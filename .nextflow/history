@@ -1,0 +1,160 @@
+2022-08-17 14:51:08	-	insane_baekeland	-	7eff6e4e07e36dd12f6f8aa96157544c	e521208c-b74d-4d89-908f-d6d4bc0855a5	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-17 14:52:39	-	silly_dijkstra	-	9c8096990c04f9d57438d9f11e56dd30	331b9867-86d6-4f5e-93c8-57c1d363de60	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-17 14:53:35	-	thirsty_descartes	-	45423bc52f64cc066b6dd235c86ea9ef	f4aac663-3f07-4425-8a6d-6ae968cbeecb	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-17 14:58:54	1.4s	tiny_leavitt	OK	32d3347485f74b5a1864e61f4bd5801a	88e905fa-0596-416f-b405-45eccfcc8fa7	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-17 15:04:25	2.2s	maniac_tuckerman	OK	32d3347485f74b5a1864e61f4bd5801a	5ee6237d-98cd-47c5-aaa1-1007d15b1169	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-17 15:11:43	1.8s	stoic_dubinsky	OK	32d3347485f74b5a1864e61f4bd5801a	5990bbf8-3259-48b4-8e3f-2d882556f84d	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-17 15:17:04	2.3s	deadly_spence	OK	c2cd03135a05f9318f929bb1e9921382	f5b3c1d3-0dee-4774-b94c-a48bcfd1971e	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-17 15:18:31	1.6s	lonely_goldwasser	OK	36d29aeaea4819de0f10b510562d4fe6	484996e1-e4c0-4beb-a763-b025b7f254af	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-17 15:19:33	2.3s	elated_bassi	OK	c2cd03135a05f9318f929bb1e9921382	0dae1768-3c1e-4b15-8b80-63f9fd7704fa	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-17 15:25:03	2.5s	suspicious_fermi	OK	95a58a4444d2af8c44ecf22be42f8e98	1bfd2b0f-6ea8-465f-aecf-22e5fd57b41f	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-19 13:10:11	23.9s	deadly_darwin	OK	13df46f2b95760b7b69df210afa5f09b	1055e49f-382a-4c2d-b9b9-0a746a4677af	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-19 15:06:56	53.5s	shrivelled_saha	OK	0e8afa2be1fe288a261e5a3a6d39e71b	cbd185a8-2ea9-4a36-a569-42dd94641b22	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-19 15:53:04	-	desperate_gautier	-	2ec322eacae131577e5be703350551a2	212372e1-1941-4cb4-be89-5a4d74f61498	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-19 15:53:41	2.8s	confident_engelbart	ERR	d6e91b79b3f3e81838df4189a59d271d	52f919cc-44f4-4d6e-94f9-4701d7f08f27	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-19 15:54:42	1m 7s	wise_caravaggio	OK	62bd0d79bc072b13bc4083708f500427	68e590f9-f15d-440b-b37b-dff4426df911	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-19 16:05:14	3.6s	high_swartz	ERR	2736db8baea3df6d7953e56fc4baa80f	7279b902-7b0d-4d80-92d5-af6177c7548d	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-19 16:05:51	-	desperate_dijkstra	-	168501e67bb07f1120c5166797c6dcc0	974f0f86-0d35-4f84-8d7f-179548db4698	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-19 16:06:41	3.5s	loving_hodgkin	ERR	2eb6180da88ddb62f1001a83bd1cd871	ca00d218-9eaf-4042-9725-b81c73c3bafc	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-19 16:10:55	2.3s	distraught_swartz	ERR	a17f375d82460916843ed880fcc746b5	fdb276ad-1d8d-4471-b5f6-260f6b49e2a1	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 09:44:17	1m 13s	zen_legentil	OK	dad3b44418ee4ddf0ae185e178c3515c	34194a6f-9ad8-4fb4-b200-2ad2154e5b0f	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 10:13:19	58.9s	romantic_wilson	OK	cbd50c0631960b487bdcd09f8091d2c1	db34a5fe-6ec0-40c1-8504-c7beb17d50ee	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 12:01:38	13.2s	jovial_wing	ERR	d280da15bf7326596147756a17d84512	7909b60f-18d5-4bb1-8b2a-24e7cc8dfddc	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 12:03:57	1m 10s	wise_hoover	OK	d280da15bf7326596147756a17d84512	ce18f413-4dcf-4a39-9f28-5d02cb3152a1	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 12:18:43	1m 16s	shrivelled_hilbert	OK	d87273ebdea8709aeafbe07e08f4919c	81cca009-ef7b-4dc6-8590-3840737635df	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 13:11:39	1m 27s	silly_thompson	OK	10e5622c77e2c992649773ee07fe3e89	6fa8e094-1b5e-4e6b-8390-086f7b7ad73d	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 13:44:19	25.2s	lonely_hypatia	ERR	143f3713bb61a75bf6e69dcf52a8e186	e772a4c5-0a0b-4e6d-8eda-27cd7d3404c8	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 13:47:20	1m 16s	evil_meninsky	OK	e923566115d4bb4647f5007a278a924a	454a0bbc-b7d9-4e84-9d29-b55d0d2cbed0	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 14:16:21	2.9s	elated_sammet	ERR	a95818f52a99ac1f9905754fc3a595c8	f99e9701-a480-4e7e-956a-37a553b7f5cd	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 14:17:36	3.4s	pensive_mendel	OK	37dea6acd5b467da4d0ca2d076f584f2	3a7bbd58-a6b7-4b93-af45-826b7a9ff4c3	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 14:18:47	2.4s	nostalgic_mcnulty	OK	37dea6acd5b467da4d0ca2d076f584f2	f37b92fa-5ff2-4d53-a5f6-2b54f639e72a	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 14:23:46	3.8s	deadly_lovelace	OK	55bb2265cb18d3986894654c67728838	b0926930-75b1-4d8a-a86a-443835d82ed6	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 14:25:57	3.8s	special_goldstine	OK	03047a1a4e663cd224833384197aa351	13339750-575a-4b85-a4eb-fa83ec12c9e2	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 14:35:57	1m 22s	dreamy_poincare	OK	05177d6aa4c6e726844f24ded780b967	e3936973-ce53-4210-b8ab-6cdb1fdf8ac2	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 14:43:15	1m 19s	exotic_bhaskara	OK	bfd29b079abd51587e239635ea037871	f47c974e-01d2-460f-81be-d289dd5e974c	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 15:24:38	1m 24s	reverent_pauling	OK	3723eb36b2a57f6604dfb45b598325a0	eb0e3086-3796-408e-bae1-2a0cc44fa3af	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 15:31:15	1m 31s	astonishing_ampere	OK	6309a8e3d4e801601b8b7186bb7dee1b	947d3d36-1c25-4631-a7a7-f72bf7fb35bc	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 15:53:34	1m 29s	soggy_visvesvaraya	OK	fd561dd893ba4cd995ba6657dd27796c	b02519f8-20fd-4e7c-ba0e-38ada8fe0a74	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-22 16:21:33	11m 52s	curious_borg	OK	91f831e7a1d57035118d7471119a086b	e0e84c96-54dd-4a30-b58a-e360b4d37443	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 08:27:31	9m 56s	curious_torvalds	OK	bb4f5934649ce17800ba02b3ef73539c	83ed2c1d-959a-4750-b937-059bc1e0b59e	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 09:23:54	5m 8s	suspicious_spence	ERR	e794f931f4d9d80f8ccdd8cbae60d73b	d5618e1e-2bca-4fd8-a27e-7e721e652fe7	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 09:38:07	8m 42s	fervent_hypatia	ERR	3fd66eab32626ec830c9d96c64be1017	6995e6e9-38d2-4051-b2c4-94b20fbefdac	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 09:52:10	10m 2s	sad_mcclintock	OK	1b6d23935fbaaabd578d2c18a2bc4ead	dc39cb1e-7e51-4f2b-a4cf-cb959cb76243	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 10:05:44	8.3s	distracted_booth	ERR	e656dca90d6f77ce61f5f2dd89913cbe	e136d7e2-8219-46c4-a25f-c66c199db67d	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 10:06:41	24.3s	sick_mestorf	OK	e808a80ce874425e4896e3d5a210c158	89ee948e-5c81-4e4b-8b0e-a789e27fa8e1	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 10:09:59	3.3s	sick_carlsson	ERR	d0a6a8f61ee20b187d04e15b740d3d33	1f09f0a6-0f58-4b33-b86f-c07e60ed6259	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 10:20:48	2.3s	small_shirley	OK	1ef6e646ead4f046aae151906a271099	b29ae49b-b888-4587-8a02-97d08e616141	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 11:36:34	-	nauseous_dubinsky	-	f2910ad38482b0acb45381c257764025	c0915d5a-e8c7-41e0-a346-f651df53af91	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 11:38:41	2.6s	confident_goldstine	ERR	fbca25326a8b280587277bdc29038a4a	2477548d-3d6e-473e-8010-ef0126094bb5	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 11:44:25	2.8s	grave_edison	ERR	388bfc11df9d56b323521631e0966e3d	c1289aaf-db95-40d2-8d6a-e6647c44da39	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 11:46:50	2.8s	golden_magritte	OK	be01b7569bd982520dc7bd17cccbd903	68ca35dc-7acb-4053-ab46-b59df71345b7	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 11:49:01	2.8s	cheeky_bohr	OK	fb8372c2cacaf3a1a277d7aa48b1f3d2	45e85050-9982-4f0c-a386-0e17d4381341	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 14:09:42	3.2s	wise_brattain	ERR	b4ed7e90135203dd6505db0de5a96391	718f4a32-d680-4b83-8524-801423c88a71	nextflow run test.nf -params-file params.yaml
+2022-08-23 14:12:57	2.6s	condescending_newton	ERR	5122c1038629a39411b950b7566be235	328ec1c7-47d5-48f5-99af-77a3986217a0	nextflow run test.nf -params-file params.yaml
+2022-08-23 14:14:36	3.6s	nostalgic_becquerel	ERR	6dbf8d507c224981edae465e7d17fbf9	0c692432-24bf-422c-9f7c-cc595f9c9add	nextflow run test.nf -params-file params.yaml
+2022-08-23 14:15:12	3.1s	shrivelled_pasteur	ERR	583373826731a465a37dfbf18dbc43b1	af276711-7a3a-4ef3-a532-9ed15900ebc9	nextflow run test.nf -params-file params.yaml
+2022-08-23 14:16:04	2.9s	romantic_wright	OK	dfe527cd3b5c6c7c6b4ec7981f82d72b	c9c790d1-0673-4c19-a529-52b671ce4b93	nextflow run test.nf -params-file params.yaml
+2022-08-23 15:10:35	-	marvelous_goldberg	-	fc669465a0a6ff04dbf9cddde1bdab83	a2cba540-7272-4691-8270-b157f2afab95	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:13:06	-	gigantic_bartik	-	17eb02d530e729c844058771e70d95ca	d101dc6d-f1b7-4cb5-ad62-6d02fc8494b6	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:14:03	-	silly_lalande	-	09bbd0fdb82985d9bc9d4bdb4253a406	afdfe84a-6775-42ab-880d-6ab7ffc80d1a	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:15:22	-	serene_euclid	-	e3e36335b6a5ac59412c91a7553beb76	9c2040d9-5c4c-40b8-b8ba-4a2530dfa86d	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:18:19	1m 6s	desperate_meninsky	ERR	9aabde254fb996612c3dce731db82b29	c6935b5b-1a19-4f91-9791-7ef2e89fb8f5	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:20:30	56.5s	nauseous_bohr	ERR	0025ae668553dbe6670f177c7f5eadb2	3b85df66-7a31-40e3-b53e-07dda02688ee	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:24:02	54.3s	prickly_archimedes	ERR	3ca299cf0974b56f979b3668644ccdab	9c100f79-e5a1-46dd-8bb5-2ee7b5a97d23	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:28:02	1m 50s	deadly_kalman	OK	05c5da1f340e5675a9b291f2a7375fc1	a86aac4f-d908-435a-a0e2-5ca2351f9ea2	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:32:03	-	intergalactic_meucci	-	437120406148797381c18298510fa0ed	a3c4e21c-659d-48f2-9e39-b44619e75745	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:37:18	-	cheesy_mirzakhani	-	98c0de7feb329e5b6cb5c6827c1ff0fc	3fcd1173-66e5-4b8f-a844-78dcb198bca0	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:42:43	-	high_brattain	-	625fa97149d05cbee1aa97a5701f5b52	78694b7a-e7b4-4eb4-95dd-2264e27364fa	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:46:37	1m 56s	confident_wozniak	OK	97d5f7fe7156550f026cc54bc2fdd4cc	9412c393-4e12-4426-9a66-0172ed33f0a2	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:49:36	-	cranky_mandelbrot	-	1fdf25a54dbfe1c99334edd433070447	883d3340-5a26-4418-a7c7-b05fc69ee2e6	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:53:36	-	irreverent_lalande	-	4b57bbc13196b6907a707e7ba21d7e17	115593c0-ede5-47a6-80d4-688321322f97	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 15:55:26	1m 54s	desperate_brahmagupta	OK	89a592b8cb553829b7e41f99cca3da42	e8393e59-57c6-41cc-85bd-df7d92d2cbd5	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-23 16:17:56	-	big_visvesvaraya	-	25575fc4982328479e6c6d9b9a2650f2	7658da49-b9ae-49f8-a427-086b6e4014c5	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 08:37:23	-	sick_hodgkin	-	ca049e928cef0083e4f042fc04cfa698	744fcf44-5641-4157-993d-69453ee0d4ef	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 08:40:17	-	marvelous_blackwell	-	edb493274f9e9fd7ff657856d5d31b44	dfe9db4a-7fed-4450-8cdb-bc6e55d3c7b2	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 08:41:03	-	disturbed_solvay	-	a47532a287b00244108464d0625651aa	d4cc800d-dabc-497d-aa2c-3f15cd2c67be	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 08:41:44	-	intergalactic_wing	-	a47532a287b00244108464d0625651aa	55b743b7-4295-4eea-b28a-8141a61f1f6f	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 08:42:21	1m 46s	suspicious_elion	OK	e740a32727f26df1e94d7d91fc4ead52	f7a06ccd-c7d6-4d50-9ea9-0d8ed851b349	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 08:47:32	1m 48s	gigantic_wilson	OK	4ad0dc925a060bb0c47bc9b383194bdd	539e9009-642e-4141-abb7-77f07e578562	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 09:06:12	1m 30s	nasty_hamilton	OK	f4938136ecd51feae2e40922164c4f58	4db2ceb5-be2e-4270-bccc-07488b22e1c8	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 09:20:19	1m 30s	big_ardinghelli	OK	808911e42c3eed411a60048fd7ef6813	46389df2-de0a-471c-acf1-b4898802a8fe	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 10:23:44	10m 18s	hungry_carlsson	OK	2c4b977950b5292bdc329767e97fd00f	2fd53a44-c333-493b-b31b-3eb47a86a3fa	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 10:49:32	9m 24s	modest_williams	OK	ca0d063dc9b9fe522c9f2c958c5be315	a54e35d0-baa5-4672-bed2-c16a0e0508ab	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 11:01:12	1m 5s	boring_davinci	ERR	fcf93a235906eb4dd74420496d528345	b1e38ec1-3f19-4195-9e4d-8da5065324c9	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 11:02:47	4m 54s	curious_dijkstra	OK	1e4b0a08df5eb8ed84a1552d9ab615e7	164138a3-c98d-4083-9eec-d6b5666eafd9	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 13:58:51	-	cheeky_wilson	-	e356fada1ed33eb8dfa264851c8132da	e4669df2-9fa2-417d-be28-4365062bb90a	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 14:00:28	-	curious_booth	-	0f700394571ac89aeb48a1d1ca010dfe	74ae344b-53fd-4f9d-ae94-c2ba3d8fac32	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 14:01:37	5m 14s	jolly_chandrasekhar	OK	eadd78d4605ad1a25c7c5aba8fad6543	b6f616a2-bf37-4382-9c74-db25b60766e5	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 14:10:56	-	adoring_murdock	-	5415e629fd0bd81de96aec3dcd4c4c41	2c181e24-5878-4c23-9a36-2d5b3610f102	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 14:17:26	4m 53s	silly_bhaskara	OK	31580206e77e9fd9a8652d57231df5a3	9ace4758-b89d-4e3a-b5ca-593b196c7ca6	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 14:24:01	-	pensive_watson	-	c78c3f099b16becd7d5a5c114ddf2aab	37291e75-6b45-45b5-95da-4fc17ec0c331	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 14:35:07	1m 4s	chaotic_agnesi	ERR	78117380c05a46d5ed73c047297d8c4a	ddb8d070-6a83-4e30-b5b6-a8a68404a103	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 14:42:22	-	goofy_lovelace	-	5ea074e0c74f04d8a05bff64044c7b1e	5fe4cee4-b6b7-4ca7-85f3-40d9ee811699	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 15:24:23	59.6s	insane_saha	ERR	7bc2dd648040af83475402e484dc583e	5b3ac3b1-0bda-4be4-a018-48e4a419aff9	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 15:31:15	1m 3s	chaotic_carlsson	ERR	17f34419d916cf35047c5dc42d38fc25	4544ac62-f9ea-4665-9379-537d97622668	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 15:34:09	4m 43s	extravagant_engelbart	OK	aeb5be39ba1772200a936705e5cf0ff7	2c9719b0-aa68-4d8c-9be4-913183190dcc	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 15:48:20	58.7s	curious_mcnulty	ERR	cc619fcadc6cc81f8cd3de79f6864be3	df1eb110-2635-4c8d-ac59-1d53f338e5d4	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 15:50:40	59.4s	elated_wiles	ERR	7a45c02fcee37721ef0a3ef28995a689	0c87faef-f23d-4e73-ad88-d2c9dd5c13dc	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 15:55:34	4m 40s	distracted_nobel	OK	6adcfde30dcadbbd74bde16aa37d731b	3600ee55-a1f6-4fdc-a790-5df71dd61519	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 16:00:31	59.4s	scruffy_kimura	ERR	04898b31d2a734dca503acc73091a829	1a3157b5-6164-4f04-8cc9-e4ef3f43835d	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 16:05:39	1m	spontaneous_poitras	ERR	ed650b19b991b11f16b2b28e8bb52e65	35823b2b-a698-40d5-94b9-fae6a482a8e3	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 16:11:59	4m 51s	golden_ramanujan	OK	efb635332c5fdd247f464bbcc7f98aee	6acdc7f2-c4a0-4225-9bcb-ec1b5b3e205a	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 16:20:41	1m 2s	hopeful_jennings	ERR	8d3ca586d1d8ca2ff67d36646bd38b6d	bea1b13e-ef98-4110-bf1c-20de170393c4	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-24 16:25:33	4m 43s	agitated_majorana	OK	537c0f453dd6113a5fa1980b4f72f5ff	0128b698-8d00-4397-ae36-58ba6a81dd70	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 07:48:30	4m 52s	intergalactic_hoover	OK	2d07e085fe02df11fb03fb7655f538a8	5198366f-377e-41ce-83d2-316c35d53881	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 07:54:00	4m 48s	sick_stone	OK	3c03d96ff6ceddcbc8171d1a871bfdcb	f288f7a2-7a0b-4f94-8491-4d88157ddc6f	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 09:05:06	5m 20s	loving_cori	ERR	550f1b727987e5a16108223c7d27c174	b7ae62cc-ce18-4b54-9d99-19885b142727	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 09:12:33	1m 2s	evil_volta	ERR	e325616188f1f501d4420f2db40315c3	1fa1de80-bbf4-4565-9d56-6bc0e13e90b3	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 09:16:35	2m 25s	marvelous_nobel	ERR	237805fba9b3cad5be122192635a6979	a2f8377a-2f20-4a74-a083-6f230342a457	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 09:19:10	9m 12s	zen_darwin	OK	fba5257535f7d619dbb45e7484ca2e90	d22ea06a-04a8-4e35-ab75-33b26ca641bb	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 09:29:06	4m 53s	trusting_fermat	OK	fba5257535f7d619dbb45e7484ca2e90	4d71f0a4-abdf-4e13-8007-3edc4160a3e5	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 09:44:15	5m 39s	drunk_wing	OK	fd59cd9268b77ffc3b88a3b5efe2b21a	15b76800-2c9e-4263-b8db-311292b6369f	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 12:19:24	5m 39s	wise_galileo	OK	a8e22dae58c272be900e2138b5ec6e3d	fc787335-d463-4526-8ca7-20afa0af121a	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 12:47:47	5m 45s	nasty_kowalevski	OK	527f408c7025b9a1b5f6c00172877800	f81cfe1e-0cec-4d20-a6a1-7c24d1ee0cb8	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 13:09:25	1m 25s	golden_turing	ERR	434a195319751e473ed4c3e0a61e352d	c1316444-73a7-4eaa-8a43-7c59311342e6	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 13:18:20	1m 22s	small_hoover	ERR	49c5aa0dd6a03c92296a71961922d1f1	8dd8dc2c-7894-4f9c-a311-9e713052ca83	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 13:22:10	6m 6s	stupefied_colden	OK	4d34cb0c5583c6999c37beb8cc191f34	4dcfd906-b9da-4685-9481-c74b0ad53366	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 13:33:08	1m 26s	chaotic_caravaggio	ERR	ebf279721e98d6fab19f08591e16a92e	00e71797-0d0e-417f-9f58-f53c77ae77f4	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 13:43:56	1m 26s	magical_bassi	ERR	925af9e0327349e1a1971cc7e00c44ec	82895ee9-4782-42df-b83c-b6a9fe9b4f56	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 13:50:15	5m 6s	astonishing_swanson	ERR	2890c75520ad0d5c3befe109bf90d8cb	283f039b-23f2-4b06-bcec-818baac5baf1	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 13:55:26	1m 30s	cranky_meitner	ERR	aabb56abb52675069e97d7ce6ae7df9b	bbbc6ed0-a101-4f78-bd45-f2937da63257	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 14:06:34	2.8s	shrivelled_edison	ERR	09139ca1944a6a42ba873cebeb5868d3	ef5210be-f89b-42f0-9606-3d11b4f6fbd4	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 14:07:01	5m 19s	admiring_volhard	ERR	8021a59ed29edf432956aca971950fc6	39767081-91a0-4b78-9c61-54241205ebcf	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 14:14:38	1m 7s	maniac_stonebraker	ERR	6cdd802233453dc13a04c4a4efb34c0a	78562b6b-ae8d-4e90-a62d-723b6d707a7e	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 14:29:05	1m 7s	intergalactic_noyce	ERR	1d9e075d0a71d7fc1f0c45b0555b7792	23a07a71-3482-42c2-91e5-a4948c8591dc	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 14:33:42	1m 7s	jolly_golick	ERR	747167757a181516cbc8ce08af492e1d	f06249d4-6118-469d-bcd7-4e41e3d8b11d	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 14:38:27	1m 28s	festering_carlsson	ERR	758bb6c2003a39d8328a0765e8f14876	07153910-f33c-44c1-91c8-cd095bcffc98	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 14:46:39	10m 23s	cheeky_ampere	OK	75d0473a4611dbedbaa7d112d4348717	ca95fe1f-9705-4e4d-ba42-940341627eb2	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 15:08:34	3m 31s	mighty_meninsky	ERR	f4f122b77c874711ee72c2c8f313d7a6	7d09daff-32ea-4c82-8795-7b1cd80e9c46	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 15:12:34	6m 2s	goofy_pasteur	OK	49630250b3c37368855eb3bb59320ee7	324efa6a-eff3-47da-a4b0-ac2825e39bae	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 15:23:07	5m 50s	elated_ekeblad	OK	5deb72f5f0684afeef7315d40dfea81f	bad0fc25-bc00-4e89-add9-f95eded8d146	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 15:49:46	1m 35s	lethal_kilby	ERR	d35d54685ed900c7a0c690891b38fd5e	51d66206-2864-4063-981f-03ea9b3adc1e	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 15:55:21	1m 27s	zen_feynman	ERR	120469f9c5bfe0c3a67ac553cc5fde13	3621a292-fef8-4025-bd34-b077f1442b42	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 15:59:36	1m 30s	pedantic_brattain	ERR	e9fb5e8416dc25318fa36948e2b294ad	d795789b-2369-45c8-b415-8f3b70defb78	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 16:03:53	21.1s	festering_ampere	ERR	a4a4b6d41d48f53cb2ee849d0370b744	c03d8aa6-911e-4572-8504-61f87aab6314	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 16:05:35	8m 22s	adoring_lichterman	OK	bf8fdaf1322d089774a546e3f1e55daa	a961a416-eef7-4452-ade9-c5dab9e4d97b	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 16:19:16	7m 40s	pedantic_celsius	OK	fed4214b4b811f44de40f5fc2d4a7494	72d13377-14f5-4bbe-8f1a-2dade1e6efde	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-25 16:29:44	5m 35s	disturbed_wing	OK	7a9cc8be186fda36b0f36909b5120c11	9ec575be-d557-4196-bde6-ae68fc6a5b42	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 09:17:37	6m 3s	tender_tesla	OK	5dfd63095b892036de6e3a9043fcad72	1e24f04e-5ee7-4b8d-b356-cd4c465ca9f6	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 10:03:15	5m 9s	pensive_dubinsky	OK	f8e6c78daf7de506123a2c7be075dd89	eb58ac21-07b1-4e51-9940-476d3c7aafb7	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 10:13:23	9m 49s	naughty_wozniak	OK	48da1651c4d04095269850c78935ef96	d435b66d-3d32-4ca4-a6d3-0829df0b5156	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 10:52:47	9m 52s	naughty_bohr	OK	43f7a9998ab698d2bd966d985181da80	aa9f2d65-ebbd-4f16-aad3-4292c035c6e8	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 11:09:08	10m 22s	stoic_tesla	OK	0ef18dda460c7c067b3eb8871b8e0b16	f643fe67-66e5-4ca0-baad-359cf58135b2	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 12:13:41	6m 48s	sick_kare	ERR	8b34d6506a55339341e2a096bffbabfd	a5aba1c3-6e6e-4d22-a7e2-c2bf98a751c5	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 13:24:59	4m 8s	sad_nobel	ERR	6167f0abf6e11dcda1257e97cdd9a11d	404421e4-bb2a-4aa4-8a68-e71d5e9cc5f7	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 13:34:20	9m 45s	naughty_goldberg	OK	9da5a47d08bd2b9e0e957c1df01865cb	ceb68e10-ea72-4d80-9f7f-24fe300f228d	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 13:50:03	10m 3s	spontaneous_montalcini	OK	44c0bfdf1476b343ddd678b422fd1919	e972770d-93d2-4ccb-b238-c077acf7ad33	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 14:02:03	4m 20s	ecstatic_mestorf	ERR	78e0dae721cd2a94eeeeef3a4991f433	98bc0d93-b5a0-4b0a-82e3-0122353fb18d	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 14:07:18	3m 51s	distracted_hilbert	ERR	7e830fad802b355a8b3628bf88167f82	8662d251-f70d-4707-826f-36fe24e4e289	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 14:12:30	9m 50s	silly_cori	OK	580e18c8dc1ff9ad6179d40da42c6860	7a49f8f3-f65e-4ae1-8739-84b851ee14e1	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 14:30:13	8m 32s	voluminous_ekeblad	ERR	841d69ba825d2a08c5828567d44e7298	fcca2c87-0502-4e05-b6c2-d858b2008bc5	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 14:38:55	3m 56s	zen_fermi	ERR	4e894a94c5c10ed624f7c0df606d336e	dad85d6f-7d01-4413-b8db-babcd2d7e791	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 14:50:42	10m 8s	high_dubinsky	OK	619db894617497f71d6b2d66ca3545dc	fe524cdc-70e9-47e8-8480-969a0c20eb66	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 15:57:49	9m 45s	confident_mayer	OK	758cb2123fb77e9bf6cb7b8bcfd6fe56	def7faf5-a0d7-452f-b52c-3cc8bc8ac47e	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-26 16:21:04	15m 24s	silly_wescoff	OK	dd2e0805b5afb94106b6a678d80b9755	eb0aea5d-3e92-4f27-86fe-447e4605752a	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-29 08:49:51	12m 42s	fervent_jepsen	OK	b81769705b667660d56e2cb00bbcbd27	80989c7f-abe7-4d69-ad5e-e46e48dfd1aa	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-29 10:29:38	10m 1s	extravagant_colden	OK	b81769705b667660d56e2cb00bbcbd27	6b363cf7-a70f-4394-be3c-7e0297cf1b03	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-29 11:27:18	15m 42s	insane_nightingale	OK	b81769705b667660d56e2cb00bbcbd27	a6e2d03c-a20d-4ca7-a4d9-5683b052ceae	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-29 11:46:32	3.8s	determined_meninsky	OK	c893c0163ce8aa0e564ecd143884240b	928ecc8d-f338-4db1-9d58-4d4b5a769e64	nextflow run flaq_amr_nf_illu.nf -params-file params.yaml
+2022-08-29 11:48:16	1.5s	grave_gutenberg	OK	91dcee8e66247267b3b65bf2acbd4fe4	4ae25bd3-1e33-4f71-92d7-a816450cea67	nextflow run flaq_amr_nf_illu.nf -params-file params.yaml
+2022-08-29 13:03:01	14m 53s	nostalgic_brattain	OK	505a7a25b81db744e97e04c57562e3d5	a9dfa3d9-c44f-4e1f-ae45-4e9b5422983f	nextflow run flaq_amr_nf.nf -params-file params.yaml

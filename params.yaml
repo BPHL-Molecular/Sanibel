@@ -1,0 +1,5 @@
+input          : "/blue/bphl-florida/dongyibo/Dev_flaq_amr_nf/fastqs"
+output    : "/blue/bphl-florida/dongyibo/Dev_flaq_amr_nf/output"
+
+# Note: The parameter "input" and "output" are the absolute path. Do not include the "/" at the end of the paths.
+
