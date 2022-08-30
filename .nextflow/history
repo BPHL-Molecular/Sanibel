@@ -158,3 +158,5 @@
 2022-08-29 11:46:32	3.8s	determined_meninsky	OK	c893c0163ce8aa0e564ecd143884240b	928ecc8d-f338-4db1-9d58-4d4b5a769e64	nextflow run flaq_amr_nf_illu.nf -params-file params.yaml
 2022-08-29 11:48:16	1.5s	grave_gutenberg	OK	91dcee8e66247267b3b65bf2acbd4fe4	4ae25bd3-1e33-4f71-92d7-a816450cea67	nextflow run flaq_amr_nf_illu.nf -params-file params.yaml
 2022-08-29 13:03:01	14m 53s	nostalgic_brattain	OK	505a7a25b81db744e97e04c57562e3d5	a9dfa3d9-c44f-4e1f-ae45-4e9b5422983f	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-30 09:01:46	9m 56s	gigantic_hawking	OK	505a7a25b81db744e97e04c57562e3d5	dc15c3ae-6db0-402b-87db-1d186d33d0ea	nextflow run flaq_amr_nf.nf -params-file params.yaml
+2022-08-30 09:29:39	11m 16s	reverent_aryabhata	OK	505a7a25b81db744e97e04c57562e3d5	a2bfb106-f2be-4f63-81f1-99548bba7585	nextflow run flaq_amr_nf.nf -params-file params.yaml

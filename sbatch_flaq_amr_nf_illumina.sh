@@ -25,5 +25,7 @@ mv ./fastqs/*_R2_*.gz ./fastqs/original
 
 nextflow run flaq_amr_nf.nf -params-file params.yaml
 
-sort ./output/*/report.txt | uniq | sort -r > ./output/sum_report.txt
+sort ./output/*/report.txt | uniq > ./output/sum_report.txt
+sed -i '/sampleID\tspeciesID/d' ./output/sum_report.txt
+sed -i '1i sampleID\tspeciesID_mash\tnearest_neighb_mash\tmash_distance\tspeciesID_kraken\tkraken_percent\tmlst_scheme\tmlst_st\tnum_clean_reads\tavg_readlength\tavg_read_qual\test_coverage\tnum_contigs\tlongest_contig\tN50\tL50\ttotal_length\tgc_content\tannotated_cds' ./output/sum_report.txt
 
