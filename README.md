@@ -12,4 +12,4 @@ Nextflow version of the Flaq_amr pipeline
    b. open file "parames.yaml", set the two parameters absolute paths. They should be ".../.../fastqs" and ".../.../output".
    c. get into the directory of the pipeline, run "sbatch ./sbatch_flaq_amr_nf.sh"
    
-Note: some sample data files can be found in directory /sampl_data
+Note: some sample data files can be found in directory /sample_data
