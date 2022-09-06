@@ -1,4 +1,5 @@
 # Sanibel
+
 ## 1. What to do
 The pipeline is a Nextflow version of the Flaq_amr pipeline. Also some plus analyses for specific bacteria (Legionella, Shigella, group A strep, Klebsiella, Salmonella and E.coli) and plasmid are developed. The results of these plus analyses can be found in the folder named by the bacteria name.  
 
