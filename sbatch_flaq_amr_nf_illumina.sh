@@ -23,7 +23,7 @@ mkdir ./fastqs/original
 mv ./fastqs/*_R1_*.gz ./fastqs/original
 mv ./fastqs/*_R2_*.gz ./fastqs/original
 
-nextflow run flaq_amr_nf.nf -params-file params.yaml
+nextflow run flaq_amr_nf_plus.nf -params-file params.yaml
 
 sort ./output/*/report.txt | uniq > ./output/sum_report.txt
 sed -i '/sampleID\tspeciesID/d' ./output/sum_report.txt
