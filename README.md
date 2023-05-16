@@ -31,7 +31,7 @@ Singularity is also needed. The detail of installation can be found in https://s
 
   For Hinfluenzae analysis, the value of the parameter "isHinfluenzae" in the file "parames.yaml" is set to "yes"
 
-  By default the values of the above two parameters are both "no". Although Neisseria or Hinfluenzae can be analyzed using their default   settings (namely "no"), clonal complex and serotype prediction features will not work.   
+  The default values of the above two parameters are both "no". Although Neisseria or Hinfluenzae can be analyzed using their default   settings (namely "no"), clonal complex and serotype prediction features will not work.   
 
 ## Version updates
     https://github.com/BPHL-Molecular/Sanibel.wiki.git
