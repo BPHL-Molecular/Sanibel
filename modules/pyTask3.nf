@@ -14,6 +14,10 @@ process pyTask3 {
     filepath2="${mypath}/"+items[-1]+"_assembly/"+items[-1]+".mlst"
     filepath3="${mypath}/kraken_out/"+items[-1]+".report"
     filepath4="${mypath}/report.txt"
+    uppath="/".join(items[:-2])
+    filepath5a=uppath+"/neisseria.txt"
+    filepath5b=uppath+"/hinfluenzae.txt"
+    filepath6="${mypath}/pmga/"+items[-1]+"sta.txt"
     
     cds = ''
     with open(filepath1, 'r') as genes:
@@ -27,6 +31,22 @@ process pyTask3 {
            out = line.rstrip().split()
            scheme = out[1]
            st = out[2]
+           cc = ""
+           if scheme == "neisseria":
+              with open(filepath5a, 'r') as mlst_table:
+                  for row in mlst_table:
+                      cols = row.rstrip().split()
+                      if st == cols[0]:
+                          cc = cols[8]
+                          break
+           if scheme == "hinfluenzae":
+              with open(filepath5b, 'r') as mlst_table:
+                  for row in mlst_table:
+                      cols = row.rstrip().split()
+                      if st == cols[0]:
+                          cc = cols[8]
+                          break
+
     with open(filepath3, 'r') as kreport:
         lines = kreport.readlines()
         for l in lines:
@@ -36,10 +56,21 @@ process pyTask3 {
             tax = l_parse[5].lstrip()
             if tax_level == 'S':
                 break
+    
+    import os.path
+    pgspecies=''
+    pgpredict=''
+    if os.path.exists(filepath6):
+        with open(filepath6, 'r') as pgmalines:
+            pglines = pgmalines.readlines()
+            pgcells = pglines[1].strip().split("\t")
+            pgpredict = pgcells[2]
+            pgspecies = pgcells[1]
+                 
     #print(cds+"\t"+st+"\t"+tax)
     
     f = open("${pyoutputs}", "a")
-    f.write(","+str(cds)+","+str(scheme)+","+str(st)+","+str(percent)+","+str(tax))
+    f.write(","+str(cds)+","+str(scheme)+","+str(st)+","+str(cc)+","+str(percent)+","+str(tax)+","+str(pgspecies)+","+str(pgpredict))
     f.close
     
     #f=open("${pyoutputs}", "r")
