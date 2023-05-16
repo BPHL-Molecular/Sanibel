@@ -31,5 +31,7 @@ Singularity is also needed. The detail of installation can be found in https://s
 
   By default the values of the above two parameters are both "no". Although Neisseria or Hinfluenzae can be analyzed using their default   settings (namely "no"), clonal complex and serotype prediction features will not work.   
 
-
+## Version updates
+    https://github.com/BPHL-Molecular/Sanibel.wiki.git
+    
 #### Note: some sample data files can be found in directory /fastqs/sample_data
