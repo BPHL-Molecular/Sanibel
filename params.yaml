@@ -1,5 +1,7 @@
-input          : "/blue/bphl-florida/dongyibo/Dev_module_Sanibel/fastqs"
-output    : "/blue/bphl-florida/dongyibo/Dev_module_Sanibel/output"
+input          : "/blue/bphl-florida/dongyibo/Dev_module_Sanibel/Version2/fastqs"
+output    : "/blue/bphl-florida/dongyibo/Dev_module_Sanibel/Version2/output"
+isNeisseria : "no"
+isHinfluenzae : "no"
 
 # Note: The parameter "input" and "output" are the absolute path. Do not include the "/" at the end of the paths.
 
