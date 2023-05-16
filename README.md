@@ -26,7 +26,7 @@ Singularity is also needed. The detail of installation can be found in https://s
 ## For Neisseria or Hinfluenzae analysis
 1. For Neisseria analysis, the value of the parameter "isNeisseria" is set as "yes"
 2. For Hinfluenzae analysis, the value of the parameter "isHinfluenzae" is set as "yes"
-Note: By default the values of the above two parameters are both "no". Although Neisseria or Hinfluenzae can be analyzed using their default settings (namely "no"), clonal complex and serotype prediction features will not work.   
+3. By default the values of the above two parameters are both "no". Although Neisseria or Hinfluenzae can be analyzed using their default settings (namely "no"), clonal complex and serotype prediction features will not work.   
 
 
 #### Note: some sample data files can be found in directory /fastqs/sample_data
