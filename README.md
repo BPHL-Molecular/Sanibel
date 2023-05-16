@@ -24,9 +24,12 @@ Singularity is also needed. The detail of installation can be found in https://s
 3. get into the directory of the pipeline, run "sbatch ./sbatch_flaq_amr_nf.sh"
 
 ## For Neisseria or Hinfluenzae analysis
-1. For Neisseria analysis, the value of the parameter "isNeisseria" is set as "yes"
-2. For Hinfluenzae analysis, the value of the parameter "isHinfluenzae" is set as "yes"
-3. By default the values of the above two parameters are both "no". Although Neisseria or Hinfluenzae can be analyzed using their default settings (namely "no"), clonal complex and serotype prediction features will not work.   
+
+For Neisseria analysis, the value of the parameter "isNeisseria" is set as "yes"
+
+For Hinfluenzae analysis, the value of the parameter "isHinfluenzae" is set as "yes"
+
+By default the values of the above two parameters are both "no". Although Neisseria or Hinfluenzae can be analyzed using their default settings (namely "no"), clonal complex and serotype prediction features will not work.   
 
 
 #### Note: some sample data files can be found in directory /fastqs/sample_data
