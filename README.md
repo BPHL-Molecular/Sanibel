@@ -39,6 +39,7 @@ Singularity is also needed. The detail of installation can be found in https://s
 
 ## By Docker
 By default, the pipeline uses singularity to run containers and is wrapped by SLURM. If you want to use docker to run the containers, you should use the command below:
+
 If your data file names do not directly come from Illumina output,
 ```bash
 "sbatch ./docker_flaq_amr_nf.sh"
