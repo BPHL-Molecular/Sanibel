@@ -26,15 +26,30 @@ L001R1Lst.each{
 A = Channel.fromList(sampleNames)
 //A.view()
 
-include { assemble } from './modules/assemble.nf'
+//include { assemble } from './modules/assemble.nf'
+include { fastqc } from './modules/fastqc.nf'
+include { trimmomatic } from './modules/trimmomatic.nf'
+include { bbtools } from './modules/bbtools.nf'
+include { fastqc2 } from './modules/fastqc2.nf'
+include { multiqc } from './modules/multiqc.nf'
+include { mash } from './modules/mash.nf'
+include { unicycler } from './modules/unicycler.nf'
+include { pmga } from './modules/pmga.nf'
+include { quast } from './modules/quast.nf'
+
 include { pyTask1 } from './modules/pyTask1.nf'
 include { readssum } from './modules/readssum.nf'
 include { pyTask2 } from './modules/pyTask2.nf'
-include { annotate } from './modules/annotate.nf'
+
+include { prokka } from './modules/prokka.nf'
+include { amrfinder } from './modules/amrfinder.nf'
+include { mlst } from './modules/mlst.nf'
+include { kraken } from './modules/kraken.nf'
+
 include { pyTask3 } from './modules/pyTask3.nf'
 include { pyTask4 } from './modules/pyTask4.nf'
 include { plusAnalyses } from './modules/plusAnalyses.nf'
 
 workflow {
-    assemble(A) | pyTask1 | readssum | pyTask2 |  annotate| pyTask3 | pyTask4 | plusAnalyses | view
+    fastqc(A) | trimmomatic | bbtools| fastqc2 | multiqc | mash | unicycler | pmga | quast | pyTask1 | readssum | pyTask2 | prokka | amrfinder | mlst | kraken | pyTask3 | pyTask4 | plusAnalyses | view
 }

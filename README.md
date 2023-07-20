@@ -18,13 +18,17 @@ Singularity is also needed. The detail of installation can be found in https://s
 ### Option1, your data file names directly come from Illumina output: 
 1. put your data files into directory /fastqs. Your data file's name should look like "JBS22002292-FL-NDX550430-220701_S143_L001_R1_001.fastq.gz". 
 2. open file "parames.yaml", set the two parameters absolute paths. They should be ".../.../fastqs" and ".../.../output". 
-3. get to the top directory of the pipeline, run "sbatch ./sbatch_flaq_amr_nf_illumina.sh"
-
+3. get to the top directory of the pipeline, run 
+```bash
+"sbatch ./sbatch_flaq_amr_nf_illumina.sh"
+```
 ### Option2, your data file names do not directly come from Illumina output: 
 1. put your data files into directory /fastqs. Your data file's name should look like "JBS22002292_1.fastq.gz", "JBS22002292_2.fastq.gz" 
 2. open file "parames.yaml", set the two parameters absolute paths. They should be ".../.../fastqs" and ".../.../output". 
-3. get into the directory of the pipeline, run "sbatch ./sbatch_flaq_amr_nf.sh"
-
+3. get into the directory of the pipeline, run 
+```bash
+"sbatch ./sbatch_flaq_amr_nf.sh"
+```
 ## For Neisseria or Hinfluenzae analysis
 
   For Neisseria analysis, the value of the parameter "isNeisseria" in the file "parames.yaml" is set to "yes"
@@ -32,6 +36,20 @@ Singularity is also needed. The detail of installation can be found in https://s
   For Hinfluenzae analysis, the value of the parameter "isHinfluenzae" in the file "parames.yaml" is set to "yes"
 
   The default values of the above two parameters are both "no". Although Neisseria or Hinfluenzae can be analyzed using their default   settings (namely "no"), clonal complex and serotype prediction features will not work.   
+
+## By Docker
+By default, the pipeline uses singularity to run containers and is wrapped by SLURM. If you want to use docker to run the containers, you should use the command below:
+If your data file names do not directly come from Illumina output,
+```bash
+"sbatch ./docker_flaq_amr_nf.sh"
+```
+If your data file names directly come from Illumina output,
+```bash
+"sbatch ./docker_flaq_amr_nf_illumina.sh"
+```
+
+
+
 
 ## Version updates
     https://github.com/BPHL-Molecular/Sanibel.wiki.git

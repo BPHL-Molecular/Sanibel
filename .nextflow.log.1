@@ -1,0 +1,250 @@
+Jul-20 09:24:36.537 [main] DEBUG nextflow.cli.Launcher - $> nextflow run flaq_amr_plus2.nf -params-file params.yaml
+Jul-20 09:24:36.654 [main] INFO  nextflow.cli.CmdRun - N E X T F L O W  ~  version 21.10.6
+Jul-20 09:24:36.675 [main] INFO  nextflow.cli.CmdRun - Launching `flaq_amr_plus2.nf` [special_joliot] - revision: bc783eafcf
+Jul-20 09:24:36.686 [main] DEBUG nextflow.config.ConfigBuilder - Found config local: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/nextflow.config
+Jul-20 09:24:36.686 [main] DEBUG nextflow.config.ConfigBuilder - Parsing config file: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/nextflow.config
+Jul-20 09:24:36.742 [main] DEBUG nextflow.config.ConfigBuilder - Applying config profile: `standard`
+Jul-20 09:24:37.579 [main] DEBUG nextflow.plugin.PluginsFacade - Setting up plugin manager > mode=prod; plugins-dir=/home/dongyibo/.nextflow/plugins
+Jul-20 09:24:37.582 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins default=[]
+Jul-20 09:24:37.593 [main] INFO  org.pf4j.DefaultPluginStatusProvider - Enabled plugins: []
+Jul-20 09:24:37.594 [main] INFO  org.pf4j.DefaultPluginStatusProvider - Disabled plugins: []
+Jul-20 09:24:37.597 [main] INFO  org.pf4j.DefaultPluginManager - PF4J version 3.4.1 in 'deployment' mode
+Jul-20 09:24:37.605 [main] INFO  org.pf4j.AbstractPluginManager - No plugins
+Jul-20 09:24:37.661 [main] DEBUG nextflow.Session - Session uuid: fb5cf01a-c68c-4f63-b66f-f663f3e37cbf
+Jul-20 09:24:37.661 [main] DEBUG nextflow.Session - Run name: special_joliot
+Jul-20 09:24:37.662 [main] DEBUG nextflow.Session - Executor pool size: 20
+Jul-20 09:24:37.683 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 21.10.6 build 5660
+  Created: 21-12-2021 16:55 UTC (11:55 EDT)
+  System: Linux 3.10.0-1160.88.1.el7.x86_64
+  Runtime: Groovy 3.0.9 on OpenJDK 64-Bit Server VM 1.8.0_312-b07
+  Encoding: UTF-8 (UTF-8)
+  Process: 30574@c0710a-s25.ufhpc [172.16.199.150]
+  CPUs: 20 - Mem: 20 GB (19.5 GB) - Swap: 0 (0)
+Jul-20 09:24:37.719 [main] DEBUG nextflow.Session - Work-dir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work [lustre]
+Jul-20 09:24:37.720 [main] DEBUG nextflow.Session - Script base path does not exist or is not a directory: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/bin
+Jul-20 09:24:37.731 [main] DEBUG nextflow.executor.ExecutorFactory - Extension executors providers=[]
+Jul-20 09:24:37.743 [main] DEBUG nextflow.Session - Observer factory: DefaultObserverFactory
+Jul-20 09:24:37.805 [main] DEBUG nextflow.util.CustomThreadPool - Creating default thread pool > poolSize: 21; maxThreads: 1000
+Jul-20 09:24:37.909 [main] DEBUG nextflow.Session - Session start invoked
+Jul-20 09:24:38.163 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+Jul-20 09:24:38.816 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:fastqc` matches process fastqc
+Jul-20 09:24:38.821 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:38.821 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:38.824 [main] DEBUG nextflow.executor.Executor - [warm up] executor > local
+Jul-20 09:24:38.829 [main] DEBUG n.processor.LocalPollingMonitor - Creating local task monitor for executor 'local' > cpus=20; memory=20 GB; capacity=20; pollInterval=100ms; dumpInterval=5m
+Jul-20 09:24:38.844 [main] DEBUG nextflow.util.CustomThreadPool - Creating default thread pool > poolSize: 21; maxThreads: 1000
+Jul-20 09:24:38.976 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:trimmomatic` matches process trimmomatic
+Jul-20 09:24:38.977 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:38.977 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:38.980 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:bbtools` matches process bbtools
+Jul-20 09:24:38.980 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:38.980 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:38.986 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:fastqc2` matches process fastqc2
+Jul-20 09:24:38.986 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:38.986 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:38.989 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:multiqc` matches process multiqc
+Jul-20 09:24:38.989 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:38.989 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:38.991 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:mash` matches process mash
+Jul-20 09:24:38.992 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:38.992 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:38.994 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:unicycler` matches process unicycler
+Jul-20 09:24:38.994 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:38.994 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:38.997 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:pmga` matches process pmga
+Jul-20 09:24:38.997 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:38.997 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.001 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:quast` matches process quast
+Jul-20 09:24:39.001 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:39.002 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.008 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:39.008 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.012 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:readssum` matches process readssum
+Jul-20 09:24:39.012 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:39.012 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.015 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:39.015 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.018 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:prokka` matches process prokka
+Jul-20 09:24:39.019 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:39.020 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.025 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:amrfinder` matches process amrfinder
+Jul-20 09:24:39.026 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:39.026 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.028 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:mlst` matches process mlst
+Jul-20 09:24:39.029 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:39.029 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.032 [main] DEBUG nextflow.script.ProcessConfig - Config settings `withName:kraken` matches process kraken
+Jul-20 09:24:39.033 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:39.033 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.037 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:39.037 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.042 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:39.043 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.047 [main] DEBUG nextflow.executor.ExecutorFactory - << taskConfig executor: null
+Jul-20 09:24:39.047 [main] DEBUG nextflow.executor.ExecutorFactory - >> processorType: 'local'
+Jul-20 09:24:39.065 [main] DEBUG nextflow.Session - Workflow process names [dsl2]: unicycler, pyTask1, pmga, pyTask3, pyTask2, pyTask4, fastqc2, prokka, bbtools, kraken, trimmomatic, quast, amrfinder, mlst, fastqc, readssum, plusAnalyses, mash, multiqc
+Jul-20 09:24:39.067 [main] DEBUG nextflow.Session - Ignite dataflow network (20)
+Jul-20 09:24:39.067 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > fastqc
+Jul-20 09:24:39.068 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > trimmomatic
+Jul-20 09:24:39.068 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > bbtools
+Jul-20 09:24:39.068 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > fastqc2
+Jul-20 09:24:39.069 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > multiqc
+Jul-20 09:24:39.069 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > mash
+Jul-20 09:24:39.069 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > unicycler
+Jul-20 09:24:39.069 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > pmga
+Jul-20 09:24:39.070 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > quast
+Jul-20 09:24:39.070 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > pyTask1
+Jul-20 09:24:39.070 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > readssum
+Jul-20 09:24:39.070 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > pyTask2
+Jul-20 09:24:39.071 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > prokka
+Jul-20 09:24:39.071 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > amrfinder
+Jul-20 09:24:39.071 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > mlst
+Jul-20 09:24:39.072 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > kraken
+Jul-20 09:24:39.072 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > pyTask3
+Jul-20 09:24:39.072 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > pyTask4
+Jul-20 09:24:39.073 [main] DEBUG nextflow.processor.TaskProcessor - Starting process > plusAnalyses
+Jul-20 09:24:39.073 [main] DEBUG nextflow.script.ScriptRunner - > Await termination 
+Jul-20 09:24:39.073 [main] DEBUG nextflow.Session - Session await
+Jul-20 09:24:39.135 [Actor Thread 20] WARN  nextflow.container.SingularityCache - Singularity cache directory has not been defined -- Remote image will be stored in the path: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity -- Use env variable NXF_SINGULARITY_CACHEDIR to specify a different location
+Jul-20 09:24:39.138 [Actor Thread 20] INFO  nextflow.container.SingularityCache - Pulling Singularity image docker://staphb/fastqc:0.11.9 [cache /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-fastqc-0.11.9.img]
+Jul-20 09:24:48.006 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity pull complete image=docker://staphb/fastqc:0.11.9 path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-fastqc-0.11.9.img
+Jul-20 09:24:48.093 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:24:48.096 [Task submitter] INFO  nextflow.Session - [58/d9bc5a] Submitted process > fastqc (1)
+Jul-20 09:24:54.170 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 1; name: fastqc (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/58/d9bc5a9b023d91ad7177593b829b9d]
+Jul-20 09:24:54.187 [Actor Thread 20] INFO  nextflow.container.SingularityCache - Pulling Singularity image docker://staphb/trimmomatic:0.39 [cache /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-trimmomatic-0.39.img]
+Jul-20 09:25:06.486 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity pull complete image=docker://staphb/trimmomatic:0.39 path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-trimmomatic-0.39.img
+Jul-20 09:25:06.508 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:25:06.509 [Task submitter] INFO  nextflow.Session - [0c/6f3868] Submitted process > trimmomatic (1)
+Jul-20 09:25:13.756 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 2; name: trimmomatic (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/0c/6f3868b9863999f3d2036943ba2582]
+Jul-20 09:25:13.763 [Actor Thread 20] INFO  nextflow.container.SingularityCache - Pulling Singularity image docker://staphb/bbtools:38.76 [cache /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-bbtools-38.76.img]
+Jul-20 09:25:22.303 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity pull complete image=docker://staphb/bbtools:38.76 path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-bbtools-38.76.img
+Jul-20 09:25:22.320 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:25:22.321 [Task submitter] INFO  nextflow.Session - [2e/67fc36] Submitted process > bbtools (1)
+Jul-20 09:25:25.144 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 3; name: bbtools (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/2e/67fc36214448305db050982108a5dc]
+Jul-20 09:25:25.163 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:25:25.163 [Task submitter] INFO  nextflow.Session - [92/0e4cab] Submitted process > fastqc2 (1)
+Jul-20 09:25:32.297 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 4; name: fastqc2 (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/92/0e4caba255aecc5f20b04e20434765]
+Jul-20 09:25:32.303 [Actor Thread 20] INFO  nextflow.container.SingularityCache - Pulling Singularity image docker://staphb/multiqc:1.8 [cache /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-multiqc-1.8.img]
+Jul-20 09:26:26.652 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity pull complete image=docker://staphb/multiqc:1.8 path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-multiqc-1.8.img
+Jul-20 09:26:26.674 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:26:26.675 [Task submitter] INFO  nextflow.Session - [b0/5f2ed8] Submitted process > multiqc (1)
+Jul-20 09:26:29.139 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 5; name: multiqc (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/b0/5f2ed8e3e81722f194f25b0353ca08]
+Jul-20 09:26:29.147 [Actor Thread 20] WARN  nextflow.container.SingularityCache - Singularity cache directory has not been defined -- Remote image will be stored in the path: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity -- Use env variable NXF_SINGULARITY_CACHEDIR to specify a different location
+Jul-20 09:26:29.147 [Actor Thread 20] INFO  nextflow.container.SingularityCache - Pulling Singularity image docker://staphb/mash:2.2 [cache /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-mash-2.2.img]
+Jul-20 09:26:43.289 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity pull complete image=docker://staphb/mash:2.2 path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-mash-2.2.img
+Jul-20 09:26:43.306 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:26:43.307 [Task submitter] INFO  nextflow.Session - [d2/61330d] Submitted process > mash (1)
+Jul-20 09:26:47.908 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 6; name: mash (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/d2/61330d17637300f84e10388e1c62cb]
+Jul-20 09:26:47.914 [Actor Thread 20] INFO  nextflow.container.SingularityCache - Pulling Singularity image docker://staphb/unicycler:0.4.7 [cache /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-unicycler-0.4.7.img]
+Jul-20 09:27:18.167 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity pull complete image=docker://staphb/unicycler:0.4.7 path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-unicycler-0.4.7.img
+Jul-20 09:27:18.187 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:27:18.188 [Task submitter] INFO  nextflow.Session - [59/da5abc] Submitted process > unicycler (1)
+Jul-20 09:29:38.942 [Task monitor] DEBUG n.processor.TaskPollingMonitor - !! executor local > tasks to be completed: 1 -- submitted tasks are shown below
+~> TaskHandler[id: 7; name: unicycler (1); status: RUNNING; exit: -; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/59/da5abc09e0b2153b7e1f6af2009b47]
+Jul-20 09:31:12.542 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 7; name: unicycler (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/59/da5abc09e0b2153b7e1f6af2009b47]
+Jul-20 09:31:12.550 [Actor Thread 20] WARN  nextflow.container.SingularityCache - Singularity cache directory has not been defined -- Remote image will be stored in the path: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity -- Use env variable NXF_SINGULARITY_CACHEDIR to specify a different location
+Jul-20 09:31:12.550 [Actor Thread 20] INFO  nextflow.container.SingularityCache - Pulling Singularity image docker://staphb/pmga:latest [cache /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-pmga-latest.img]
+Jul-20 09:31:42.829 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity pull complete image=docker://staphb/pmga:latest path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-pmga-latest.img
+Jul-20 09:31:42.861 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:31:42.861 [Task submitter] INFO  nextflow.Session - [58/68de01] Submitted process > pmga (1)
+Jul-20 09:31:44.761 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 8; name: pmga (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/58/68de0117a3fc220abd3bc478721e7a]
+Jul-20 09:31:44.765 [Actor Thread 20] INFO  nextflow.container.SingularityCache - Pulling Singularity image docker://staphb/quast:5.0.2 [cache /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-quast-5.0.2.img]
+Jul-20 09:32:04.022 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity pull complete image=docker://staphb/quast:5.0.2 path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-quast-5.0.2.img
+Jul-20 09:32:04.037 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:32:04.038 [Task submitter] INFO  nextflow.Session - [82/59ba33] Submitted process > quast (1)
+Jul-20 09:32:05.857 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 9; name: quast (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/82/59ba332157beee72bcdbab79c17e27]
+Jul-20 09:32:05.868 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:32:05.869 [Task submitter] INFO  nextflow.Session - [af/d2584f] Submitted process > pyTask1 (1)
+Jul-20 09:32:09.000 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 10; name: pyTask1 (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/af/d2584fe919bb8135659c03adb9eca3]
+Jul-20 09:32:09.015 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity found local store for image=docker://staphb/lyveset:1.1.4f; path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-lyveset-1.1.4f.img
+Jul-20 09:32:09.023 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:32:09.024 [Task submitter] INFO  nextflow.Session - [4e/a93088] Submitted process > readssum (1)
+Jul-20 09:32:19.736 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 11; name: readssum (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/4e/a930883f4b219b071c2d7ca467a4f7]
+Jul-20 09:32:19.750 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:32:19.750 [Task submitter] INFO  nextflow.Session - [5f/1d68ff] Submitted process > pyTask2 (1)
+Jul-20 09:32:19.911 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 12; name: pyTask2 (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/5f/1d68ff6f937e9f00fac7837523cfc2]
+Jul-20 09:32:19.920 [Actor Thread 20] WARN  nextflow.container.SingularityCache - Singularity cache directory has not been defined -- Remote image will be stored in the path: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity -- Use env variable NXF_SINGULARITY_CACHEDIR to specify a different location
+Jul-20 09:32:19.921 [Actor Thread 20] INFO  nextflow.container.SingularityCache - Pulling Singularity image docker://staphb/prokka:1.14.5 [cache /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-prokka-1.14.5.img]
+Jul-20 09:32:47.515 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity pull complete image=docker://staphb/prokka:1.14.5 path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-prokka-1.14.5.img
+Jul-20 09:32:47.527 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:32:47.528 [Task submitter] INFO  nextflow.Session - [99/32815a] Submitted process > prokka (1)
+Jul-20 09:33:10.676 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 13; name: prokka (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/99/32815a23baec352cef20bf916d8e2e]
+Jul-20 09:33:10.683 [Actor Thread 20] INFO  nextflow.container.SingularityCache - Pulling Singularity image docker://staphb/ncbi-amrfinderplus:3.10.1 [cache /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-ncbi-amrfinderplus-3.10.1.img]
+Jul-20 09:33:22.148 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity pull complete image=docker://staphb/ncbi-amrfinderplus:3.10.1 path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-ncbi-amrfinderplus-3.10.1.img
+Jul-20 09:33:22.161 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:33:22.161 [Task submitter] INFO  nextflow.Session - [aa/2de8b5] Submitted process > amrfinder (1)
+Jul-20 09:33:37.666 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 14; name: amrfinder (1); status: COMPLETED; exit: 0; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/aa/2de8b5370e73d49540f851304cbb33]
+Jul-20 09:33:37.677 [Actor Thread 20] WARN  nextflow.container.SingularityCache - Singularity cache directory has not been defined -- Remote image will be stored in the path: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity -- Use env variable NXF_SINGULARITY_CACHEDIR to specify a different location
+Jul-20 09:33:37.678 [Actor Thread 20] INFO  nextflow.container.SingularityCache - Pulling Singularity image docker://staphb/mlst:2.19.0 [cache /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-mlst-2.19.0.img]
+Jul-20 09:33:56.258 [Actor Thread 20] DEBUG nextflow.container.SingularityCache - Singularity pull complete image=docker://staphb/mlst:2.19.0 path=/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/singularity/staphb-mlst-2.19.0.img
+Jul-20 09:33:56.275 [Task submitter] DEBUG nextflow.executor.LocalTaskHandler - Launch cmd line: /bin/bash -ue .command.run
+Jul-20 09:33:56.275 [Task submitter] INFO  nextflow.Session - [b6/0dcc2c] Submitted process > mlst (1)
+Jul-20 09:33:57.974 [Task monitor] DEBUG n.processor.TaskPollingMonitor - Task completed > TaskHandler[id: 15; name: mlst (1); status: COMPLETED; exit: 1; error: -; workDir: /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/b6/0dcc2c062946cf504575ccefbd682d]
+Jul-20 09:33:57.996 [Task monitor] ERROR nextflow.processor.TaskProcessor - Error executing process > 'mlst (1)'
+
+Caused by:
+  Process `mlst (1)` terminated with an error exit status (1)
+
+Command executed:
+
+  samplename=$(echo /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/output/JBS22002790 | rev | cut -d "/" -f 1 | rev)
+  
+  #singularity exec --bind /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/output/JBS22002790/${samplename}_assembly:/data --pwd /data --cleanenv docker://staphb/mlst:2.19.0 mlst /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/output/JBS22002790/${samplename}_assembly/${samplename}.fasta --nopath > /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/output/JBS22002790/${samplename}_assembly/${samplename}.mlst
+  mlst --pwd /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/output/JBS22002790/${samplename}_assembly /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/output/JBS22002790/${samplename}_assembly/${samplename}.fasta --nopath > /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/output/JBS22002790/${samplename}_assembly/${samplename}.mlst
+
+Command exit status:
+  1
+
+Command output:
+  (empty)
+
+Command error:
+  INFO:    Environment variable SINGULARITYENV_TMPDIR is set, but APPTAINERENV_TMPDIR is preferred
+  INFO:    underlay of /etc/localtime required more than 50 (76) bind mounts
+  Unknown option: pwd
+  SYNOPSIS
+    Automatic MLST calling from assembled contigs
+  USAGE
+    % mlst --list                                            # list known schemes
+    % mlst [options] <contigs.{fasta,gbk,embl}[.gz]          # auto-detect scheme
+    % mlst --scheme <scheme> <contigs.{fasta,gbk,embl}[.gz]> # force a scheme
+  GENERAL
+    --help            This help
+    --version         Print version and exit(default ON)
+    --check           Just check dependencies and exit (default OFF)
+    --quiet           Quiet - no stderr output (default OFF)
+    --threads [N]     Number of BLAST threads (suggest GNU Parallel instead) (default '1')
+    --debug           Verbose debug output to stderr (default OFF)
+  SCHEME
+    --scheme [X]      Don't autodetect, force this scheme on all inputs (default '')
+    --list            List available MLST scheme names (default OFF)
+    --longlist        List allelles for all MLST schemes (default OFF)
+    --exclude [X]     Ignore these schemes (comma sep. list) (default 'ecoli_2,abaumannii')
+  OUTPUT
+    --csv             Output CSV instead of TSV (default OFF)
+    --json [X]        Also write results to this file in JSON format (default '')
+    --label [X]       Replace FILE with this name instead (default '')
+    --nopath          Strip filename paths from FILE column (default OFF)
+    --novel [X]       Save novel alleles to this FASTA file (default '')
+    --legacy          Use old legacy output with allele header row (requires --scheme) (default OFF)
+  SCORING
+    --minid [n.n]     DNA %identity of full allelle to consider 'similar' [~] (default '95')
+    --mincov [n.n]    DNA %cov to report partial allele at all [?] (default '10')
+    --minscore [n.n]  Minumum score out of 100 to match a scheme (when auto --scheme) (default '50')
+  PATHS
+    --blastdb [X]     BLAST database (default '/mlst-2.19.0/db/blast/mlst.fa')
+    --datadir [X]     PubMLST data (default '/mlst-2.19.0/db/pubmlst')
+  HOMEPAGE
+    https://github.com/tseemann/mlst - Torsten Seemann
+
+Work dir:
+  /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/work/b6/0dcc2c062946cf504575ccefbd682d
+
+Tip: you can replicate the issue by changing to the process work dir and entering the command `bash .command.run`
+Jul-20 09:33:57.998 [Task monitor] DEBUG nextflow.Session - Session aborted -- Cause: Process `mlst (1)` terminated with an error exit status (1)
+Jul-20 09:33:58.003 [main] DEBUG nextflow.Session - Session await > all process finished
+Jul-20 09:33:58.011 [main] DEBUG nextflow.Session - Session await > all barriers passed
+Jul-20 09:33:58.022 [main] DEBUG nextflow.trace.WorkflowStatsObserver - Workflow completed > WorkflowStats[succeededCount=14; failedCount=1; ignoredCount=0; cachedCount=0; pendingCount=0; submittedCount=0; runningCount=0; retriesCount=0; abortedCount=0; succeedDuration=5m 20s; failedDuration=1.6s; cachedDuration=0ms;loadCpus=0; loadMemory=0; peakRunning=1; peakCpus=1; peakMemory=0; ]
+Jul-20 09:33:58.219 [main] DEBUG nextflow.CacheDB - Closing CacheDB done
+Jul-20 09:33:58.248 [main] DEBUG nextflow.script.ScriptRunner - > Execution complete -- Goodbye
