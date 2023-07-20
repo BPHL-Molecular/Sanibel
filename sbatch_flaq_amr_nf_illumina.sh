@@ -34,3 +34,7 @@ sed -i '1i sampleID\tspeciesID_mash\tnearest_neighb_mash\tmash_distance\tspecies
 rm ./neisseria.txt
 rm ./hinfluenzae.txt
 
+dt=$(date "+%Y%m%d%H%M%S")
+mv ./output ./output-$dt
+mv ./work ./work-$dt
+

@@ -1,0 +1,5 @@
+2023-07-19 13:16:25	4m 6s	soggy_jang	ERR	bc783eafcfcf4d6cb08b7fa0166d54fb	19273ec5-8aa1-41b3-8866-3d4387c9eaab	nextflow run flaq_amr_plus2.nf -params-file params.yaml
+2023-07-19 13:33:59	7m 22s	cranky_becquerel	ERR	bc783eafcfcf4d6cb08b7fa0166d54fb	2b8971d0-9d12-4e7b-9443-6742d7a64ffc	nextflow run flaq_amr_plus2.nf -params-file params.yaml
+2023-07-19 15:08:58	15m 29s	trusting_bernard	OK	bc783eafcfcf4d6cb08b7fa0166d54fb	1278ea7d-16a9-44fa-acf0-968a4774e18b	nextflow run flaq_amr_plus2.nf -params-file params.yaml
+2023-07-20 09:24:37	9m 21s	special_joliot	ERR	bc783eafcfcf4d6cb08b7fa0166d54fb	fb5cf01a-c68c-4f63-b66f-f663f3e37cbf	nextflow run flaq_amr_plus2.nf -params-file params.yaml
+2023-07-20 09:43:51	13m 42s	high_noyce	OK	bc783eafcfcf4d6cb08b7fa0166d54fb	2f1870fe-0785-49c8-ac66-0752f9717c3e	nextflow run flaq_amr_plus2.nf -params-file params.yaml
