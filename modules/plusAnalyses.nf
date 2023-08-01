@@ -68,5 +68,15 @@ process plusAnalyses {
     #singularity exec -e -C -B ${mypath}/plasmid:/data /apps/staphb-toolkit/containers/plasmidfinder_2.1.6.sif plasmidfinder.py -i /data/\${samplename}_1.fastq.gz /data/\${samplename}_2.fastq.gz -o /data/
     singularity exec -e -C -B ${mypath}/plasmid:/data docker://staphb/plasmidfinder:2.1.6 plasmidfinder.py -i /data/\${samplename}_1.fastq.gz /data/\${samplename}_2.fastq.gz -o /data/
     rm ${mypath}/plasmid/\${samplename}_1.fastq.gz ${mypath}/plasmid/\${samplename}_2.fastq.gz
+
+    # if species is Haemophilus influenzae
+    #if [[ "\${speciesid}" == "Haemophilus" || "\${speciesid2}" == "Haemophilus" ]]; then
+    #   singularity exec -B ${params.output}/\${samplename}:/data docker://staphb/pmga:latest pmga --blastdir /pmga/blastdbs -o /data/pmga --force --species hinfluenzae /data/\${samplename}_assembly/\${samplename}.fasta
+    #fi
+    
+    # if species is Neisseria
+    #if [[ "\${speciesid}" == "Neisseria" || "\${speciesid2}" == "Neisseria" ]]; then
+     #  singularity exec -B ${params.output}/\${samplename}:/data docker://staphb/pmga:latest pmga --blastdir /pmga/blastdbs -o /data/pmga --force --species neisseria /data/\${samplename}_assembly/\${samplename}.fasta
+    #fi
     """
 }

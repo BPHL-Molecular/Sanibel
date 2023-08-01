@@ -9,6 +9,8 @@ process pyTask3 {
         
     """
     #!/usr/bin/env python3
+
+    import subprocess
     items = "${mypath}".strip().split("/")
     filepath1="${mypath}/"+items[-1]+"_assembly/prokka/"+items[-1]+".txt"
     filepath2="${mypath}/"+items[-1]+"_assembly/"+items[-1]+".mlst"
@@ -39,6 +41,10 @@ process pyTask3 {
                       if st == cols[0]:
                           cc = cols[8]
                           break
+
+              #serotype prediction of Neisseria 
+              subprocess.run('singularity exec -B ' + "${mypath}"+':/data docker://staphb/pmga:latest pmga --blastdir /pmga/blastdbs -o /data/pmga --force --species neisseria /data/'+items[-1]+'_assembly/'+items[-1]+'.fasta', shell=True, check=True) 
+                     
            if scheme == "hinfluenzae":
               with open(filepath5b, 'r') as mlst_table:
                   for row in mlst_table:
@@ -46,6 +52,8 @@ process pyTask3 {
                       if st == cols[0]:
                           cc = cols[8]
                           break
+              #serotype prediction of Hinfluenzae
+              subprocess.run('singularity exec -B ' + "${mypath}"+':/data docker://staphb/pmga:latest pmga --blastdir /pmga/blastdbs -o /data/pmga --force --species hinfluenzae /data/'+items[-1]+'_assembly/'+items[-1]+'.fasta', shell=True, check=True) 
 
     with open(filepath3, 'r') as kreport:
         lines = kreport.readlines()
@@ -56,7 +64,7 @@ process pyTask3 {
             tax = l_parse[5].lstrip()
             if tax_level == 'S':
                 break
-    
+        
     import os.path
     pgspecies=''
     pgpredict=''
