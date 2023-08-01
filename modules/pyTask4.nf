@@ -19,7 +19,7 @@ process pyTask4 {
             print(results)
 
     report = open("${mypath}"+"/report.txt", 'w')
-    header = ['sampleID', 'speciesID_mash', 'nearest_neighbor_mash', 'mash_distance', 'speciesID_kraken', 'kraken_percent', 'mlst_scheme', 'mlst_st', 'mlst_cc', 'num_clean_reads', 'avg_readlength', 'avg_read_qual', 'est_coverage', 'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content', 'annotated_cds'] 
+    header = ['sampleID', 'speciesID_mash', 'nearest_neighbor_mash', 'mash_distance', 'speciesID_kraken', 'kraken_percent', 'mlst_scheme', 'mlst_st', 'mlst_cc', 'pmga_species', 'serotype', 'num_clean_reads', 'avg_readlength', 'avg_read_qual', 'est_coverage', 'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content', 'annotated_cds'] 
     report.write("\t".join(header))
     report.write('\n')
     report.write('\t'.join(results))

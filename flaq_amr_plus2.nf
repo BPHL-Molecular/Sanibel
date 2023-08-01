@@ -34,7 +34,7 @@ include { fastqc2 } from './modules/fastqc2.nf'
 include { multiqc } from './modules/multiqc.nf'
 include { mash } from './modules/mash.nf'
 include { unicycler } from './modules/unicycler.nf'
-include { pmga } from './modules/pmga.nf'
+//include { pmga } from './modules/pmga.nf'
 include { quast } from './modules/quast.nf'
 
 include { pyTask1 } from './modules/pyTask1.nf'
@@ -51,5 +51,5 @@ include { pyTask4 } from './modules/pyTask4.nf'
 include { plusAnalyses } from './modules/plusAnalyses.nf'
 
 workflow {
-    fastqc(A) | trimmomatic | bbtools| fastqc2 | multiqc | mash | unicycler | pmga | quast | pyTask1 | readssum | pyTask2 | prokka | amrfinder | mlst | kraken | pyTask3 | pyTask4 | plusAnalyses | view
+    fastqc(A) | trimmomatic | bbtools| fastqc2 | multiqc | mash | unicycler | quast | pyTask1 | readssum | pyTask2 | prokka | amrfinder | mlst | kraken | pyTask3 | pyTask4 | plusAnalyses | view
 }
