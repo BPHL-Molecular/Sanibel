@@ -6,7 +6,7 @@ The pipeline is used to analyze NGS data in fastq format from bacterial genome. 
 ## Prerequisites
 Nextflow is needed. The detail of installation can be found in https://github.com/nextflow-io/nextflow.
 
-Python3 is needed. The package "pandas" should be installed by ``` pip3 install pandas ``` if not included in your system.
+Python3 is needed. The package "pandas" should be installed by ``` pip3 install pandas ``` if not included in your python3.
 
 Singularity is needed. The detail of installation can be found in https://singularity-tutorial.github.io/01-installation/.
 
