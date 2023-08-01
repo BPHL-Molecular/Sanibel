@@ -1,5 +1,5 @@
-input          : "/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/fastqs"
-output    : "/blue/bphl-florida/dongyibo/Dev_Sanibel_072023/output"
+input          : "/your/path/fastqs"
+output    : "/your/path/output"
 
 #isNeisseria : "no"
 #isHinfluenzae : "no"
