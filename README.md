@@ -17,7 +17,7 @@ SLURM is needed.
 
 ### Option1, your data file names directly come from Illumina output: 
 1. put your data files into directory /fastqs. Your data file's name should look like "XZA22002292-XS-ASX550430-220701_S143_L001_R1_001.fastq.gz". 
-2. open file "parames.yaml", set the two parameters absolute paths. They should be ".../.../fastqs" and ".../.../output". 
+2. open file "params.yaml", set the two parameters absolute paths. They should be ".../.../fastqs" and ".../.../output". 
 3. get to the top directory of the pipeline, run 
 ```bash
 sbatch ./sanibel_illumina.sh
