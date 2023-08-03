@@ -4,11 +4,12 @@
 #SBATCH --job-name=sanibel
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=20                    #This parameter shoulbe be equal to the number of samples if you want fastest running speed. However, the setting number should be less than the max cpu limit(150). 
-#SBATCH --mem=20gb
+#SBATCH --mem=64gb
 #SBATCH --time=48:00:00
 #SBATCH --output=sanibel.%j.out
 #SBATCH --error=sanibel.%j.err
-
+#SBATCH --mail-user=<EMAIL>
+#SBATCH --mail-type=FAIL,END
 
 for f in ./fastqs/*R1*.gz
 do
@@ -30,7 +31,7 @@ nextflow run flaq_amr_plus2.nf -params-file params.yaml
 
 sort ./output/*/report.txt | uniq > ./output/sum_report.txt
 sed -i '/sampleID\tspeciesID/d' ./output/sum_report.txt
-sed -i '1i sampleID\tspeciesID_mash\tnearest_neighb_mash\tmash_distance\tspeciesID_kraken\tkraken_percent\tmlst_scheme\tmlst_st\tmlst_cc\tpgma_species\tserotype\tnum_clean_reads\tavg_readlength\tavg_read_qual\test_coverage\tnum_contigs\tlongest_contig\tN50\tL50\ttotal_length\tgc_content\tannotated_cds' ./output/sum_report.txt
+sed -i '1i sampleID\tspeciesID_mash\tnearest_neighb_mash\tmash_distance\tspeciesID_kraken\tkraken_percent\tmlst_scheme\tmlst_st\tmlst_cc\tpmga_species\tserotype\tnum_clean_reads\tavg_readlength\tavg_read_qual\test_coverage\tnum_contigs\tlongest_contig\tN50\tL50\ttotal_length\tgc_content\tannotated_cds' ./output/sum_report.txt
 rm ./neisseria.txt
 rm ./hinfluenzae.txt
 
