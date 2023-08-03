@@ -16,15 +16,15 @@ SLURM is needed.
 ## How to run
 
 ### Option1, your data file names directly come from Illumina output: 
-1. put your data files into directory /fastqs. Your data file's name should look like "JBS22002292-FL-NDX550430-220701_S143_L001_R1_001.fastq.gz". 
-2. open file "parames.yaml", set the two parameters absolute paths. They should be ".../.../fastqs" and ".../.../output". 
+1. put your data files into directory /fastqs. Your data file's name should look like "XZA22002292-XS-ASX550430-220701_S143_L001_R1_001.fastq.gz". 
+2. open file "params.yaml", set the two parameters absolute paths. They should be ".../.../fastqs" and ".../.../output". 
 3. get to the top directory of the pipeline, run 
 ```bash
 "sbatch ./sanibel_illumina.sh"
 ```
 ### Option2, your data file names do not directly come from Illumina output: 
-1. put your data files into directory /fastqs. Your data file's name should look like "JBS22002292_1.fastq.gz", "JBS22002292_2.fastq.gz" 
-2. open file "parames.yaml", set the two parameters absolute paths. They should be ".../.../fastqs" and ".../.../output". 
+1. put your data files into directory /fastqs. Your data file's name should look like "XZA22002292_1.fastq.gz", "XZA22002292_2.fastq.gz" 
+2. open file "params.yaml", set the two parameters absolute paths. They should be ".../.../fastqs" and ".../.../output". 
 3. get into the directory of the pipeline, run 
 ```bash
 "sbatch ./sanibel.sh"
@@ -44,4 +44,7 @@ If your data file names directly come from Illumina output,
 ## Version updates
     https://github.com/BPHL-Molecular/Sanibel.wiki.git
     
-#### Note: some sample data files can be found in directory /fastqs/sample_data. If you want to use these data for pipeline test, please copy them to the directory /fastqs.
+#### Note1: some sample data files can be found in directory /fastqs/sample_data. If you want to use these data for pipeline test, please copy them to the directory /fastqs.
+#### Note2: If you want to get email notification when the pipeline running ends, please replace <EMAIL> with your email address in the line "#SBATCH --mail-user=<EMAIL>" in the batch file that you will run (namely, sanibel.sh, sanibel_illumina.sh, sanibel_docker.sh, or sanibel_illumina_docker.sh). 
+#### Note3: For UF HiPerGator users, you can use "module load nextflow" to load the Nextflow in your current section, so that you donot need to install Nextflow by yourself.
+#### Note4: If you want to shorten the running time, you may increase the memeory and cpus settings in the batch file that you will use. By default, memory=64gb, cpus=20, For example, you can increase the memory to 128gb by setting "#SBATCH --mem=28gb" in sanibel.sh or sanibel_illumina.sh. 

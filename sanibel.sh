@@ -4,10 +4,12 @@
 #SBATCH --job-name=sanibel
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=20                    #This parameter shoulbe be equal to the number of samples if you want fastest running speed. However, the setting number should be less than the max cpu limit(150). 
-#SBATCH --mem=20gb
+#SBATCH --mem=64gb
 #SBATCH --time=48:00:00
 #SBATCH --output=sanibel.%j.out
 #SBATCH --error=sanibel.err
+#SBATCH --mail-user=<EMAIL>
+#SBATCH --mail-type=FAIL,END
 
 singularity exec docker://staphb/mlst:2.23.0 cp /mlst-2.23.0/db/pubmlst/neisseria/neisseria.txt ./
 singularity exec  docker://staphb/mlst:2.23.0 cp /mlst-2.23.0/db/pubmlst/hinfluenzae/hinfluenzae.txt ./
