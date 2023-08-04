@@ -8,7 +8,7 @@ Nextflow is needed. The detail of installation can be found in https://github.co
 
 Python3 is needed. The package "pandas" should be installed by ``` pip3 install pandas ``` if not included in your python3.
 
-Singularity is needed. The detail of installation can be found in https://singularity-tutorial.github.io/01-installation/.
+Singularity/APPTAINER is needed. The detail of installation can be found in https://singularity-tutorial.github.io/01-installation/.
 
 SLURM is needed.
 
