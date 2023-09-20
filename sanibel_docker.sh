@@ -11,6 +11,7 @@
 #SBATCH --mail-user=<EMAIL>
 #SBATCH --mail-type=FAIL,END
 
+
 singularity exec docker://staphb/mlst:2.23.0 cp /mlst-2.23.0/db/pubmlst/neisseria/neisseria.txt ./
 singularity exec  docker://staphb/mlst:2.23.0 cp /mlst-2.23.0/db/pubmlst/hinfluenzae/hinfluenzae.txt ./
 nextflow run flaq_amr_plus2.nf -params-file params.yaml -c ./configs/docker.config
