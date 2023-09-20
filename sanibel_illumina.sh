@@ -11,6 +11,10 @@
 #SBATCH --mail-user=<EMAIL>
 #SBATCH --mail-type=FAIL,END
 
+APPTAINER_CACHEDIR=./
+export APPTAINER_CACHEDIR
+
+
 for f in ./fastqs/*R1*.gz
 do
   cp "$f" "$(echo $f | cut -d - -f 1)_1.fastq.gz"

@@ -37,9 +37,12 @@ process pyTask3 {
            if scheme == "neisseria":
               with open(filepath5a, 'r') as mlst_table:
                   for row in mlst_table:
-                      cols = row.rstrip().split()
+                      cols = row.rstrip().split("\t")
                       if st == cols[0]:
-                          cc = cols[8]
+                          if len(cols)==9:
+                             cc=cols[8]
+                          else:
+                             cc="NA"
                           break
 
               #serotype prediction of Neisseria 
@@ -48,10 +51,14 @@ process pyTask3 {
            if scheme == "hinfluenzae":
               with open(filepath5b, 'r') as mlst_table:
                   for row in mlst_table:
-                      cols = row.rstrip().split()
+                      cols = row.rstrip().split("\t")
                       if st == cols[0]:
-                          cc = cols[8]
+                          if len(cols)==9:
+                             cc=cols[8]
+                          else:
+                             cc="NA"
                           break
+                          
               #serotype prediction of Hinfluenzae
               subprocess.run('singularity exec -B ' + "${mypath}"+':/data docker://staphb/pmga:latest pmga --blastdir /pmga/blastdbs -o /data/pmga --force --species hinfluenzae /data/'+items[-1]+'_assembly/'+items[-1]+'.fasta', shell=True, check=True) 
 
