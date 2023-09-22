@@ -7,7 +7,7 @@ process pyTask1 {
         val "${mypath}", emit: outputpath2
         path "pyoutputs.txt", emit: pyoutputs
  
-    """
+    $/
     #!/usr/bin/env python3
     import sys
     import os
@@ -24,13 +24,13 @@ process pyTask1 {
     with open(filepath1, 'r') as mash:
         top_hit = mash.readline()
         top_hit = str(top_hit)
-        cells = top_hit.split()
+        gn = re.sub('.*-\.-', '', top_hit)
+        cells = gn.split()
         acell = cells[0]
-        subcells = re.split('-.-|_subsp',acell)
-        subsubcells = subcells[1].split('_')
-        genus = subsubcells[0]
-        species = subsubcells[1]
-        distance = cells[2]
+        agn = re.split('^([^_]*_[^_]*)(_|\.).*$', acell)[1]
+        genus = agn.split('_')[0]
+        species = agn.split('_')[1]
+        distance = top_hit.split()[2]
         accession = top_hit.split("-")[5]
     #print(accession)
     
@@ -51,5 +51,5 @@ process pyTask1 {
     f.write(str(genus)+","+str(species)+","+str(distance)+","+str(accession)+","+str(assem)+","+str(contigs)+","+str(long_contig)+","+str(n50)+","+str(l50)+","+str(genome)+","+str(gc))
     f.close
     
-    """
+    /$
 }
