@@ -23,7 +23,13 @@ Singularity/APPTAINER is needed. The detail of installation can be found in http
 
 SLURM is needed.
 
-
+## Recommended conda environment installation
+   ```bash
+   conda create -n SANIBEL -c conda-forge python=3.10 pandas
+   ```
+   ```bash
+   conda activate SANIBEL
+   ```
 ## How to run
 
 ### Option1, your data file names directly come from Illumina output: 
