@@ -1,15 +1,7 @@
 <h1 align="center">Sanibel</h1>
 
 ## What to do
-The pipeline is used to analyze NGS data in fastq format from bacterial genome. It is a Nextflow version of the Flaq_amr pipeline (FL-BPHL's standard bacterial assembly pipeline with AMR detection). Compared with Flaq_amr, some additional analyses for Legionella, Shigella, group A strep, Klebsiella, Salmonella, E.coli, and plasmid are added. For Neisseria and H.influenzae species, clonal complex and serotype prediction are automatically added in Sanibel.    
-
-
-
-
-![Sanibel overview](https://github.com/BPHL-Molecular/Sanibel/assets/16695937/cc657de2-47f5-4f9a-a19f-3934d018e071)
-
-
-
+The Nextflow pipeline is used to analyze NGS data in fastq format from bacterial genome. It is a Nextflow version of the Flaq_amr pipeline (FL-BPHL's standard bacterial assembly pipeline with AMR detection). Compared with Flaq_amr, Sanibel significantly reduce runtime and is especially suitable for analysis of large saple sizes. In addition, some additional analyses of Neisseria, H.influenzae, Legionella, Shigella, group A strep, Klebsiella, Salmonella, E.coli, and plasmid are added, such as identifying clonal complex and serotype of Neisseria and H.influenzae species.    
 
 
 ![Picture5](https://github.com/BPHL-Molecular/Sanibel/assets/16695937/50616a57-a19c-419c-af98-3bedd91af12c)
