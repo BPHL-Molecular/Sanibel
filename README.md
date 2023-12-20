@@ -12,6 +12,7 @@ The pipeline is used to analyze NGS data in fastq format from bacterial genome. 
 
 
 
+![Picture5](https://github.com/BPHL-Molecular/Sanibel/assets/16695937/50616a57-a19c-419c-af98-3bedd91af12c)
 
 
 ## Prerequisites
