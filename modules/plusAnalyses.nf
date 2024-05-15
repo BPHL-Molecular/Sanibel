@@ -8,7 +8,7 @@ process plusAnalyses {
         //path pyoutputs
         
     """
-    
+     
     samplename=\$(echo ${mypath} | rev | cut -d "/" -f 1 | rev)
     speciesid=\$(cat ${pyoutputs} | cut -d "," -f 20)
     speciesid2=\$(cat ${pyoutputs} | cut -d "," -f 1)
@@ -27,7 +27,9 @@ process plusAnalyses {
        singularity exec --cleanenv docker://staphb/shigatyper:2.0.1 shigatyper --R1 ${params.input}/\${samplename}_1.fastq.gz --R2 ${params.input}/\${samplename}_2.fastq.gz > ${mypath}/shigella/shigella_output.txt
     fi
     # emm type and subtype of group A strep
-    if [[ "\${speciesid}" == "Streptococcus pyogenes" || "\${speciesid}" == "Streptococcus dysgalactiae" ]]; then
+    #if [[ "\${speciesid}" == "Streptococcus pyogenes" || "\${speciesid}" == "Streptococcus dysgalactiae" ]]; then
+    #if [[ "\${speciesid}" == *"pyogenes"* || "\${speciesid}" == *"dysgalactiae"* ]]; then
+    if [ "\${speciesid}" == "Streptococcus pyogenes" || "\${speciesid}" == "Streptococcus dysgalactiae" ]; then
        mkdir -p ${mypath}/groupAstrep/
        cp ${params.input}/\${samplename}_1.fastq.gz ${mypath}/groupAstrep/
        cp ${params.input}/\${samplename}_2.fastq.gz ${mypath}/groupAstrep/
