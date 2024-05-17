@@ -10,10 +10,12 @@ process plusAnalyses {
     """
      
     samplename=\$(echo ${mypath} | rev | cut -d "/" -f 1 | rev)
-    speciesid=\$(cat ${pyoutputs} | cut -d "," -f 20)
+    speciesid=\$(cat ${pyoutputs} | cut -d "," -f 21)
     speciesid2=\$(cat ${pyoutputs} | cut -d "," -f 1)
-    echo \${speciesid}
-    echo \${speciesid2}
+    
+    #echo \$(cat ${pyoutputs}) > /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/allitems.txt
+    #echo \${speciesid} > /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/speciesid.txt
+    #echo \${speciesid2} > /blue/bphl-florida/dongyibo/Dev_Sanibel_072023/speciesid2.txt
     #the epidemiological typing of clinical and environmental isolates of Legionella pneumophila in outbreak investigations
     if [[ "\${speciesid}" == "Legionella pneumophila" || "\${speciesid2}" == "Legionella pneumophila" ]]; then
        mkdir -p ${mypath}/legsta/
@@ -27,9 +29,9 @@ process plusAnalyses {
        singularity exec --cleanenv docker://staphb/shigatyper:2.0.1 shigatyper --R1 ${params.input}/\${samplename}_1.fastq.gz --R2 ${params.input}/\${samplename}_2.fastq.gz > ${mypath}/shigella/shigella_output.txt
     fi
     # emm type and subtype of group A strep
-    #if [[ "\${speciesid}" == "Streptococcus pyogenes" || "\${speciesid}" == "Streptococcus dysgalactiae" ]]; then
-    #if [[ "\${speciesid}" == *"pyogenes"* || "\${speciesid}" == *"dysgalactiae"* ]]; then
-    if [ "\${speciesid}" == "Streptococcus pyogenes" || "\${speciesid}" == "Streptococcus dysgalactiae" ]; then
+    if [[ "\${speciesid}" == "Streptococcus pyogenes" || "\${speciesid}" == "Streptococcus dysgalactiae" ]]; then
+    #if [[ "\${speciesid}" =~ "pyogenes" || "\${speciesid}" =~ "dysgalactiae" ]]; then
+    #if [ "\${speciesid}" == "Streptococcus pyogenes" || "\${speciesid}" == "Streptococcus dysgalactiae" ]; then
        mkdir -p ${mypath}/groupAstrep/
        cp ${params.input}/\${samplename}_1.fastq.gz ${mypath}/groupAstrep/
        cp ${params.input}/\${samplename}_2.fastq.gz ${mypath}/groupAstrep/
