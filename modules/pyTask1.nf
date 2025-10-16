@@ -27,6 +27,7 @@ process pyTask1 {
         gn = re.sub('.*-\.-', '', top_hit)
         cells = gn.split()
         acell = cells[0]
+        acell=acell.lstrip("_")   # delete the leading underscore if the string begin with "_"
         agn = re.split('^([^_]*_[^_]*)(_|\.).*$', acell)[1]
         genus = agn.split('_')[0]
         species = agn.split('_')[1]
