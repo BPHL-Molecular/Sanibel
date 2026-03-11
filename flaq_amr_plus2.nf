@@ -50,6 +50,15 @@ include { pyTask3 } from './modules/pyTask3.nf'
 include { pyTask4 } from './modules/pyTask4.nf'
 include { plusAnalyses } from './modules/plusAnalyses.nf'
 
+// BMGAP2 meningitis-specific modules
+include { bmgap2_amr } from './modules/bmgap2_amr.nf'
+include { bmgap2_locusextractor } from './modules/bmgap2_locusextractor.nf'
+include { bmgap2_bmscan } from './modules/bmgap2_bmscan.nf'
+
 workflow {
-    fastqc(A) | trimmomatic | bbtools| fastqc2 | multiqc | mash | unicycler | quast | pyTask1 | readssum | pyTask2 | prokka | amrfinder | mlst | kraken | pyTask3 | pyTask4 | plusAnalyses | view
+    if (params.meningitis) {
+        fastqc(A) | trimmomatic | bbtools| fastqc2 | multiqc | mash | unicycler | quast | pyTask1 | readssum | pyTask2 | prokka | amrfinder | mlst | kraken | pyTask3 | bmgap2_amr | bmgap2_locusextractor | bmgap2_bmscan | pyTask4 | plusAnalyses | view
+    } else {
+        fastqc(A) | trimmomatic | bbtools| fastqc2 | multiqc | mash | unicycler | quast | pyTask1 | readssum | pyTask2 | prokka | amrfinder | mlst | kraken | pyTask3 | pyTask4 | plusAnalyses | view
+    }
 }

@@ -11,18 +11,31 @@
 #SBATCH --mail-user=<EMAIL>
 #SBATCH --mail-type=FAIL,END
 
-module load nextflow
+module load conda nextflow appatainer
+conda activate SANIBEL
+
 APPTAINER_CACHEDIR=./
 export APPTAINER_CACHEDIR
 
-
 for f in ./fastqs/*R1*.gz
 do
-  cp "$f" "$(echo $f | cut -d - -f 1)_1.fastq.gz"
+  base=$(basename "$f")
+  if [[ $base == *"-"* ]]; then
+    sampleid=$(echo "$base" | cut -d - -f 1)
+  else
+    sampleid=$(echo "$base" | sed 's/_S[0-9].*$//')
+  fi
+  cp "$f" "./fastqs/${sampleid}_1.fastq.gz"
 done
 for f in ./fastqs/*R2*.gz
 do
-  cp "$f" "$(echo $f | cut -d - -f 1)_2.fastq.gz"
+  base=$(basename "$f")
+  if [[ $base == *"-"* ]]; then
+    sampleid=$(echo "$base" | cut -d - -f 1)
+  else
+    sampleid=$(echo "$base" | sed 's/_S[0-9].*$//')
+  fi
+  cp "$f" "./fastqs/${sampleid}_2.fastq.gz"
 done
 
 mkdir ./fastqs/original
@@ -31,12 +44,9 @@ mv ./fastqs/*_R2_*.gz ./fastqs/original
 
 singularity exec docker://staphb/mlst:2.23.0 cp /mlst-2.23.0/db/pubmlst/neisseria/neisseria.txt ./
 singularity exec  docker://staphb/mlst:2.23.0 cp /mlst-2.23.0/db/pubmlst/hinfluenzae/hinfluenzae.txt ./
-
 nextflow run flaq_amr_plus2.nf -params-file params.yaml -c ./configs/docker.config
 
-sort ./output/*/report.txt | uniq > ./output/sum_report.txt
-sed -i '/sampleID\tspeciesID/d' ./output/sum_report.txt
-sed -i '1i sampleID\tspeciesID_mash\tnearest_neighb_mash\tmash_distance\tspeciesID_kraken\tkraken_percent\tmlst_scheme\tmlst_st\tmlst_cc\tpmga_species\tserotype\tnum_clean_reads\tavg_readlength\tavg_read_qual\test_coverage\tnum_contigs\tlongest_contig\tN50\tL50\ttotal_length\tgc_content\tannotated_cds' ./output/sum_report.txt
+cat ./output/*/report.txt | awk 'NR==1 || !/^sampleID/' > ./output/sum_report.txt
 rm ./neisseria.txt
 rm ./hinfluenzae.txt
 
