@@ -11,7 +11,7 @@
 #SBATCH --mail-user=<EMAIL>
 #SBATCH --mail-type=FAIL,END
 
-module load conda nextflow appatainer
+module load conda nextflow apptainer
 conda activate SANIBEL
 
 APPTAINER_CACHEDIR=./
