@@ -46,7 +46,15 @@ singularity exec docker://staphb/mlst:2.23.0 cp /mlst-2.23.0/db/pubmlst/neisseri
 singularity exec  docker://staphb/mlst:2.23.0 cp /mlst-2.23.0/db/pubmlst/hinfluenzae/hinfluenzae.txt ./
 nextflow run flaq_amr_plus2.nf -params-file params.yaml
 
-cat ./output/*/report.txt | awk 'NR==1 || !/^sampleID/' > ./output/sum_report.txt
+if ls ./output/*/report.txt 1>/dev/null 2>&1; then
+    cat ./output/*/report.txt | awk 'NR==1 || !/^sampleID/' > ./output/sum_report.txt
+fi
+if ls ./output/*/report_nm.txt 1>/dev/null 2>&1; then
+    cat ./output/*/report_nm.txt | awk 'NR==1 || !/^sampleID/' > ./output/sum_report_nm.txt
+fi
+if ls ./output/*/report_hi.txt 1>/dev/null 2>&1; then
+    cat ./output/*/report_hi.txt | awk 'NR==1 || !/^sampleID/' > ./output/sum_report_hi.txt
+fi
 rm ./neisseria.txt
 rm ./hinfluenzae.txt
 
@@ -62,3 +70,4 @@ mv ./output ./output-$dt
 #mv ./work ./work-$dt
 rm -r ./work
 rm -r ./cache
+

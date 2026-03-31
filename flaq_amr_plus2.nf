@@ -57,8 +57,10 @@ include { bmgap2_bmscan } from './modules/bmgap2_bmscan.nf'
 
 workflow {
     if (params.meningitis) {
-        fastqc(A) | trimmomatic | bbtools| fastqc2 | multiqc | mash | unicycler | quast | pyTask1 | readssum | pyTask2 | prokka | amrfinder | mlst | kraken | pyTask3 | bmgap2_amr | bmgap2_locusextractor | bmgap2_bmscan | pyTask4 | plusAnalyses | view
+        // With BMGAP2 meningitis modules (AMR mutation + vaccine antigen analysis + species identification)
+        fastqc(A) | trimmomatic | bbtools| fastqc2 | multiqc | mash | unicycler | quast | pyTask1 | readssum | pyTask2 | prokka | amrfinder | mlst | kraken | pyTask3 | bmgap2_amr | bmgap2_locusextractor | bmgap2_bmscan | plusAnalyses | pyTask4
     } else {
-        fastqc(A) | trimmomatic | bbtools| fastqc2 | multiqc | mash | unicycler | quast | pyTask1 | readssum | pyTask2 | prokka | amrfinder | mlst | kraken | pyTask3 | pyTask4 | plusAnalyses | view
+        // Standard workflow without meningitis-specific analysis
+        fastqc(A) | trimmomatic | bbtools| fastqc2 | multiqc | mash | unicycler | quast | pyTask1 | readssum | pyTask2 | prokka | amrfinder | mlst | kraken | pyTask3 | plusAnalyses | pyTask4
     }
 }

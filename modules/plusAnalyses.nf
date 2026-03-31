@@ -3,9 +3,8 @@ process plusAnalyses {
         val mypath
         path pyoutputs
     output:
-        stdout
-        //val mypath
-        //path pyoutputs
+        val mypath
+        path pyoutputs
         
     """
      
