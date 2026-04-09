@@ -1,9 +1,7 @@
-# Note: The parameter "input" and "output" are the absolute path. Do not include the "/" at the end of the paths.
-input          : "/<full path to Sanibel>/fastqs"
-output    : "/<full path to Sanibel>/output"
+# Input / Output absolute path, no trailing slash "/"
+input:  "/full/path/to/fastqs"
+output: "/full/path/to/output"
 
-# Meningitis specific analysis (BMGAP2 integration)
-meningitis: false
 
-# Path to BMGAP2 databases and scripts
-bmgap2_db: "/blue/bphl-florida/share/bmgap2"
+# non-HiPerGator users: set this to your BMGAP2 analysis_scripts directory
+bmgap2_db:  "/blue/bphl-florida/share/bmgap2"

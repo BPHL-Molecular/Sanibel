@@ -1,21 +1,16 @@
 process readssum {
-    input:
-        val mypath
-        path pyoutputs
-    output:
-        //stdout
-        val mypath
-        path pyoutputs
-        
-    """
-    #echo ${mypath}
-    genome=\$(cat ${pyoutputs} | cut -d "," -f 10)
-    #echo \${genome}
-    samplename=\$(echo ${mypath} | rev | cut -d "/" -f 1 | rev)
-    #echo \${samplename}
-    
-    run_assembly_shuffleReads.pl -gz ${mypath}/\${samplename}_1.fq.gz ${mypath}/\${samplename}_2.fq.gz > ${mypath}/\${samplename}_clean_shuffled.fq.gz
-    run_assembly_readMetrics.pl ${mypath}/\${samplename}_clean_shuffled.fq.gz -e \${genome} > ${mypath}/\${samplename}_readMetrics.txt
+    tag "${meta.id}"
 
+    input:
+        tuple val(meta), path(pyoutputs), path(reads)
+    output:
+        tuple val(meta), path(pyoutputs), path("${meta.id}_readMetrics.txt"), emit: out
+
+    script:
+    def prefix = meta.id
+    """
+    genome=\$(cut -d "," -f 10 ${pyoutputs})
+    run_assembly_shuffleReads.pl -gz ${reads[0]} ${reads[1]} > ${prefix}_clean_shuffled.fq.gz
+    run_assembly_readMetrics.pl ${prefix}_clean_shuffled.fq.gz -e \${genome} > ${prefix}_readMetrics.txt
     """
 }

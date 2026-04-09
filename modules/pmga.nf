@@ -1,21 +1,23 @@
 process pmga {
-   input:
-      val x
-   output:
-      //path 'xfile.txt', emit: aLook
-      val "${x}"
-      //path "${params.output}/${x}_trim_2.fastq", emit: trimR2
-      
-   """     
-   
-   if [[ ${params.isNeisseria} =~ yes ]];then
-      #singularity exec -B ${params.output}/${x}:/data docker://staphb/pmga:latest pmga --blastdir /pmga/blastdbs -o /data/pmga --force --species neisseria /data/${x}_assembly/${x}.fasta
-      pmga --blastdir /pmga/blastdbs -o ${params.output}/${x}/pmga --force --species neisseria ${params.output}/${x}/${x}_assembly/${x}.fasta
-   fi
-   if [[ ${params.isHinfluenzae} =~ yes ]];then
-      #singularity exec -B ${params.output}/${x}:/data docker://staphb/pmga:latest pmga --blastdir /pmga/blastdbs -o /data/pmga --force --species hinfluenzae /data/${x}_assembly/${x}.fasta
-      pmga --blastdir /pmga/blastdbs -o ${params.output}/${x}/pmga --force --species hinfluenzae ${params.output}/${x}/${x}_assembly/${x}.fasta
-   fi
-     
-   """
+    tag "${meta.id}"
+    publishDir "${params.output}/${meta.id}/pmga", mode: 'copy'
+
+    input:
+        tuple val(meta), path(assembly), path(mlst_out)
+    output:
+        tuple val(meta), path("${meta.id}sta.txt"), emit: out
+
+    script:
+    def prefix = meta.id
+    """
+    scheme=\$(awk 'NR==1{print \$2}' ${mlst_out})
+
+    if [[ "\${scheme}" == "neisseria" || "\${scheme}" == "hinfluenzae" ]]; then
+        pmga --blastdir /pmga/blastdbs -o pmga_out --force \\
+            --species \${scheme} ${assembly}
+        cp pmga_out/${prefix}sta.txt .
+    else
+        touch ${prefix}sta.txt
+    fi
+    """
 }

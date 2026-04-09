@@ -1,20 +1,27 @@
 process prokka {
-    input:
-        val mypath
-        path pyoutputs
-    output:
-        //stdout
-        val mypath
-        path pyoutputs
-        
-    """
-    samplename=\$(echo ${mypath} | rev | cut -d "/" -f 1 | rev)
-    genus=\$(cat ${pyoutputs} | cut -d "," -f 1)
-    species=\$(cat ${pyoutputs} | cut -d "," -f 2)
-    echo \${genus}
-    
-    prokka --genus \${genus} --species \${species} --strain \${samplename} --outdir ${mypath}/\${samplename}_assembly/prokka --prefix \${samplename} --force --compliant --locustag \${genus} ${mypath}/\${samplename}_assembly/\${samplename}.fasta
+    tag "${meta.id}"
+    publishDir "${params.output}/${meta.id}/${meta.id}_assembly", mode: 'copy'
 
-     
+    input:
+        tuple val(meta), path(assembly), path(pyoutputs)
+    output:
+        tuple val(meta), path("prokka/"), emit: annotation
+        tuple val(meta), path(pyoutputs), path("prokka/${meta.id}.txt"), emit: cds
+
+    script:
+    def prefix = meta.id
+    """
+    genus=\$(cut -d "," -f 1 ${pyoutputs})
+    species=\$(cut -d "," -f 2 ${pyoutputs})
+
+    prokka \\
+        --genus \${genus} --species \${species} \\
+        --strain ${prefix} \\
+        --outdir prokka \\
+        --prefix ${prefix} \\
+        --force --compliant \\
+        --locustag \${genus} \\
+        --cpus ${task.cpus} \\
+        ${assembly}
     """
 }

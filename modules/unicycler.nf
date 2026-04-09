@@ -1,16 +1,22 @@
 process unicycler {
-   input:
-      val x
-   output:
-      //path 'xfile.txt', emit: aLook
-      val "${x}"
-      //path "${params.output}/${x}_trim_2.fastq", emit: trimR2
-      
-   """     
-   
-   unicycler -1 ${params.output}/${x}/${x}_1.fq.gz -2 ${params.output}/${x}/${x}_2.fq.gz -o ${params.output}/${x}/${x}_assembly --min_fasta_length 300 --keep 1 --min_kmer_frac 0.3 --max_kmer_frac 0.9 --verbosity 2
-   mv ${params.output}/${x}/${x}_assembly/assembly.fasta ${params.output}/${x}/${x}_assembly/${x}.fasta
+    tag "${meta.id}"
+    publishDir "${params.output}/${meta.id}/${meta.id}_assembly", mode: 'copy'
 
-     
-   """
+    input:
+        tuple val(meta), path(reads)
+    output:
+        tuple val(meta), path("${meta.id}.fasta"), emit: assembly
+
+    script:
+    def prefix = meta.id
+    """
+    unicycler \\
+        -1 ${reads[0]} -2 ${reads[1]} \\
+        -o assembly \\
+        --min_fasta_length 300 --keep 1 \\
+        --min_kmer_frac 0.3 --max_kmer_frac 0.9 \\
+        --verbosity 2 --threads ${task.cpus}
+
+    mv assembly/assembly.fasta ${prefix}.fasta
+    """
 }
