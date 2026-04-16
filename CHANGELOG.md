@@ -4,25 +4,25 @@ All notable changes to Sanibel are documented in this file.
 
 ---
 
-## [2.0.0] — 2026-04-09
+## [2.0.0] — 2026-04-16
 
 ### Complete DSL2 Rewrite
-The pipeline has been fully rewritten from the ground up in modern Nextflow DSL2.
+The pipeline has been fully rewritten in modern Nextflow DSL2.
 
 - Main workflow file renamed from `flaq_amr_plus2.nf` → `sanibel.nf`.
 - Input handling moved from manual string enumeration (`Channel.fromList`) to `channel.fromFilePairs`, supporting both Illumina native and simplified file naming in a single workflow.
 - All processes now follow the `tuple val(meta), path(...)` pattern with a `meta` map (replaces raw sample name strings), enabling per-sample metadata propagation throughout the pipeline.
 - All modules use named outputs (`emit:`) for explicit channel wiring.
 
-### Renamed Modules
-The legacy `pyTask*` and `plusAnalyses` modules have been replaced with purpose-named modules:
+### Renamed / Replaced Modules
+The legacy `pyTask*` and `plusAnalyses` modules have been replaced:
 
 | 1.3.0 | 2.0.0 |
 |-------|-------|
 | `pyTask1` | `parse_assembly` |
-| `pyTask2` | `parse_reads` |
-| `pyTask3` | `parse_typing` |
-| `pyTask4` | `generate_row` |
+| `pyTask2` | *(removed — read metrics now sourced via `readssum` + `meta.genome_size`)* |
+| `pyTask3` | *(removed — typing data threaded via individual files)* |
+| `pyTask4` | *(removed — replaced by `summary_report`)* |
 | `plusAnalyses` | `summary_report` + individual species modules (see below) |
 
 ### Extracted Species Modules
@@ -43,9 +43,6 @@ Four new species-specific typing modules added:
 - **`pasty`** — *Pseudomonas aeruginosa* serogroup typing (pasty 2.2.1)
 - **`kaptive_ab`** — *Acinetobacter baumannii* K/OC locus typing (Kaptive 3.2.0)
 - **`kaptive_vp`** — *Vibrio parahaemolyticus* K/O locus typing (Kaptive 3.2.0)
-
-### Re-enabled Modules
-- **`pmga`** — Was present in 1.3.0 but commented out of the workflow. Now runs as a dedicated module (PMGA 3.0.2) for *Neisseria meningitidis* and *H. influenzae* samples.
 
 ### BMGAP2 Integration
 Three new modules added for enhanced *N. meningitidis* and *H. influenzae* analysis:
@@ -71,7 +68,7 @@ BMGAP2 runs automatically on every sample; the Python scripts check the MLST sch
 | `prokka` | 1.14.5 | 1.15.6 |
 | `amrfinder` | 3.10.1 | 4.2.7 |
 | `mlst` | 2.19.0 | 2.32.2 |
-| `pmga` | latest *(unused)* | 3.0.2 |
+| `pmga` | latest | 3.0.2 |
 | `kleborate` | 2.2.0 | 3.2.4 |
 | `shigatyper` | 2.0.1 | 2.0.5 |
 | `seqsero2` | 1.2.1 | 1.3.2 |
@@ -85,13 +82,61 @@ BMGAP2 runs automatically on every sample; the Python scripts check the MLST sch
 ### Configuration Changes
 - Single `nextflow.config` replaces the `configs/config_template.config` split used in 1.3.0.
 - Added `profiles` block supporting `standard`, `docker`, `singularity`, and `apptainer` execution profiles.
-- `autoMounts = true` moved inside the `singularity {}` and `apptainer {}` profile blocks (was incorrectly at top level / in docker block in 1.3.0).
 - CPU and memory resource limits added for every process.
 - `params.bmgap2_db` default added.
 
 ### Bug Fixes
-- Fixed `prefix` variable scope error in 10 modules (`amrfinder`, `trimmomatic`, `bbtools`, `mash`, `unicycler`, `kraken`, `mlst`, `pmga`, `readssum`, `prokka`): `${prefix}` in `output:` blocks replaced with `${meta.id}`, which is in scope.
 - Fixed 19 Nextflow DSL2 linter errors in `sanibel.nf`: moved top-level statements inside `workflow {}`, renamed `Channel` → `channel` (lowercase), and prefixed unused closure parameters with `_`.
+- `bbtools_phix`: fixed `-in`/`-in2` flag order causing read-pair swap.
+- `fastqc2`: fixed input declared as `path` instead of `tuple val(meta), path`.
+- `kraken`: fixed container path and database mount.
+- `prokka`: added `export _JAVA_OPTIONS="-XX:-UsePerfData"` to suppress JVM crash on HiPerGator.
+- `unicycler`: reduced memory request to avoid SLURM OOM kills.
+- `readssum`: now uses `meta.genome_size` directly instead of reading pyoutputs.
+- `sanibel.nf`: fixed closure parameter warnings — unused params prefixed with `_`; params shadowing imported process names renamed.
+
+### Architecture — Eliminated pyoutputs Accumulation Pattern
+The fragile in-place CSV accumulation pattern (`parse_assembly` → `parse_reads` → `parse_typing` mutating a shared file per sample) has been fully removed and replaced with a clean Nextflow data-flow approach.
+
+**Removed modules:** `modules/parse_reads.nf`, `modules/parse_typing.nf`, `modules/generate_row.nf`
+
+**Removed scripts:** `bin/collect_sample_data.py`, `bin/generate_report_row.py`
+
+#### Meta Enrichment
+After `parse_assembly`, the workflow now enriches `meta` inline:
+- `meta.mash_genus` — Mash top-hit genus (e.g. `Salmonella`)
+- `meta.mash_species` — Mash top-hit genus + species (e.g. `Salmonella_enterica`)
+- `meta.genome_size` — total assembly length (used by `readssum` for coverage calculation)
+
+#### Summary Report Rewrite
+`bin/summary_report.py` completely rewritten (Juno-style):
+- Discovers sample IDs from `*_assembly_stats.txt` files staged in the work directory
+- Parses each mandatory staged file directly (`_assembly_stats.txt`, `_readMetrics.txt`, prokka `.txt`, `.mlst`, Kraken `.report`, `sta.txt`)
+- Reads species-specific outputs from `--outdir/{sample_id}/tool/` (serotypefinder, kleborate, seqsero2, emm_typing, shigatyper, legsta)
+- BMGAP2: checks for `bmgap2_amr/{sample_id}*amr_data.json` — if present, parses all three BMGAP2 output dirs; no `params.meningitis` flag required
+- Routes by MLST scheme: `sum_report.txt` (standard), `sum_report_nm.txt` (neisseria), `sum_report_hi.txt` (hinfluenzae)
+
+`modules/summary_report.nf` rewritten to accept 6 collected per-sample file inputs plus the two MLST CC lookup tables.
+
+#### Species Gating
+All 11 species-specific modules now gate via `meta.mash_genus` / `meta.mash_species` Groovy interpolation in their bash blocks. Inputs no longer include a pyoutputs path.
+
+#### BMGAP2 Updates
+- All three BMGAP2 modules now thread `mlst_file` through the chain (was pyoutputs)
+- Python scripts now read MLST scheme from the `.mlst` file (whitespace field[1]) instead of a pyoutputs CSV field
+- Fixed `assembly_dir` path: `{id}_assembly/` → `assembly/`
+- `params.meningitis` flag removed — BMGAP2 self-gates via MLST scheme
+
+### Output Directory Standardization
+| Output | Before | After |
+|--------|--------|-------|
+| Unicycler assembly | `{sample_id}_assembly/` | `assembly/` |
+| AMRFinder | *(inline)* | `amrfinder/` |
+| MLST | *(inline)* | `mlst/` |
+| SeqSero2 | `seqsero2_output/` | `seqsero2/` |
+| Kleborate | `kleborate_output/` | `kleborate/` |
+| SerotypeFinder | `serotypefinder_output/` | `serotypefinder/` |
+| emm-typing | `emm_output/` | `emm_typing/` |
 
 ---
 

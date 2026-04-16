@@ -1,18 +1,19 @@
 process prokka {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/${meta.id}_assembly", mode: 'copy'
+    publishDir "${params.output}/${meta.id}/assembly", mode: 'copy'
 
     input:
-        tuple val(meta), path(assembly), path(pyoutputs)
+        tuple val(meta), path(assembly), path(assembly_stats)
     output:
         tuple val(meta), path("prokka/"), emit: annotation
-        tuple val(meta), path(pyoutputs), path("prokka/${meta.id}.txt"), emit: cds
+        tuple val(meta), path("prokka/${meta.id}.txt"), emit: cds_txt
 
     script:
     def prefix = meta.id
     """
-    genus=\$(cut -d "," -f 1 ${pyoutputs})
-    species=\$(cut -d "," -f 2 ${pyoutputs})
+    export _JAVA_OPTIONS="-XX:-UsePerfData"
+    genus=\$(cut -d "," -f 1 ${assembly_stats})
+    species=\$(cut -d "," -f 2 ${assembly_stats})
 
     prokka \\
         --genus \${genus} --species \${species} \\

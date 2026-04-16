@@ -3,7 +3,7 @@ process kaptive_ab {
     publishDir "${params.output}/${meta.id}/kaptive_ab", mode: 'copy'
 
     input:
-        tuple val(meta), path(pyoutputs), path(assembly)
+        tuple val(meta), path(assembly)
     output:
         path("${meta.id}_ab_k.txt"),  optional: true
         path("${meta.id}_ab_oc.txt"), optional: true
@@ -11,10 +11,7 @@ process kaptive_ab {
 
     script:
     """
-    speciesid=\$(cut -d "," -f 21 ${pyoutputs})
-    speciesid2=\$(cut -d "," -f 1 ${pyoutputs})
-
-    if [[ "\${speciesid}" == "Acinetobacter baumannii" || "\${speciesid2}" == "Acinetobacter baumannii" ]]; then
+    if [[ "${meta.mash_species}" == "Acinetobacter_baumannii" ]]; then
         kaptive.py assembly \\
             /kaptive/reference_database/Acinetobacter_baumannii_k_locus_primary_reference.gbk \\
             ${assembly} -o ${meta.id}_ab_k.txt

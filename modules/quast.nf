@@ -1,6 +1,6 @@
 process quast {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/${meta.id}_assembly", mode: 'copy'
+    publishDir "${params.output}/${meta.id}/assembly", mode: 'copy'
 
     input:
         tuple val(meta), path(assembly)

@@ -3,9 +3,9 @@
 run_bmgap2_locusextractor.py — vaccine antigen typing for Neisseria / H. influenzae samples.
 
 Usage:
-    run_bmgap2_locusextractor.py <mypath> <pyoutputs_file> <bmgap2_db>
+    run_bmgap2_locusextractor.py <mypath> <mlst_file> <bmgap2_db>
 
-Reads MLST scheme from pyoutputs_file to determine whether to run.
+Reads MLST scheme from mlst_file to determine whether to run.
 Exits cleanly (code 0) if the sample is not a meningitis species.
 """
 
@@ -18,27 +18,26 @@ import sys
 def main():
     if len(sys.argv) != 4:
         print(
-            f"Usage: {sys.argv[0]} <mypath> <pyoutputs_file> <bmgap2_db>",
+            f"Usage: {sys.argv[0]} <mypath> <mlst_file> <bmgap2_db>",
             file=sys.stderr
         )
         sys.exit(1)
 
-    mypath         = sys.argv[1]
-    pyoutputs_file = sys.argv[2]
-    bmgap2_db      = sys.argv[3]
+    mypath    = sys.argv[1]
+    mlst_file = sys.argv[2]
+    bmgap2_db = sys.argv[3]
 
     items       = mypath.strip().split("/")
     sample_name = items[-1]
 
     scheme = ""
     try:
-        with open(pyoutputs_file) as f:
-            content = f.read().strip()
-            fields  = content.split(',')
-            if len(fields) > 16:
-                scheme = fields[16]
+        with open(mlst_file) as f:
+            fields = f.readline().strip().split()
+            if len(fields) > 1:
+                scheme = fields[1]
     except Exception as e:
-        print(f"BMGAP2-LocusExtractor: Error reading pyoutputs - {e}", file=sys.stderr)
+        print(f"BMGAP2-LocusExtractor: Error reading MLST file - {e}", file=sys.stderr)
         sys.exit(0)
 
     if scheme not in ['neisseria', 'hinfluenzae']:
@@ -48,7 +47,7 @@ def main():
         )
         sys.exit(0)
 
-    assembly_dir  = f"{mypath}/{sample_name}_assembly"
+    assembly_dir  = f"{mypath}/assembly"
     output_dir    = f"{mypath}/bmgap2_locusextractor"
     le_dir        = os.path.join(bmgap2_db, "locusextractor")
     le_script     = os.path.join(le_dir, "LocusExtractor_RHEL8.py")

@@ -15,6 +15,6 @@ process trimmomatic {
         ${reads[0]} ${reads[1]} \\
         ${prefix}_trim_1.fastq.gz ${prefix}_unpaired_trim_1.fastq.gz \\
         ${prefix}_trim_2.fastq.gz ${prefix}_unpaired_trim_2.fastq.gz \\
-        ILLUMINACLIP:/Trimmomatic-0.39/adapters/NexteraPE-PE.fa:2:30:10 SLIDINGWINDOW:5:20 MINLEN:71 TRAILING:20
+        ILLUMINACLIP:/usr/local/bin/adapters/NexteraPE-PE.fa:2:30:10 SLIDINGWINDOW:5:20 MINLEN:71 TRAILING:20
     """
 }

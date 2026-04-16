@@ -11,7 +11,7 @@ process kraken {
     def prefix = meta.id
     """
     kraken2 \\
-        --db /kraken2-db/minikraken2_v1_8GB/ \\
+        --db ${params.kraken_db} \\
         --threads ${task.cpus} \\
         --use-names \\
         --report ${prefix}.report \\

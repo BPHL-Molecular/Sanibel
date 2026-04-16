@@ -4,7 +4,7 @@ process parse_assembly {
     input:
         tuple val(meta), path(distances), path(quast_report)
     output:
-        tuple val(meta), path("${meta.id}_pyoutputs.txt"), emit: out
+        tuple val(meta), path("${meta.id}_assembly_stats.txt"), emit: out
 
     script:
     def sample = meta.id
@@ -12,6 +12,6 @@ process parse_assembly {
     collect_sample_data.py parse-assembly \\
         ${distances} \\
         ${quast_report} \\
-        ${sample}_pyoutputs.txt
+        ${sample}_assembly_stats.txt
     """
 }

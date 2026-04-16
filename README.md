@@ -24,6 +24,22 @@ Sanibel is FL-BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis p
 - **Conda** (for the SANIBEL environment)
 
 
+## 💻 Resource Requirements
+
+The pipeline is designed for HPC environments. The most resource-intensive step is **Unicycler** (*de novo* assembly via SPAdes), which runs once per sample.
+
+| Resource | Recommended | Minimum |
+|----------|-------------|---------|
+| CPUs | 20 (runs 2 assemblies in parallel) | 4 (1 assembly at a time, slower) |
+| RAM | 64 GB | 16 GB |
+| Disk (input + output) | ~10 GB per sample | — |
+| Disk (Kraken2 database) | ~8.5 GB | — |
+
+> **Running locally with fewer CPUs:** Nextflow will still run but your machine will be oversubscribed during assembly. Each Unicycler job requests 10 CPUs by default, on a machine with fewer cores the OS will time-share threads and assembly will complete more slowly but will not fail. You can lower the `cpus` value for `unicycler` in `nextflow.config` to match your hardware.
+
+**Estimated runtime** (12 samples, 20 CPUs, HPC): ~3–4 hours total, dominated by Unicycler (~25 min/sample, 2 running in parallel).
+
+
 ## 🛠️ Setup
 
 ### 1. Create the conda environment

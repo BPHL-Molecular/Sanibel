@@ -3,7 +3,7 @@ process plasmidfinder {
     publishDir "${params.output}/${meta.id}/plasmid", mode: 'copy'
 
     input:
-        tuple val(meta), path(pyoutputs), path(reads)
+        tuple val(meta), path(reads)
     output:
         path("results_tab.tsv"), optional: true
         val meta, emit: done

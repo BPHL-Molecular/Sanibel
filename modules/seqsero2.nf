@@ -1,19 +1,16 @@
 process seqsero2 {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/salmonella", mode: 'copy'
+    publishDir "${params.output}/${meta.id}/seqsero2", mode: 'copy'
 
     input:
-        tuple val(meta), path(pyoutputs), path(reads)
+        tuple val(meta), path(reads)
     output:
         path("SeqSero_result_*"), optional: true
         val meta, emit: done
 
     script:
     """
-    speciesid=\$(cut -d "," -f 21 ${pyoutputs})
-    speciesid2=\$(cut -d "," -f 1 ${pyoutputs})
-
-    if [[ "\${speciesid}" == "Salmonella" || "\${speciesid2}" == "Salmonella" ]]; then
+    if [[ "${meta.mash_genus}" == "Salmonella" ]]; then
         SeqSero2_package.py -p ${task.cpus} -t 2 -i ${reads[0]} ${reads[1]}
     fi
     """

@@ -3,9 +3,9 @@
 run_bmgap2_bmscan.py — species identification for Neisseria / H. influenzae samples.
 
 Usage:
-    run_bmgap2_bmscan.py <mypath> <pyoutputs_file> <bmgap2_db> <cpus>
+    run_bmgap2_bmscan.py <mypath> <mlst_file> <bmgap2_db> <cpus>
 
-Reads MLST scheme from pyoutputs_file to determine whether to run.
+Reads MLST scheme from mlst_file to determine whether to run.
 Exits cleanly (code 0) if the sample is not a meningitis species.
 """
 
@@ -17,28 +17,27 @@ import sys
 def main():
     if len(sys.argv) != 5:
         print(
-            f"Usage: {sys.argv[0]} <mypath> <pyoutputs_file> <bmgap2_db> <cpus>",
+            f"Usage: {sys.argv[0]} <mypath> <mlst_file> <bmgap2_db> <cpus>",
             file=sys.stderr
         )
         sys.exit(1)
 
-    mypath         = sys.argv[1]
-    pyoutputs_file = sys.argv[2]
-    bmgap2_db      = sys.argv[3]
-    cpus           = sys.argv[4]
+    mypath    = sys.argv[1]
+    mlst_file = sys.argv[2]
+    bmgap2_db = sys.argv[3]
+    cpus      = sys.argv[4]
 
     items       = mypath.strip().split("/")
     sample_name = items[-1]
 
     scheme = ""
     try:
-        with open(pyoutputs_file) as f:
-            content = f.read().strip()
-            fields  = content.split(',')
-            if len(fields) > 16:
-                scheme = fields[16]
+        with open(mlst_file) as f:
+            fields = f.readline().strip().split()
+            if len(fields) > 1:
+                scheme = fields[1]
     except Exception as e:
-        print(f"BMGAP2-BMScan: Error reading pyoutputs - {e}", file=sys.stderr)
+        print(f"BMGAP2-BMScan: Error reading MLST file - {e}", file=sys.stderr)
         sys.exit(0)
 
     if scheme not in ['neisseria', 'hinfluenzae']:
@@ -48,7 +47,7 @@ def main():
         )
         sys.exit(0)
 
-    assembly_dir = f"{mypath}/{sample_name}_assembly"
+    assembly_dir = f"{mypath}/assembly"
     output_dir   = f"{mypath}/bmgap2_bmscan"
     bmscan       = os.path.join(bmgap2_db, "SpeciesDB", "bin", "identify_species.py")
 
