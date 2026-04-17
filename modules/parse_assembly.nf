@@ -9,9 +9,6 @@ process parse_assembly {
     script:
     def sample = meta.id
     """
-    collect_sample_data.py parse-assembly \\
-        ${distances} \\
-        ${quast_report} \\
-        ${sample}_assembly_stats.txt
+    parse_assembly.py ${distances} ${quast_report} > ${sample}_assembly_stats.txt
     """
 }

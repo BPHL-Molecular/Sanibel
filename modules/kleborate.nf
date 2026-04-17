@@ -5,13 +5,11 @@ process kleborate {
     input:
         tuple val(meta), path(assembly)
     output:
-        path("kleborate_out/klebsiella_pneumo_complex_output.txt"), optional: true
+        path("kleborate_out/klebsiella_pneumo_complex_output.txt")
         val meta, emit: done
 
     script:
     """
-    if [[ "${meta.mash_genus}" == "Klebsiella" ]]; then
-        kleborate -a ${assembly} -o kleborate_out -p kpsc --trim_headers
-    fi
+    kleborate -a ${assembly} -o kleborate_out -p kpsc --trim_headers
     """
 }

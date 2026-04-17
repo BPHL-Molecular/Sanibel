@@ -11,13 +11,8 @@ process pmga {
     def prefix = meta.id
     """
     scheme=\$(awk 'NR==1{print \$2}' ${mlst_out})
-
-    if [[ "\${scheme}" == "neisseria" || "\${scheme}" == "hinfluenzae" ]]; then
-        pmga --blastdir /pmga/blastdbs -o pmga_out --force \\
-            --species \${scheme} ${assembly}
-        cp pmga_out/${prefix}sta.txt .
-    else
-        touch ${prefix}sta.txt
-    fi
+    pmga --blastdir /pmga/blastdbs -o pmga_out --force \\
+        --species \${scheme} ${assembly}
+    cp pmga_out/${prefix}sta.txt .
     """
 }

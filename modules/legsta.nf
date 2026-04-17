@@ -5,13 +5,11 @@ process legsta {
     input:
         tuple val(meta), path(assembly)
     output:
-        path("legsta_output.txt"), optional: true
+        path("legsta_output.txt")
         val meta, emit: done
 
     script:
     """
-    if [[ "${meta.mash_species}" == "Legionella_pneumophila" ]]; then
-        legsta ${assembly} > legsta_output.txt
-    fi
+    legsta ${assembly} > legsta_output.txt
     """
 }

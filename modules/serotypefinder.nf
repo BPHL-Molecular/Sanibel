@@ -5,13 +5,11 @@ process serotypefinder {
     input:
         tuple val(meta), path(reads)
     output:
-        path("results_tab.tsv"), optional: true
+        path("results_tab.tsv")
         val meta, emit: done
 
     script:
     """
-    if [[ "${meta.mash_species}" == "Escherichia_coli" ]]; then
-        serotypefinder.py -i ${reads[0]} ${reads[1]} -o ./
-    fi
+    serotypefinder.py -i ${reads[0]} ${reads[1]} -o ./
     """
 }

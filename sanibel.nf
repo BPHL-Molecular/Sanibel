@@ -147,7 +147,11 @@ workflow {
     )
     amrfinder(ch_assembly_enriched)
     ch_mlst = mlst(ch_assembly_enriched)
-    ch_pmga = pmga(ch_assembly_enriched.join(ch_mlst.out, by: 0))
+    ch_pmga = pmga(
+        ch_assembly_enriched
+            .filter { meta, _f -> meta.mash_genus in ['Neisseria', 'Haemophilus'] }
+            .join(ch_mlst.out, by: 0)
+    )
 
     // Kraken output with enriched meta
     ch_kraken_enriched = ch_kraken.out
@@ -156,39 +160,43 @@ workflow {
         .map  { _id, report, emeta -> [ emeta, report ] }
 
     // BMGAP2 channels
-    ch_bmgap2_amr = bmgap2_amr(ch_mlst.out)
+    ch_bmgap2_amr = bmgap2_amr(
+        ch_mlst.out.join(ch_pmga.out, by: 0)
+    )
     ch_bmgap2_le  = bmgap2_locusextractor(ch_bmgap2_amr.out)
     ch_pre_report = bmgap2_bmscan(ch_bmgap2_le.out)
 
-    // Species-specific analyses
-    legsta(ch_assembly_enriched)
-    kleborate(ch_assembly_enriched)
-    shigatyper(ch_clean_enriched)
-    emm_typing(ch_clean_enriched)
-    seqsero2(ch_clean_enriched)
-    serotypefinder(ch_clean_enriched)
-    plasmidfinder(ch_clean_enriched)
-    seroba(ch_clean_enriched)
-    pasty(ch_assembly_enriched)
-    kaptive_ab(ch_assembly_enriched)
-    kaptive_vp(ch_assembly_enriched)
+    // Species-specific analyses — filtered to relevant species at channel level
+    legsta(ch_assembly_enriched.filter          { meta, _f -> meta.mash_species == 'Legionella_pneumophila' })
+    kleborate(ch_assembly_enriched.filter       { meta, _f -> meta.mash_genus   == 'Klebsiella' })
+    shigatyper(ch_clean_enriched.filter         { meta, _f -> meta.mash_genus   == 'Shigella' })
+    emm_typing(ch_clean_enriched.filter         { meta, _f -> meta.mash_species in ['Streptococcus_pyogenes', 'Streptococcus_dysgalactiae'] })
+    seqsero2(ch_clean_enriched.filter           { meta, _f -> meta.mash_genus   == 'Salmonella' })
+    serotypefinder(ch_clean_enriched.filter     { meta, _f -> meta.mash_species == 'Escherichia_coli' })
+    plasmidfinder(ch_clean_enriched.filter      { meta, _f -> meta.mash_genus   == 'Escherichia' })
+    seroba(ch_clean_enriched.filter             { meta, _f -> meta.mash_species == 'Streptococcus_pneumoniae' })
+    pasty(ch_assembly_enriched.filter           { meta, _f -> meta.mash_species == 'Pseudomonas_aeruginosa' })
+    kaptive_ab(ch_assembly_enriched.filter      { meta, _f -> meta.mash_species == 'Acinetobacter_baumannii' })
+    kaptive_vp(ch_assembly_enriched.filter      { meta, _f -> meta.mash_species == 'Vibrio_parahaemolyticus' })
 
-    // Track completion of all species-specific tools
-    ch_species_done =
+    // Barrier: mix all optional-tool done signals + one noop per sample from ch_stats.
+    // The noop guarantees collect() closes even when no species tools ran for a sample.
+    ch_optional_barrier =
         legsta.out.done
-            .mix(shigatyper.out.done, emm_typing.out.done, kleborate.out.done,
+            .mix(kleborate.out.done, shigatyper.out.done, emm_typing.out.done,
                  seqsero2.out.done, serotypefinder.out.done, plasmidfinder.out.done,
-                 seroba.out.done, pasty.out.done, kaptive_ab.out.done, kaptive_vp.out.done)
-            .map { meta -> [ meta.id, 1 ] }
-            .groupTuple(size: 11)
+                 seroba.out.done, pasty.out.done, kaptive_ab.out.done, kaptive_vp.out.done,
+                 ch_pre_report.map { meta, _f -> meta })
+            .mix( ch_stats.map { meta, _s -> meta } )
+            .map { meta -> meta.id }
+            .collect()
 
     // Generate summary report
     ch_summary_gate = ch_stats
-        .map  { meta, stats -> [ meta.id, stats ] }
-        .join( ch_species_done )
-        .join( ch_pre_report.map { meta, _f -> [ meta.id, 1 ] } )
-        .map  { _id, stats, _sdone, _bdone -> stats }
+        .map  { _meta, stats -> stats }
         .collect()
+        .combine( ch_optional_barrier )
+        .map  { stats_list, _barrier -> stats_list }
 
     summary_report(
         ch_summary_gate,
@@ -196,7 +204,7 @@ workflow {
         ch_prokka.cds_txt.map       { _meta, ptxt -> ptxt }.collect(),
         ch_mlst.out.map             { _meta, mlst_file -> mlst_file }.collect(),
         ch_kraken_enriched.map      { _meta, kr   -> kr   }.collect(),
-        ch_pmga.out.map             { _meta, pmga_file -> pmga_file }.collect(),
+        ch_pmga.out.map             { _meta, pmga_file -> pmga_file }.collect().ifEmpty([]),
         ch_neisseria_txt,
         ch_hinfluenzae_txt
     )

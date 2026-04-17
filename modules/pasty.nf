@@ -5,15 +5,13 @@ process pasty {
     input:
         tuple val(meta), path(assembly)
     output:
-        path("${meta.id}.tsv"),         optional: true
-        path("${meta.id}.details.tsv"), optional: true
-        path("${meta.id}.blastn.tsv"),  optional: true
+        path("${meta.id}.tsv")
+        path("${meta.id}.details.tsv")
+        path("${meta.id}.blastn.tsv")
         val meta, emit: done
 
     script:
     """
-    if [[ "${meta.mash_species}" == "Pseudomonas_aeruginosa" ]]; then
-        pasty --input ${assembly} --prefix ${meta.id} --outdir .
-    fi
+    pasty --input ${assembly} --prefix ${meta.id} --outdir .
     """
 }

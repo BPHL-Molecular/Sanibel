@@ -11,7 +11,7 @@ process amrfinder {
     def prefix = meta.id
     """
     amrfinder \\
-        --num_threads ${task.cpus} \\
+        --threads ${task.cpus} \\
         -n ${assembly} \\
         --plus \\
         -o ${prefix}_amrfinderplus_report.tsv
