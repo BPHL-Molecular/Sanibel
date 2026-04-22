@@ -115,7 +115,7 @@ workflow {
         def fields        = stats.text.trim().split(',')
         def enriched_meta = meta + [
             mash_genus:   fields[0],
-            mash_species: "${fields[0]}_${fields[1]}",
+            mash_species: fields[0] + '_' + fields[1],
             genome_size:  fields[9].toLong()
         ]
         [ enriched_meta, stats ]
@@ -166,21 +166,19 @@ workflow {
     ch_bmgap2_le  = bmgap2_locusextractor(ch_bmgap2_amr.out)
     ch_pre_report = bmgap2_bmscan(ch_bmgap2_le.out)
 
-    // Species-specific analyses — filtered to relevant species at channel level
+    // Species-specific analyses
     legsta(ch_assembly_enriched.filter          { meta, _f -> meta.mash_species == 'Legionella_pneumophila' })
     kleborate(ch_assembly_enriched.filter       { meta, _f -> meta.mash_genus   == 'Klebsiella' })
     shigatyper(ch_clean_enriched.filter         { meta, _f -> meta.mash_genus   == 'Shigella' })
     emm_typing(ch_clean_enriched.filter         { meta, _f -> meta.mash_species in ['Streptococcus_pyogenes', 'Streptococcus_dysgalactiae'] })
     seqsero2(ch_clean_enriched.filter           { meta, _f -> meta.mash_genus   == 'Salmonella' })
     serotypefinder(ch_clean_enriched.filter     { meta, _f -> meta.mash_species == 'Escherichia_coli' })
-    plasmidfinder(ch_clean_enriched.filter      { meta, _f -> meta.mash_genus   == 'Escherichia' })
+    plasmidfinder(ch_clean_enriched)
     seroba(ch_clean_enriched.filter             { meta, _f -> meta.mash_species == 'Streptococcus_pneumoniae' })
     pasty(ch_assembly_enriched.filter           { meta, _f -> meta.mash_species == 'Pseudomonas_aeruginosa' })
     kaptive_ab(ch_assembly_enriched.filter      { meta, _f -> meta.mash_species == 'Acinetobacter_baumannii' })
     kaptive_vp(ch_assembly_enriched.filter      { meta, _f -> meta.mash_species == 'Vibrio_parahaemolyticus' })
 
-    // Barrier: mix all optional-tool done signals + one noop per sample from ch_stats.
-    // The noop guarantees collect() closes even when no species tools ran for a sample.
     ch_optional_barrier =
         legsta.out.done
             .mix(kleborate.out.done, shigatyper.out.done, emm_typing.out.done,
@@ -188,18 +186,13 @@ workflow {
                  seroba.out.done, pasty.out.done, kaptive_ab.out.done, kaptive_vp.out.done,
                  ch_pre_report.map { meta, _f -> meta })
             .mix( ch_stats.map { meta, _s -> meta } )
-            .map { meta -> meta.id }
+            .map { _id -> 1 }
             .collect()
-
-    // Generate summary report
-    ch_summary_gate = ch_stats
-        .map  { _meta, stats -> stats }
-        .collect()
-        .combine( ch_optional_barrier )
-        .map  { stats_list, _barrier -> stats_list }
+            .map { _ids -> true }
 
     summary_report(
-        ch_summary_gate,
+        ch_optional_barrier,
+        ch_stats.map { _meta, stats -> stats }.collect(),
         ch_readssum.out.map         { _meta, rm   -> rm   }.collect(),
         ch_prokka.cds_txt.map       { _meta, ptxt -> ptxt }.collect(),
         ch_mlst.out.map             { _meta, mlst_file -> mlst_file }.collect(),

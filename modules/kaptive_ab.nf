@@ -11,11 +11,7 @@ process kaptive_ab {
 
     script:
     """
-    kaptive.py assembly \\
-        /kaptive/reference_database/Acinetobacter_baumannii_k_locus_primary_reference.gbk \\
-        ${assembly} -o ${meta.id}_ab_k.txt
-    kaptive.py assembly \\
-        /kaptive/reference_database/Acinetobacter_baumannii_OC_locus_primary_reference.gbk \\
-        ${assembly} -o ${meta.id}_ab_oc.txt
+    kaptive assembly ab_k ${assembly} -o ${meta.id}_ab_k.txt
+    kaptive assembly ab_o ${assembly} -o ${meta.id}_ab_oc.txt
     """
 }

@@ -2,14 +2,6 @@
 """
 summary_report.py — Build Sanibel summary reports from individual tool outputs.
 
-Discovers sample IDs from *_assembly_stats.txt files staged in the working directory.
-For each sample, reads mandatory files from the working directory and
-optional species-specific outputs from --outdir/{sample_id}/ sub-directories.
-
-Output files (created only when samples of that type exist):
-  sum_report.txt     — standard samples        (20 columns)
-  sum_report_nm.txt  — Neisseria meningitidis   (45 columns)
-  sum_report_hi.txt  — Haemophilus influenzae   (41 columns)
 """
 
 import argparse
@@ -22,10 +14,7 @@ import sys
 
 NO_DATA = 'No data'
 
-
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def normalize_le_value(val):
     if not val:
@@ -34,6 +23,10 @@ def normalize_le_value(val):
         return 'Not detected'
     if val.startswith('Allele not identified') or val.startswith('Peptide not found'):
         return 'Not detected'
+    if val.startswith('Incomplete ORF') or val.startswith('incomplete ORF'):
+        return 'Not detected'
+    if val.startswith('New-BLASTonly') or val.startswith('New-PCR'):
+        return 'New allele'
     return val
 
 
@@ -47,9 +40,7 @@ def find_gene(gene_dict, gene_name):
     return None
 
 
-# ---------------------------------------------------------------------------
-# Per-file parsers — mandatory (staged working directory)
-# ---------------------------------------------------------------------------
+# Per-file parsers
 
 def parse_assembly_stats(filepath):
     with open(filepath) as f:
@@ -99,6 +90,10 @@ def parse_mlst(filepath, neisseria_txt=None, hinfluenzae_txt=None):
                 scheme = out[1]
                 st     = out[2]
                 cc     = ''
+                if scheme in ('-', '') :
+                    scheme = 'Not detected'
+                if st in ('-', ''):
+                    st = 'Not detected'
                 if scheme == 'neisseria' and neisseria_txt and os.path.isfile(neisseria_txt):
                     try:
                         with open(neisseria_txt) as tbl:
@@ -119,7 +114,7 @@ def parse_mlst(filepath, neisseria_txt=None, hinfluenzae_txt=None):
                                     break
                     except Exception:
                         pass
-            break  # only first data line
+            break
     return {'scheme': scheme, 'st': st, 'cc': cc}
 
 
@@ -148,9 +143,7 @@ def parse_pmga(filepath):
     return result
 
 
-# ---------------------------------------------------------------------------
-# Per-file parsers — species-specific (published output directory)
-# ---------------------------------------------------------------------------
+# Per-file parsers — species-specific
 
 def get_ecoli_serotype(sample_dir, sample_id):
     ecoli_json = os.path.join(sample_dir, 'serotypefinder', 'data.json')
@@ -271,9 +264,70 @@ def get_shigella_serotype(sample_dir, sample_id):
         return 'Not detected'
 
 
-# ---------------------------------------------------------------------------
+def get_pneumococcal_serotype(sample_dir, sample_id):
+    pred_csv = os.path.join(sample_dir, 'seroba', sample_id, 'pred.csv')
+    if not os.path.isfile(pred_csv):
+        return None
+    try:
+        with open(pred_csv) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                serotype = row.get('Serotype', '').strip()
+                return serotype if serotype else 'Not detected'
+    except Exception as e:
+        print(f"Warning: Could not parse Seroba pred.csv for {sample_id}: {e}", file=sys.stderr)
+        return 'Not detected'
+
+
+def _parse_kaptive_txt(filepath):
+    """Return (locus, type) from a kaptive v3 TSV output file."""
+    try:
+        with open(filepath) as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            for row in reader:
+                locus = row.get('Best match locus', '').strip()
+                ktype = row.get('Best match type', '').strip()
+                return locus, ktype
+    except Exception:
+        pass
+    return '', ''
+
+
+def get_acinetobacter_serotype(sample_dir, sample_id):
+    k_txt  = os.path.join(sample_dir, 'kaptive_ab', f'{sample_id}_ab_k.txt')
+    oc_txt = os.path.join(sample_dir, 'kaptive_ab', f'{sample_id}_ab_oc.txt')
+    if not os.path.isfile(k_txt) and not os.path.isfile(oc_txt):
+        return None
+    try:
+        k_locus,  k_type  = _parse_kaptive_txt(k_txt)  if os.path.isfile(k_txt)  else ('', '')
+        oc_locus, oc_type = _parse_kaptive_txt(oc_txt) if os.path.isfile(oc_txt) else ('', '')
+        parts = []
+        if k_locus or k_type:
+            parts.append(f"{k_locus}({k_type})" if k_locus and k_type else k_locus or k_type)
+        if oc_locus or oc_type:
+            parts.append(f"{oc_locus}({oc_type})" if oc_locus and oc_type else oc_locus or oc_type)
+        return '/'.join(parts) if parts else 'Not detected'
+    except Exception as e:
+        print(f"Warning: Could not parse Kaptive output for {sample_id}: {e}", file=sys.stderr)
+        return 'Not detected'
+
+
+def get_pseudomonas_serotype(sample_dir, sample_id):
+    pasty_tsv = os.path.join(sample_dir, 'pasty', f'{sample_id}.tsv')
+    if not os.path.isfile(pasty_tsv):
+        return None
+    try:
+        with open(pasty_tsv) as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            for row in reader:
+                stype = row.get('type', '').strip()
+                return stype if stype else 'Not detected'
+    except Exception as e:
+        print(f"Warning: Could not parse pasty TSV for {sample_id}: {e}", file=sys.stderr)
+        return 'Not detected'
+
+
 # BMGAP2 data parser
-# ---------------------------------------------------------------------------
 
 def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
     """Parse BMGAP2 AMR, LocusExtractor, and BMScan outputs for Nm/Hi samples."""
@@ -374,49 +428,50 @@ def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
             try:
                 with open(le_csv) as f:
                     reader = csv.DictReader(f)
-                    for row in reader:
-                        if 'Assembly-1' not in row.get('Unique_ID', ''):
-                            continue
-                        if scheme == 'hinfluenzae':
-                            d['bmgap2_mlst_st'] = row.get('Hi_MLST_ST', '') or NO_DATA
-                            hi_st = d['bmgap2_mlst_st']
-                            d['bmgap2_mlst_cc'] = NO_DATA
-                            if (hinfluenzae_txt and os.path.isfile(hinfluenzae_txt)
-                                    and hi_st not in [NO_DATA, 'Not detected', 'New', 'NA', '']):
-                                try:
-                                    with open(hinfluenzae_txt) as ht:
-                                        for hrow in ht:
-                                            hcols = hrow.strip().split('\t')
-                                            if hcols[0] == hi_st:
-                                                d['bmgap2_mlst_cc'] = (
-                                                    hcols[8] if len(hcols) >= 9 else 'Not detected'
-                                                )
-                                                break
-                                except Exception:
-                                    pass
-                        else:
-                            d['bmgap2_mlst_st'] = row.get('Nm_MLST_ST', '') or NO_DATA
-                            d['bmgap2_mlst_cc'] = row.get('Nm_MLST_cc', '') or NO_DATA
+                    all_rows = list(reader)
 
-                        d['FHbp_variant']  = normalize_le_value(row.get('FHbp_protein_subvariant_Novartis', ''))
-                        d['FHbp_subfamily'] = normalize_le_value(row.get('FHbp_subfamily', ''))
-                        d['FHbp_peptide']  = normalize_le_value(row.get('FHbp_protein_subvariant_Oxford', ''))
-                        d['NadA_variant']  = normalize_le_value(row.get('NadA_Protein_subvariant_Novartis', ''))
-                        d['NhbA_peptide']  = normalize_le_value(row.get('NhbA_Protein_subvariant_Novartis', ''))
+                prokka_rows = [r for r in all_rows if 'prokka' in r.get('Filename', '')]
+                row = prokka_rows[0] if prokka_rows else (all_rows[0] if all_rows else None)
+                if row is not None:
+                    if scheme == 'hinfluenzae':
+                        d['bmgap2_mlst_st'] = row.get('Hi_MLST_ST', '') or NO_DATA
+                        hi_st = d['bmgap2_mlst_st']
+                        d['bmgap2_mlst_cc'] = NO_DATA
+                        if (hinfluenzae_txt and os.path.isfile(hinfluenzae_txt)
+                                and hi_st not in [NO_DATA, 'Not detected', 'New', 'NA', '']):
+                            try:
+                                with open(hinfluenzae_txt) as ht:
+                                    for hrow in ht:
+                                        hcols = hrow.strip().split('\t')
+                                        if hcols[0] == hi_st:
+                                            d['bmgap2_mlst_cc'] = (
+                                                hcols[8] if len(hcols) >= 9 else 'Not detected'
+                                            )
+                                            break
+                            except Exception:
+                                pass
+                    else:
+                        d['bmgap2_mlst_st'] = row.get('Nm_MLST_ST', '') or NO_DATA
+                        d['bmgap2_mlst_cc'] = row.get('Nm_MLST_cc', '') or NO_DATA
 
-                        if scheme == 'hinfluenzae':
-                            d['vaccine_4CMenB_coverage'] = 'Not applicable'
+                    d['FHbp_variant']  = normalize_le_value(row.get('FHbp_protein_subvariant_Novartis', ''))
+                    d['FHbp_subfamily'] = normalize_le_value(row.get('FHbp_subfamily', ''))
+                    d['FHbp_peptide']  = normalize_le_value(row.get('FHbp_protein_subvariant_Oxford', ''))
+                    d['NadA_variant']  = normalize_le_value(row.get('NadA_Protein_subvariant_Novartis', ''))
+                    d['NhbA_peptide']  = normalize_le_value(row.get('NhbA_Protein_subvariant_Novartis', ''))
+
+                    if scheme == 'hinfluenzae':
+                        d['vaccine_4CMenB_coverage'] = 'Not applicable'
+                    else:
+                        has_fhbp = d['FHbp_variant'] not in [NO_DATA, 'Not detected']
+                        has_nada = d['NadA_variant'] not in [NO_DATA, 'Not detected']
+                        has_nhba = d['NhbA_peptide'] not in [NO_DATA, 'Not detected']
+                        if has_fhbp and (has_nada or has_nhba):
+                            d['vaccine_4CMenB_coverage'] = 'Likely'
+                        elif has_fhbp:
+                            d['vaccine_4CMenB_coverage'] = 'Possible'
                         else:
-                            has_fhbp = d['FHbp_variant'] not in [NO_DATA, 'Not detected']
-                            has_nada = d['NadA_variant'] not in [NO_DATA, 'Not detected']
-                            has_nhba = d['NhbA_peptide'] not in [NO_DATA, 'Not detected']
-                            if has_fhbp and (has_nada or has_nhba):
-                                d['vaccine_4CMenB_coverage'] = 'Likely'
-                            elif has_fhbp:
-                                d['vaccine_4CMenB_coverage'] = 'Possible'
-                            else:
-                                d['vaccine_4CMenB_coverage'] = 'Unlikely'
-                        break
+                            d['vaccine_4CMenB_coverage'] = 'Unlikely'
             except Exception as e:
                 print(f"Warning: Could not parse LocusExtractor CSV for {sample_id}: {e}", file=sys.stderr)
 
@@ -438,29 +493,20 @@ def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
     return d
 
 
-# ---------------------------------------------------------------------------
 # Report headers
-# ---------------------------------------------------------------------------
 
 HEADER_STANDARD = [
     'sampleID',
+    'speciesID_mash', 'nearest_neighbor_mash', 'mash_distance',
+    'speciesID_kraken', 'kraken_percent',
+    'mlst_scheme', 'mlst_st', 'serotype',
     'num_clean_reads', 'avg_readlength', 'avg_read_qual', 'est_coverage',
     'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
     'annotated_cds',
-    'speciesID_mash', 'nearest_neighbor_mash', 'mash_distance',
-    'speciesID_kraken', 'kraken_percent',
-    'mlst_scheme', 'mlst_st',
-    'serotype',
 ]
 
 HEADER_NM = [
     'sampleID',
-    'num_clean_reads', 'avg_readlength', 'avg_read_qual', 'est_coverage',
-    'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
-    'annotated_cds',
-    'speciesID_mash', 'nearest_neighbor_mash', 'mash_distance',
-    'speciesID_kraken', 'kraken_percent',
-    'mlst_scheme', 'mlst_st', 'mlst_cc',
     'pmga_species', 'nm_serogroup', 'serotype_notes',
     'bmgap2_species', 'bmgap2_mlst_st', 'bmgap2_mlst_cc', 'predicted_resistance',
     'penA_allele', 'penA_mutations', 'penA_phenotype',
@@ -474,12 +520,6 @@ HEADER_NM = [
 
 HEADER_HI = [
     'sampleID',
-    'num_clean_reads', 'avg_readlength', 'avg_read_qual', 'est_coverage',
-    'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
-    'annotated_cds',
-    'speciesID_mash', 'nearest_neighbor_mash', 'mash_distance',
-    'speciesID_kraken', 'kraken_percent',
-    'mlst_scheme', 'mlst_st', 'mlst_cc',
     'pmga_species', 'hi_serotype', 'serotype_notes',
     'bmgap2_species', 'bmgap2_mlst_st', 'bmgap2_mlst_cc', 'predicted_resistance',
     'ftsI_allele', 'ftsI_mutations', 'ftsI_phenotype',
@@ -491,9 +531,7 @@ HEADER_HI = [
 ]
 
 
-# ---------------------------------------------------------------------------
 # Main
-# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description='Build Sanibel summary reports.')
@@ -506,7 +544,6 @@ def main():
     neisseria_txt   = args.neisseria_txt
     hinfluenzae_txt = args.hinfluenzae_txt
 
-    # Discover samples from staged assembly_stats files
     samples = sorted(
         f.replace('_assembly_stats.txt', '')
         for f in glob.glob('*_assembly_stats.txt')
@@ -523,7 +560,6 @@ def main():
     for sid in samples:
         sample_dir = os.path.join(outdir, sid)
 
-        # Parse mandatory files staged in working directory
         asm  = parse_assembly_stats(f'{sid}_assembly_stats.txt')
         rm   = parse_read_metrics(f'{sid}_readMetrics.txt')
         cds  = parse_prokka_txt(f'{sid}.txt')
@@ -536,20 +572,24 @@ def main():
 
         common = [
             sid,
-            rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
-            asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
-            asm['total_length'], asm['gc_content'],
-            cds,
             f"{asm['genus']}_{asm['species']}", asm['accession'], asm['mash_distance'],
             kr['species'], kr['percent'],
         ]
 
         if scheme == 'neisseria':
             bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
-            row = common + [
-                scheme, mlst['st'], mlst['cc'],
+            serotype = pmga['prediction'] or NO_DATA
+            std_row = common + [
+                scheme, mlst['st'], serotype,
+                rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
+                asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
+                asm['total_length'], asm['gc_content'], cds,
+            ]
+            rows_std.append(std_row)
+            nm_row = [
+                sid,
                 pmga_sp,
-                pmga['prediction'] or NO_DATA,   # nm_serogroup
+                pmga['prediction'] or NO_DATA,
                 pmga['serotype_notes'],
                 bm['bmgap2_species'], bm['bmgap2_mlst_st'], bm['bmgap2_mlst_cc'],
                 bm['predicted_resistance'],
@@ -561,25 +601,33 @@ def main():
                 bm['FHbp_variant'], bm['FHbp_subfamily'], bm['FHbp_peptide'],
                 bm['NadA_variant'], bm['NhbA_peptide'], bm['vaccine_4CMenB_coverage'],
             ]
-            rows_nm.append(row)
+            rows_nm.append(nm_row)
 
         elif scheme == 'hinfluenzae':
             bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
-            row = common + [
-                scheme, mlst['st'], mlst['cc'],
+            serotype = pmga['prediction'] or NO_DATA
+            std_row = common + [
+                scheme, mlst['st'], serotype,
+                rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
+                asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
+                asm['total_length'], asm['gc_content'], cds,
+            ]
+            rows_std.append(std_row)
+            hi_row = [
+                sid,
                 pmga_sp,
-                pmga['prediction'] or NO_DATA,   # hi_serotype
+                pmga['prediction'] or NO_DATA,
                 pmga['serotype_notes'],
                 bm['bmgap2_species'], bm['bmgap2_mlst_st'], bm['bmgap2_mlst_cc'],
                 bm['predicted_resistance'],
-                bm['penA_allele'], bm['penA_mutations'], bm['penA_phenotype'],  # ftsI in penA slots
+                bm['penA_allele'], bm['penA_mutations'], bm['penA_phenotype'],
                 bm['gyrA_allele'], bm['gyrA_mutations'], bm['gyrA_phenotype'],
                 bm['parC_allele'], bm['parC_phenotype'],
                 bm['rpoB_allele'], bm['rpoB_phenotype'],
                 bm['folA_allele'], bm['folA_phenotype'],
                 bm['blaTEM1_status'], bm['blaROB1_status'],
             ]
-            rows_hi.append(row)
+            rows_hi.append(hi_row)
 
         else:
             # Species-specific serotype from published output dirs
@@ -591,13 +639,21 @@ def main():
                 lambda: get_salmonella_serotype(sample_dir, sid),
                 lambda: get_gas_serotype(sample_dir, sid),
                 lambda: get_shigella_serotype(sample_dir, sid),
+                lambda: get_pneumococcal_serotype(sample_dir, sid),
+                lambda: get_acinetobacter_serotype(sample_dir, sid),
+                lambda: get_pseudomonas_serotype(sample_dir, sid),
             ]:
                 result = getter()
                 if result is not None:
                     serotype = result
                     break
 
-            row = common + [scheme, mlst['st'], serotype]
+            row = common + [
+                scheme, mlst['st'], serotype,
+                rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
+                asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
+                asm['total_length'], asm['gc_content'], cds,
+            ]
             rows_std.append(row)
 
     def write_report(path, header, rows):
@@ -610,9 +666,9 @@ def main():
     if rows_std:
         write_report('sum_report.txt',    HEADER_STANDARD, rows_std)
     if rows_nm:
-        write_report('sum_report_nm.txt', HEADER_NM,       rows_nm)
+        write_report('nm_sum_report.txt', HEADER_NM,       rows_nm)
     if rows_hi:
-        write_report('sum_report_hi.txt', HEADER_HI,       rows_hi)
+        write_report('hi_sum_report.txt', HEADER_HI,       rows_hi)
 
     if not (rows_std or rows_nm or rows_hi):
         print('summary_report.py: no rows generated.', file=sys.stderr)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Parse mash distances and QUAST report into a single CSV line for Sanibel.
+Parse mash distances and QUAST report into a single CSV line.
 
 Usage: parse_assembly.py <distances_file> <quast_report>
 
@@ -22,12 +22,10 @@ def parse_mash(distances_file):
 
     if '-.-' in ref_id:
         acc_part, org_part = ref_id.split('-.-', 1)
-        # Try standard GCF_/GCA_/NC_/NZ_ accession pattern first
         m = re.search(r'((?:GC[FA]|N[CZ])_[A-Za-z0-9]+(?:\.[0-9]+)?)', acc_part)
         if m:
             accession = m.group(1)
         else:
-            # Fall back to everything after the last dash
             accession = acc_part.rsplit('-', 1)[-1] or 'Unknown'
         org_seg   = re.sub(r'\.fna.*', '', org_part)
         parts     = org_seg.split('_')

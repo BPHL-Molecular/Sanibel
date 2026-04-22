@@ -8,7 +8,6 @@ process quast {
         tuple val(meta), path("quast_results/report.tsv"), emit: report
 
     script:
-    //def prefix = meta.id  // unused — quast output directory is fixed
     """
     quast.py --threads ${task.cpus} -o quast_results ${assembly}
     """

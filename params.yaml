@@ -5,5 +5,5 @@ output: "/full/path/to/output"
 # non-HiPerGator users: set this to your BMGAP2 analysis_scripts directory
 bmgap2_db:  "/blue/bphl-florida/share/bmgap2"
 
-# Kraken2 database directory
+# non-HiPerGator users: set this to your Kraken2 database directory
 kraken_db:  "/blue/bphl-florida/share/kraken2_databases/k2_standard_8GB_20260226"

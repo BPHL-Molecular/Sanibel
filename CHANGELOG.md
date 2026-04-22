@@ -4,7 +4,19 @@ All notable changes to Sanibel are documented in this file.
 
 ---
 
-## [2.0.0] — 2026-04-16
+## [2.0.0] — 2026-04-22
+
+### Bug Fixes
+- **`kaptive_ab`** — Fixed command for Kaptive v3: executable renamed from `kaptive.py` to `kaptive`; replaced file-path DB arguments with built-in keywords `ab_k` and `ab_o`.
+- **`emm_typing`** — Fixed EMBOSS library conflict preventing execution. Added `containerOptions "--bind ${task.workDir}:/EMBOSS-6.6.0/emboss/.libs"`.
+- **`sanibel.nf`** — Fixed `_` reserved identifier in two closures (renamed to `_id` / `_ids`).
+- **`sanibel.nf`** — Fixed `mash_species` Groovy GString assignment that caused all species-specific `.filter {}` comparisons to return `false`. Changed to plain String concatenation (`fields[0] + '_' + fields[1]`). Affected modules: `emm_typing`, `seroba`, `pasty`, `kaptive_ab`, `kaptive_vp`, `serotypefinder`.
+- **`summary_report.py`** — MLST `-` values now normalised to `Not detected`.
+- **`summary_report.py`** — LocusExtractor CSV parser now prefers prokka-annotated rows for complete antigen ORF data.
+- **`summary_report.py`** — `normalize_le_value()` extended to handle `Incomplete ORF`, `New-BLASTonly`, and `New-PCR` result strings.
+- **`summary_report.py`** — Added missing serotype parsers: `get_pneumococcal_serotype()` (SeroBA), `get_acinetobacter_serotype()` (Kaptive), `get_pseudomonas_serotype()` (pasty).
+- **`summary_report.py`** — Report column order updated: species ID, MLST, and serotype now precede QC metrics in `sum_report.txt`. Nm/Hi species-specific reports (`nm_sum_report.txt`, `hi_sum_report.txt`) condensed to species-only columns.
+- **`params.yaml`** — Added `kraken_db` parameter.
 
 ### Complete DSL2 Rewrite
 The pipeline has been fully rewritten in modern Nextflow DSL2.
@@ -51,7 +63,7 @@ Three new modules added for enhanced *N. meningitidis* and *H. influenzae* analy
 - **`bmgap2_locusextractor`** — Vaccine antigen identification
 - **`bmgap2_bmscan`** — Species confirmation
 
-BMGAP2 runs automatically on every sample; the Python scripts check the MLST scheme internally and skip non-Nm/Hi samples. No `meningitis` flag is required. `params.bmgap2_db` defaults to `/blue/bphl-florida/share/bmgap2` (HiPerGator path).
+BMGAP2 runs automatically on every sample; the python scripts check the MLST scheme internally and skip non-Nm/Hi samples. `params.bmgap2_db` defaults to `/blue/bphl-florida/share/bmgap2` (HiPerGator path).
 
 ### Container Version Updates
 | Module | 1.3.0 | 2.0.0 |
@@ -82,7 +94,7 @@ BMGAP2 runs automatically on every sample; the Python scripts check the MLST sch
 ### Configuration Changes
 - Single `nextflow.config` replaces the `configs/config_template.config` split used in 1.3.0.
 - Added `profiles` block supporting `standard`, `docker`, `singularity`, and `apptainer` execution profiles.
-- CPU and memory resource limits added for every process.
+- CPU and memory resource added for every process.
 - `params.bmgap2_db` default added.
 
 ### Bug Fixes
@@ -109,14 +121,12 @@ After `parse_assembly`, the workflow now enriches `meta` inline:
 - `meta.genome_size` — total assembly length (used by `readssum` for coverage calculation)
 
 #### Summary Report Rewrite
-`bin/summary_report.py` completely rewritten (Juno-style):
+`bin/summary_report.py` completely rewritten:
 - Discovers sample IDs from `*_assembly_stats.txt` files staged in the work directory
 - Parses each mandatory staged file directly (`_assembly_stats.txt`, `_readMetrics.txt`, prokka `.txt`, `.mlst`, Kraken `.report`, `sta.txt`)
 - Reads species-specific outputs from `--outdir/{sample_id}/tool/` (serotypefinder, kleborate, seqsero2, emm_typing, shigatyper, legsta)
-- BMGAP2: checks for `bmgap2_amr/{sample_id}*amr_data.json` — if present, parses all three BMGAP2 output dirs; no `params.meningitis` flag required
+- BMGAP2: checks for `bmgap2_amr/{sample_id}*amr_data.json` — if present, parses all three BMGAP2 output dirs
 - Routes by MLST scheme: `sum_report.txt` (standard), `sum_report_nm.txt` (neisseria), `sum_report_hi.txt` (hinfluenzae)
-
-`modules/summary_report.nf` rewritten to accept 6 collected per-sample file inputs plus the two MLST CC lookup tables.
 
 #### Species Gating
 All 11 species-specific modules now gate via `meta.mash_genus` / `meta.mash_species` Groovy interpolation in their bash blocks. Inputs no longer include a pyoutputs path.

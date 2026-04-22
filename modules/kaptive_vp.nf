@@ -11,11 +11,9 @@ process kaptive_vp {
 
     script:
     """
-    kaptive.py assembly \\
-        /kaptive/reference_database/VibrioPara_Kaptivedb_K.gbk \\
+    kaptive assembly /kaptive/reference_database/VibrioPara_Kaptivedb_K.gbk \\
         ${assembly} -o ${meta.id}_vp_k.txt
-    kaptive.py assembly \\
-        /kaptive/reference_database/VibrioPara_Kaptivedb_O.gbk \\
+    kaptive assembly /kaptive/reference_database/VibrioPara_Kaptivedb_O.gbk \\
         ${assembly} -o ${meta.id}_vp_o.txt
     """
 }

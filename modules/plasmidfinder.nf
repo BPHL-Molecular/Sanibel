@@ -5,7 +5,7 @@ process plasmidfinder {
     input:
         tuple val(meta), path(reads)
     output:
-        path("results_tab.tsv")
+        path("results_*.json")
         val meta, emit: done
 
     script:

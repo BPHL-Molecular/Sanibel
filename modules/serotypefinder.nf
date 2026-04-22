@@ -5,7 +5,7 @@ process serotypefinder {
     input:
         tuple val(meta), path(reads)
     output:
-        path("results_tab.tsv")
+        path("data.json")
         val meta, emit: done
 
     script:

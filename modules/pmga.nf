@@ -6,6 +6,7 @@ process pmga {
         tuple val(meta), path(assembly), path(mlst_out)
     output:
         tuple val(meta), path("${meta.id}sta.txt"), emit: out
+        path("${meta.id}sta*")
 
     script:
     def prefix = meta.id
@@ -13,6 +14,6 @@ process pmga {
     scheme=\$(awk 'NR==1{print \$2}' ${mlst_out})
     pmga --blastdir /pmga/blastdbs -o pmga_out --force \\
         --species \${scheme} ${assembly}
-    cp pmga_out/${prefix}sta.txt .
+    cp pmga_out/${prefix}sta* .
     """
 }
