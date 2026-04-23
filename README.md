@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/sanibel_pipeline_logo.svg" alt="Sanibel logo" width="400"/>
+  <img src="assets/sanibel_pipeline_logo_v2.svg" alt="Sanibel logo" width="400"/>
 </p>
 
 <p align="center">
