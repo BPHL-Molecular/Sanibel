@@ -1,9 +1,9 @@
-# Input / Output absolute path, no trailing slash "/"
+# Input / Output absolute paths, no trailing slash "/"
 input:  "/full/path/to/fastqs"
 output: "/full/path/to/output"
 
-# non-HiPerGator users: set this to your BMGAP2 analysis_scripts directory
-bmgap2_db:  "/blue/bphl-florida/share/bmgap2"
+# non-HiPerGator users: uncomment and set your BMGAP2 analysis_scripts directory
+# bmgap2_db:  "/full/path/to/bmgap2/analysis_scripts"
 
-# non-HiPerGator users: set this to your Kraken2 database directory
-kraken_db:  "/blue/bphl-florida/share/kraken2_databases/k2_standard_8GB_20260226"
+# non-HiPerGator users: uncomment and set your Kraken2 database directory
+# kraken_db:  "/full/path/to/kraken2/database"

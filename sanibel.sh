@@ -20,5 +20,10 @@ export NXF_APPTAINER_CACHEDIR=/path/to/singularity/cache
 # Run pipeline
 nextflow run sanibel.nf -profile apptainer -params-file params.yaml
 
+# Rename output directory with timestamp
+dt=$(date "+%Y%m%d%H%M%S")
+output_dir=$(python3 -c "import yaml; print(yaml.safe_load(open('params.yaml'))['output'])")
+mv "$output_dir" "${output_dir}-${dt}"
+
 # Cleanup (disabled for troubleshooting runs)
 #rm -rf ./work ./cache

@@ -1,4 +1,6 @@
-<h1 align="center">Sanibel - Bacterial WGS Analysis Pipeline</h1>
+<p align="center">
+  <img src="assets/sanibel_pipeline_logo.svg" alt="Sanibel logo" width="400"/>
+</p>
 
 <p align="center">
   <em>⚠️ For research use only. Results were obtained by procedures that were not CLIA validated.</em>
@@ -26,14 +28,11 @@ Sanibel is FL-BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis p
 
 ## 💻 Resource Requirements
 
-The pipeline is designed for HPC environments. The most resource-intensive step is **Unicycler** (*de novo* assembly via SPAdes), which runs once per sample.
+Sanibel can run on any system with Nextflow and Apptainer installed, but is **strongly recommended to run on an HPC environment**. The most resource-intensive step is **Unicycler** (*de novo* assembly via SPAdes), which runs once per sample.
 
-| Resource | Recommended | Minimum |
-|----------|-------------|---------|
-| CPUs | 20 (runs 2 assemblies in parallel) | 4 (1 assembly at a time, slower) |
-| RAM | 64 GB | 16 GB |
-| Disk (input + output) | ~10 GB per sample | — |
-| Disk (Kraken2 database) | ~8.5 GB | — |
+- **CPUs:** 20 recommended (runs 2 assemblies in parallel); minimum 4
+- **RAM:** 64 GB recommended; minimum 16 GB
+- **Disk:** ~10 GB per sample (input + output); ~8.5 GB for the Kraken2 database
 
 > **Running locally with fewer CPUs:** Nextflow will still run but your machine will be oversubscribed during assembly. Each Unicycler job requests 10 CPUs by default, on a machine with fewer cores the OS will time-share threads and assembly will complete more slowly but will not fail. You can lower the `cpus` value for `unicycler` in `nextflow.config` to match your hardware.
 
@@ -60,12 +59,16 @@ Edit `params.yaml` and set paths for your environment:
 input:  "/full/path/to/fastqs"
 output: "/full/path/to/output"
 
-# non-HiPerGator users: set this to your BMGAP2 analysis_scripts directory
-bmgap2_db:  "/blue/bphl-florida/share/bmgap2"
+# non-HiPerGator users: uncomment and set your BMGAP2 analysis_scripts directory
+# bmgap2_db:  "/full/path/to/bmgap2/analysis_scripts"
 
-# non-HiPerGator users: set this to your Kraken2 database directory
-kraken_db:  "/blue/bphl-florida/share/kraken2_databases/k2_standard_8GB_20260226"
+# non-HiPerGator users: uncomment and set your Kraken2 database directory
+# kraken_db:  "/full/path/to/kraken2/database"
 ```
+
+> **HiPerGator users:** only `input` and `output` need to be set. All other paths are pre-configured.
+
+> **Non-HiPerGator users:** uncomment `bmgap2_db` and `kraken_db` by removing the leading `#` and set their paths.
 
 ### 3. Configure sanibel.sh
 
@@ -87,12 +90,7 @@ For non-HiPerGator users, BMGAP2 must be installed before running the pipeline. 
 
 ## How to Run
 
-Place input FASTQ files in the directory specified by `params.input`. Both naming conventions are supported:
-
-| Convention | Example |
-|------------|---------|
-| Illumina native | `SAMPLE_S1_L001_R1_001.fastq.gz` |
-| Simplified | `SAMPLE_1.fastq.gz` |
+Place input FASTQ files in the directory specified by `params.input`. Both Illumina native (`SAMPLE_S1_L001_R1_001.fastq.gz`) and simplified (`SAMPLE_1.fastq.gz`) naming conventions are supported.
 
 
 ## 🐊 HiPerGator Usage
@@ -193,32 +191,13 @@ flowchart TD
 
 <small>
 
-| Module | Tool | Version |
-|--------|------|---------|
-| `fastqc` / `fastqc2` | FastQC | 0.12.1 |
-| `trimmomatic` | Trimmomatic | 0.40 |
-| `bbtools` | BBTools | 39.77 |
-| `multiqc` | MultiQC | 1.33 |
-| `mash` | Mash | 2.3 |
-| `unicycler` | Unicycler | 0.5.1 |
-| `kraken` | Kraken2 | 2.17.1 |
-| `quast` | QUAST | 5.3.0 |
-| `readssum` | Lyveset | 2.0.1 |
-| `prokka` | Prokka | 1.15.6 |
-| `amrfinder` | AMRFinderPlus | 4.2.7 |
-| `mlst` | MLST | 2.32.2 |
-| `pmga` | PMGA | 3.0.2 |
-| `bmgap2_amr` / `bmgap2_locusextractor` / `bmgap2_bmscan` | BMGAP2 | — |
-| `legsta` | Legsta | 0.5.1 |
-| `kleborate` | Kleborate | 3.2.4 |
-| `shigatyper` | ShigaTyper | 2.0.5 |
-| `emm_typing` | emm-typing-tool | 0.0.1 |
-| `seqsero2` | SeqSero2 | 1.3.2 |
-| `serotypefinder` | SerotypeFinder | 2.0.2 |
-| `plasmidfinder` | PlasmidFinder | 3.0.3 |
-| `seroba` | SeroBA | 2.0.5 |
-| `pasty` | pasty | 2.2.1 |
-| `kaptive_ab` / `kaptive_vp` | Kaptive | 3.2.0 |
+**Quality Control** — [FastQC](https://github.com/s-andrews/FastQC) · [Trimmomatic](https://github.com/usadellab/Trimmomatic) · [BBTools](https://github.com/bbushnell/BBTools) · [MultiQC](https://github.com/MultiQC/MultiQC)
+
+**Assembly & Annotation** — [Mash](https://github.com/marbl/Mash) · [Unicycler](https://github.com/rrwick/Unicycler) · [QUAST](https://github.com/ablab/quast) · [Prokka](https://github.com/tseemann/prokka) · [Lyveset](https://github.com/lskatz/lyve-SET)
+
+**Typing & Classification** — [Kraken2](https://github.com/DerrickWood/kraken2) · [MLST](https://github.com/tseemann/mlst) · [AMRFinderPlus](https://github.com/ncbi/amr) · [PMGA](https://github.com/CDCgov/PMGA) · [BMGAP2](https://github.com/CDCgov/BMGAP2)
+
+**Species-Specific** — [Legsta](https://github.com/MDU-PHL/legsta) · [Kleborate](https://github.com/klebgenomics/Kleborate) · [ShigaTyper](https://github.com/CFSAN-Biostatistics/shigatyper) · [emm-typing-tool](https://github.com/ukhsa-collaboration/emm-typing-tool) · [SeqSero2](https://github.com/denglab/SeqSero2) · [SerotypeFinder](https://bitbucket.org/genomicepidemiology/serotypefinder) · [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder) · [SeroBA](https://github.com/sanger-pathogens/seroba) · [pasty](https://github.com/rpetit3/pasty) · [Kaptive](https://github.com/klebgenomics/Kaptive)
 
 </small>
 
@@ -231,8 +210,6 @@ All per-sample results are written to `params.output/<sample_id>/`. Depending on
 | `sum_report.txt` | All | 21 | ID · species (Mash/Kraken) · MLST scheme/ST · serotype · QC metrics (reads, coverage, assembly stats, GC, CDS) |
 | `nm_sum_report.txt` | *N. meningitidis* only | 26 | ID · PMGA serogroup · BMGAP2 AMR alleles/phenotypes · vaccine antigen coverage (4CMenB) |
 | `hi_sum_report.txt` | *H. influenzae* only | 23 | ID · PMGA capsule type · BMGAP2 AMR alleles/phenotypes |
-
-> For Nm and Hi samples, `serotype` in `sum_report.txt` reflects the PMGA prediction. Species-specific details are in the dedicated reports.
 
 
 ## 🤝 Contributing
