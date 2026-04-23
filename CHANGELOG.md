@@ -108,11 +108,7 @@ BMGAP2 runs automatically on every sample; the python scripts check the MLST sch
 - `sanibel.nf`: fixed closure parameter warnings — unused params prefixed with `_`; params shadowing imported process names renamed.
 
 ### Architecture — Eliminated pyoutputs Accumulation Pattern
-The fragile in-place CSV accumulation pattern (`parse_assembly` → `parse_reads` → `parse_typing` mutating a shared file per sample) has been fully removed and replaced with a clean Nextflow data-flow approach.
-
-**Removed modules:** `modules/parse_reads.nf`, `modules/parse_typing.nf`, `modules/generate_row.nf`
-
-**Removed scripts:** `bin/collect_sample_data.py`, `bin/generate_report_row.py`
+The in-place CSV accumulation pattern (`parse_assembly` → `parse_reads` → `parse_typing` mutating a shared file per sample) has been fully removed and replaced with a clean Nextflow data-flow approach.
 
 #### Meta Enrichment
 After `parse_assembly`, the workflow now enriches `meta` inline:
