@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/sanibel_pipeline_logo_v2.svg" alt="Sanibel logo" width="400"/>
+  <img src="assets/sanibel_pipeline_logo_v2.svg" alt="Sanibel logo" width="600"/>
 </p>
 
 <p align="center">
@@ -15,10 +15,13 @@
 
 ## 🦠🧬 Overview
 
-Sanibel is FL-BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis pipeline. It performs quality control, *de novo* assembly, species identification, sequence typing and antimicrobial resistance (AMR) detection on paired-end Illumina short reads. Species-specific typing modules run automatically based on species identification results: *Legionella pneumophila* (Legsta), *Klebsiella* (Kleborate), *Shigella* (ShigaTyper), *Streptococcus pyogenes/dysgalactiae* (EMM typing), *Salmonella* (SeqSero2), *E. coli* (SerotypeFinder), *Streptococcus pneumoniae* (SeroBA), *Pseudomonas aeruginosa* (pasty), *Acinetobacter baumannii* (Kaptive), *Vibrio parahaemolyticus* (Kaptive), and *Neisseria meningitidis*/*Haemophilus influenzae* (PMGA). BMGAP2 provides enhanced AMR and antigen analysis for *Neisseria meningitidis* and *Haemophilus influenzae*. PlasmidFinder runs on all samples.
+Sanibel is FL-BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis pipeline. It performs quality control, *de novo* assembly, species identification, sequence typing and antimicrobial resistance (AMR) detection on paired-end Illumina short reads. 
 
 
-## ⚙️ Dependencies
+Species-specific typing modules run automatically based on species identification results: *Legionella pneumophila* (Legsta), *Klebsiella* (Kleborate), *Shigella* (ShigaTyper), *Streptococcus pyogenes/dysgalactiae* (EMM typing), *Salmonella* (SeqSero2), *E. coli* (SerotypeFinder), *Streptococcus pneumoniae* (SeroBA), *Pseudomonas aeruginosa* (pasty), *Acinetobacter baumannii* (Kaptive), *Vibrio parahaemolyticus* (Kaptive), and *Neisseria meningitidis*/*Haemophilus influenzae* (PMGA). BMGAP2 provides enhanced AMR and antigen analysis for *Neisseria meningitidis* and *Haemophilus influenzae*. PlasmidFinder runs on all samples.
+
+
+### ⚙️ Dependencies
 
 - **Nextflow** ≥ 22.10 — [installation guide](https://github.com/nextflow-io/nextflow)
 - **Apptainer/Singularity** — [installation guide](https://apptainer.org/docs/user/latest/)
@@ -26,7 +29,7 @@ Sanibel is FL-BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis p
 - **Conda** (for the SANIBEL environment)
 
 
-## 💻 Resource Requirements
+### 💻 Resource Requirements
 
 Sanibel can run on any system with Nextflow and Apptainer installed, but is **strongly recommended to run on an HPC environment**. The most resource-intensive step is **Unicycler** (*de novo* assembly via SPAdes), which runs once per sample.
 
@@ -39,9 +42,9 @@ Sanibel can run on any system with Nextflow and Apptainer installed, but is **st
 **Estimated runtime** (12 samples, 20 CPUs, HPC): ~3–4 hours total, dominated by Unicycler (~25 min/sample, 2 running in parallel).
 
 
-## 🛠️ Setup
+### 🛠️ Setup
 
-### 1. Create the conda environment
+#### 1. Create the conda environment
 
 ```bash
 $ conda create -n SANIBEL -c conda-forge -c bioconda python=3.10 pandas=1.5.3 openpyxl=3.1.5 biopython=1.78 mash=2.3 blast=2.17.0
@@ -50,7 +53,7 @@ $ conda activate SANIBEL
 
 `pandas`, `openpyxl`, `biopython`, `mash`, and `blast` are required by the BMGAP2 modules (used for Nm/Hi samples).
 
-### 2. Configure params.yaml
+#### 2. Configure params.yaml
 
 Edit `params.yaml` and set paths for your environment:
 
@@ -70,7 +73,7 @@ output: "/full/path/to/output"
 
 > **Non-HiPerGator users:** uncomment `bmgap2_db` and `kraken_db` by removing the leading `#` and set their paths.
 
-### 3. Configure sanibel.sh
+#### 3. Configure sanibel.sh
 
 Set `NXF_APPTAINER_CACHEDIR` to your image cache directory and add your email address for job notifications:
 
@@ -79,7 +82,7 @@ export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
 #SBATCH --mail-user=your@email.gov
 ```
 
-## BMGAP2 Setup
+### BMGAP2 Setup
 
 > **HiPerGator users:** BMGAP2 is already installed and configured on the cluster. The `bmgap2_db` path in `params.yaml` is pre-set. Skip this section entirely.
 
@@ -88,22 +91,22 @@ export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
 For non-HiPerGator users, BMGAP2 must be installed before running the pipeline. Its scripts run directly on the host (not inside a container) and are invoked by the three `bmgap2_*` Nextflow modules. Follow the [BMGAP2 installation instructions](https://github.com/CDCgov/BMGAP2) to clone the repository and build all required databases, then set `bmgap2_db` in `params.yaml` to the `analysis_scripts` directory.
 
 
-## How to Run
+### How to Run
 
 Place input FASTQ files in the directory specified by `params.input`. Both Illumina native (`SAMPLE_S1_L001_R1_001.fastq.gz`) and simplified (`SAMPLE_1.fastq.gz`) naming conventions are supported.
 
 
-## 🐊 HiPerGator Usage
+### 🐊 HiPerGator Usage
 ```bash
 sbatch sanibel.sh
 ```
 
-## ⚡ Local Usage
+### ⚡ Local Usage
 ```bash
 nextflow run sanibel.nf -profile apptainer -params-file params.yaml
 ```
 
-## Workflow Diagram
+### Workflow Diagram
 
 ```mermaid
 flowchart TD
@@ -185,9 +188,9 @@ flowchart TD
     style X fill:#f96,stroke:#333,stroke-width:3px
 ```
 
-### Modules
+### 🧩 Modules
 
-<small>Sanibel is made possible thanks to the following tools:</small>
+Sanibel is made possible thanks to the following tools:
 
 <small>
 
@@ -201,7 +204,7 @@ flowchart TD
 
 </small>
 
-## 📁 Output
+### 📁 Output
 
 All per-sample results are written to `params.output/<sample_id>/`. Depending on which species are in the run, up to three summary files are written to `params.output/`:
 
@@ -212,11 +215,13 @@ All per-sample results are written to `params.output/<sample_id>/`. Depending on
 | `hi_sum_report.txt` | *H. influenzae* only | 23 | ID · PMGA capsule type · BMGAP2 AMR alleles/phenotypes |
 
 
-## 🤝 Contributing
+### 🤝 Contributing
 We welcome contributions to make Sanibel better! Feel free to open issues or submit pull requests to suggest any additional features or enhancements!
 
-## 📧 Contact
+### 📧 Contact
 **Email**: bphl-sebioinformatics@flhealth.gov
 
-## ⚖️ License
-Sanibel is licensed under the [Apache License ](https://github.com/BPHL-Molecular/Sanibel/blob/main/LICENSE).
+### ⚖️ License
+Sanibel is licensed under the [Apache License](https://github.com/BPHL-Molecular/Sanibel/blob/main/LICENSE).
+
+[BMGAP2](https://github.com/CDCgov/BMGAP2) is developed by the CDC and is also distributed under the Apache License 2.0. A copy is included in [`licenses/BMGAP2_LICENSE`](licenses/BMGAP2_LICENSE).
