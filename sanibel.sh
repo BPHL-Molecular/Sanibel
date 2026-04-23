@@ -22,7 +22,7 @@ nextflow run sanibel.nf -profile apptainer -params-file params.yaml
 
 # Rename output directory with timestamp
 dt=$(date "+%Y%m%d%H%M%S")
-output_dir=$(python3 -c "import yaml; print(yaml.safe_load(open('params.yaml'))['output'])")
+output_dir=$(grep '^output:' params.yaml | sed 's/output:[[:space:]]*//' | tr -d '"')
 mv "$output_dir" "${output_dir}-${dt}"
 
 # Cleanup (disabled for troubleshooting runs)
