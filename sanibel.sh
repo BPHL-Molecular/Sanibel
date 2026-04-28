@@ -3,7 +3,7 @@
 #SBATCH --qos=bphl-umbrella
 #SBATCH --job-name=sanibel
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=20
+#SBATCH --cpus-per-task=40
 #SBATCH --mem=200gb
 #SBATCH --time=48:00:00
 #SBATCH --output=sanibel.%j.out
@@ -15,7 +15,7 @@ module load conda nextflow apptainer
 conda activate SANIBEL
 
 # Path to container image cache directory
-export NXF_APPTAINER_CACHEDIR=/path/to/singularity/cache
+export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
 
 # Run pipeline
 nextflow run sanibel.nf -profile apptainer -params-file params.yaml

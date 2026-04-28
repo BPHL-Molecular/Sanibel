@@ -312,6 +312,25 @@ def get_acinetobacter_serotype(sample_dir, sample_id):
         return 'Not detected'
 
 
+def get_vibrio_serotype(sample_dir, sample_id):
+    k_txt = os.path.join(sample_dir, 'kaptive_vp', f'{sample_id}_vp_k.txt')
+    o_txt = os.path.join(sample_dir, 'kaptive_vp', f'{sample_id}_vp_o.txt')
+    if not os.path.isfile(k_txt) and not os.path.isfile(o_txt):
+        return None
+    try:
+        k_locus, k_type = _parse_kaptive_txt(k_txt) if os.path.isfile(k_txt) else ('', '')
+        o_locus, o_type = _parse_kaptive_txt(o_txt) if os.path.isfile(o_txt) else ('', '')
+        parts = []
+        if k_locus or k_type:
+            parts.append(f"{k_locus}({k_type})" if k_locus and k_type else k_locus or k_type)
+        if o_locus or o_type:
+            parts.append(f"{o_locus}({o_type})" if o_locus and o_type else o_locus or o_type)
+        return '/'.join(parts) if parts else 'Not detected'
+    except Exception as e:
+        print(f"Warning: Could not parse Kaptive VP output for {sample_id}: {e}", file=sys.stderr)
+        return 'Not detected'
+
+
 def get_pseudomonas_serotype(sample_dir, sample_id):
     pasty_tsv = os.path.join(sample_dir, 'pasty', f'{sample_id}.tsv')
     if not os.path.isfile(pasty_tsv):
@@ -507,8 +526,8 @@ HEADER_STANDARD = [
 
 HEADER_NM = [
     'sampleID',
-    'pmga_species', 'nm_serogroup', 'serotype_notes',
-    'bmgap2_species', 'bmgap2_mlst_st', 'bmgap2_mlst_cc', 'predicted_resistance',
+    'pmga_species', 'nm_serogroup',
+    'bmgap2_species', 'bmgap2_mlst_st', 'bmgap2_mlst_cc', 'serotype_notes', 'predicted_resistance',
     'penA_allele', 'penA_mutations', 'penA_phenotype',
     'gyrA_allele', 'gyrA_mutations', 'gyrA_phenotype',
     'parC_allele', 'parC_phenotype',
@@ -520,8 +539,8 @@ HEADER_NM = [
 
 HEADER_HI = [
     'sampleID',
-    'pmga_species', 'hi_serotype', 'serotype_notes',
-    'bmgap2_species', 'bmgap2_mlst_st', 'bmgap2_mlst_cc', 'predicted_resistance',
+    'pmga_species', 'hi_serotype',
+    'bmgap2_species', 'bmgap2_mlst_st', 'bmgap2_mlst_cc', 'serotype_notes', 'predicted_resistance',
     'ftsI_allele', 'ftsI_mutations', 'ftsI_phenotype',
     'gyrA_allele', 'gyrA_mutations', 'gyrA_phenotype',
     'parC_allele', 'parC_phenotype',
@@ -590,8 +609,8 @@ def main():
                 sid,
                 pmga_sp,
                 pmga['prediction'] or NO_DATA,
-                pmga['serotype_notes'],
                 bm['bmgap2_species'], bm['bmgap2_mlst_st'], bm['bmgap2_mlst_cc'],
+                pmga['serotype_notes'],
                 bm['predicted_resistance'],
                 bm['penA_allele'], bm['penA_mutations'], bm['penA_phenotype'],
                 bm['gyrA_allele'], bm['gyrA_mutations'], bm['gyrA_phenotype'],
@@ -617,8 +636,8 @@ def main():
                 sid,
                 pmga_sp,
                 pmga['prediction'] or NO_DATA,
-                pmga['serotype_notes'],
                 bm['bmgap2_species'], bm['bmgap2_mlst_st'], bm['bmgap2_mlst_cc'],
+                pmga['serotype_notes'],
                 bm['predicted_resistance'],
                 bm['penA_allele'], bm['penA_mutations'], bm['penA_phenotype'],
                 bm['gyrA_allele'], bm['gyrA_mutations'], bm['gyrA_phenotype'],
@@ -641,6 +660,7 @@ def main():
                 lambda: get_shigella_serotype(sample_dir, sid),
                 lambda: get_pneumococcal_serotype(sample_dir, sid),
                 lambda: get_acinetobacter_serotype(sample_dir, sid),
+                lambda: get_vibrio_serotype(sample_dir, sid),
                 lambda: get_pseudomonas_serotype(sample_dir, sid),
             ]:
                 result = getter()
