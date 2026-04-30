@@ -526,8 +526,7 @@ HEADER_STANDARD = [
 
 HEADER_NM = [
     'sampleID',
-    'pmga_species', 'nm_serogroup',
-    'bmgap2_species', 'bmgap2_mlst_st', 'bmgap2_mlst_cc', 'serotype_notes', 'predicted_resistance',
+    'pmga_species', 'bmgap2_species', 'bmgap2_mlst_st', 'bmgap2_mlst_cc', 'serotype_notes', 'nm_serogroup', 'predicted_resistance',
     'penA_allele', 'penA_mutations', 'penA_phenotype',
     'gyrA_allele', 'gyrA_mutations', 'gyrA_phenotype',
     'parC_allele', 'parC_phenotype',
@@ -539,8 +538,7 @@ HEADER_NM = [
 
 HEADER_HI = [
     'sampleID',
-    'pmga_species', 'hi_serotype',
-    'bmgap2_species', 'bmgap2_mlst_st', 'bmgap2_mlst_cc', 'serotype_notes', 'predicted_resistance',
+    'pmga_species', 'bmgap2_species', 'bmgap2_mlst_st', 'bmgap2_mlst_cc', 'serotype_notes', 'hi_serotype', 'predicted_resistance',
     'ftsI_allele', 'ftsI_mutations', 'ftsI_phenotype',
     'gyrA_allele', 'gyrA_mutations', 'gyrA_phenotype',
     'parC_allele', 'parC_phenotype',
@@ -608,9 +606,9 @@ def main():
             nm_row = [
                 sid,
                 pmga_sp,
-                pmga['prediction'] or NO_DATA,
                 bm['bmgap2_species'], bm['bmgap2_mlst_st'], bm['bmgap2_mlst_cc'],
                 pmga['serotype_notes'],
+                pmga['prediction'] or NO_DATA,
                 bm['predicted_resistance'],
                 bm['penA_allele'], bm['penA_mutations'], bm['penA_phenotype'],
                 bm['gyrA_allele'], bm['gyrA_mutations'], bm['gyrA_phenotype'],
@@ -635,9 +633,9 @@ def main():
             hi_row = [
                 sid,
                 pmga_sp,
-                pmga['prediction'] or NO_DATA,
                 bm['bmgap2_species'], bm['bmgap2_mlst_st'], bm['bmgap2_mlst_cc'],
                 pmga['serotype_notes'],
+                pmga['prediction'] or NO_DATA,
                 bm['predicted_resistance'],
                 bm['penA_allele'], bm['penA_mutations'], bm['penA_phenotype'],
                 bm['gyrA_allele'], bm['gyrA_mutations'], bm['gyrA_phenotype'],

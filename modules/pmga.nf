@@ -13,6 +13,7 @@ process pmga {
     """
     scheme=\$(awk 'NR==1{print \$2}' ${mlst_out})
     pmga --blastdir /pmga/blastdbs -o pmga_out --force \\
+        --threads ${task.cpus} \\
         --species \${scheme} ${assembly}
     cp pmga_out/${prefix}sta* .
     """
