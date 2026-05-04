@@ -21,17 +21,26 @@ def parse_mash(distances_file):
     dist   = fields[2] if len(fields) > 2 else 'NA'
 
     if '-.-' in ref_id:
-        acc_part, org_part = ref_id.split('-.-', 1)
-        m = re.search(r'((?:GC[FA]|N[CZ])_[A-Za-z0-9]+(?:\.[0-9]+)?)', acc_part)
-        if m:
-            accession = m.group(1)
+        segs = ref_id.split('-.-')
+        if len(segs) >= 3:
+            # Format: pre -.- accession -.- organism.fna (e.g. some Listeria refs)
+            acc_str  = segs[-2]
+            org_part = segs[-1]
+            m = re.search(r'((?:GC[FA]|N[CZ])_[A-Za-z0-9]+(?:\.[0-9]+)?)', acc_str)
+            accession = m.group(1) if m else (acc_str.rsplit('-', 1)[-1] or 'Unknown')
         else:
-            accession = acc_part.rsplit('-', 1)[-1] or 'Unknown'
-        org_seg   = re.sub(r'\.fna.*', '', org_part)
-        parts     = org_seg.split('_')
-        genus     = parts[0] if parts else 'Unknown'
-        species   = parts[1] if len(parts) > 1 else 'unknown'
-        asm_name  = '_'.join(parts[2:]) if len(parts) > 2 else '.'
+            # Standard format: acc_part -.- organism.fna
+            acc_part, org_part = segs
+            m = re.search(r'((?:GC[FA]|N[CZ])_[A-Za-z0-9]+(?:\.[0-9]+)?)', acc_part)
+            if m:
+                accession = m.group(1)
+            else:
+                accession = acc_part.rsplit('-', 1)[-1] or 'Unknown'
+        org_seg  = re.sub(r'\.fna.*', '', org_part)
+        parts    = [p for p in org_seg.split('_') if p]
+        genus    = parts[0] if parts else 'Unknown'
+        species  = parts[1] if len(parts) > 1 else 'unknown'
+        asm_name = '_'.join(parts[2:]) if len(parts) > 2 else '.'
     else:
         accession = 'Unknown'
         genus     = 'Unknown'

@@ -4,9 +4,14 @@ All notable changes to Sanibel are documented in this file.
 
 ---
 
-## [2.0.0] — 2026-04-22
+## [2.0.0] — 2026-05-04
 
 ### Bug Fixes
+- **`bin/parse_assembly.py`** — Fixed parsing of MASH reference IDs containing two `-.-` separators (e.g. some *Listeria monocytogenes* RefSeq entries: `...-PRJNA224116-.-GCF_000307085.1-.-Listeria_monocytogenes_...`). The previous `split('-.-', 1)` produced a wrong accession (`PRJNA224116`) and a malformed genus (`GCF`). The fix splits on all `-.-` occurrences and selects `segs[-2]`/`segs[-1]` as accession/organism for entries with ≥ 3 segments.
+- **`bin/parse_assembly.py`** — Fixed genus/species extraction for reference organisms whose names begin with an underscore (e.g. `_Cellvibrio_japonicus`). Empty strings produced by leading underscores are now filtered out before indexing the parts list.
+- **`summary_report.py`** — Added missing `get_vibrio_serotype()` implementation; *Vibrio parahaemolyticus* serotype from Kaptive VP was previously never reported in `sum_report.txt`.
+- **`summary_report.py`** — Fixed NM/HI summary report column order: `bmgap2_species`, `bmgap2_mlst_st`, `bmgap2_mlst_cc`, and `serotype_notes` now precede `nm_serogroup`/`hi_serotype` and `predicted_resistance`.
+- **`bin/run_bmgap2_locusextractor.py`** — Fixed `PermissionError` on `allele_reference.txt` caused by file ownership after BMGAP2 refactor; resolved on HiPerGator with `chmod g+rw`.
 - **`kaptive_ab`** — Fixed command for Kaptive v3: executable renamed from `kaptive.py` to `kaptive`; replaced file-path DB arguments with built-in keywords `ab_k` and `ab_o`.
 - **`emm_typing`** — Fixed EMBOSS library conflict preventing execution. Added `containerOptions "--bind ${task.workDir}:/EMBOSS-6.6.0/emboss/.libs"`.
 - **`sanibel.nf`** — Fixed `_` reserved identifier in two closures (renamed to `_id` / `_ids`).
@@ -17,6 +22,16 @@ All notable changes to Sanibel are documented in this file.
 - **`summary_report.py`** — Added missing serotype parsers: `get_pneumococcal_serotype()` (SeroBA), `get_acinetobacter_serotype()` (Kaptive), `get_pseudomonas_serotype()` (pasty).
 - **`summary_report.py`** — Report column order updated: species ID, MLST, and serotype now precede QC metrics in `sum_report.txt`. Nm/Hi species-specific reports (`nm_sum_report.txt`, `hi_sum_report.txt`) condensed to species-only columns.
 - **`params.yaml`** — Added `kraken_db` parameter.
+
+### Improvements
+- **`modules/pmga.nf`** — Added `--threads ${task.cpus}` flag; PMGA previously defaulted to 1 thread regardless of the CPU allocation in `nextflow.config`.
+- **`nextflow.config`** — Increased BMGAP2 process CPU/memory allocations (`bmgap2_amr`: 4 CPU / 4 GB; `bmgap2_locusextractor`: 4 CPU / 8 GB; `bmgap2_bmscan`: 4 CPU / 4 GB). Added explicit resource block for `pmga` (4 CPU / 8 GB).
+- **`sanibel.sh`** — Increased SLURM allocation to 40 CPUs / 200 GB, enabling 4 Unicycler assemblies to run in parallel (down from ~3–4 hrs to ~75 min for a 12-sample run). Added post-run timestamp rename of the output directory.
+- **`nextflow.config`** — Default `kraken_db` reverted to `minikraken2_v1_8GB_201904`; the newer `k2_standard_8GB_20260226` database showed lower species-level classification rates due to increased k-mer ambiguity from a larger reference genome set compressed into the same 8 GB space.
+
+### README
+- Reorganised **Modules** section: Lyveset moved to Quality Control; PMGA and BMGAP2 moved to Species-Specific; added new **AMR & Mobile Genetic Elements** category for AMRFinderPlus and PlasmidFinder.
+- Clarified disk requirement note to specify it applies to the minikraken2 / standard-8 databases.
 
 ### Complete DSL2 Rewrite
 The pipeline has been fully rewritten in modern Nextflow DSL2.
