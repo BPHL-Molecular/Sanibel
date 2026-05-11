@@ -109,7 +109,7 @@ nextflow run sanibel.nf -profile apptainer -params-file params.yaml
 ### Workflow Diagram
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[Paired FASTQ Input] --> B[FastQC]
     B --> C[Trimmomatic]
     C --> D[BBTools]
@@ -128,64 +128,32 @@ flowchart TD
 
     G --> O[parse_assembly]
     J --> O
+    O --> M
     O --> P[readssum]
     D --> P
-    P --> Q[parse_reads]
-    Q --> M
 
-    M --> R[parse_typing]
-    L --> R
-    I --> R
-
-    R --> V[Species-specific analyses]
-
-    V -->|Legionella pneumophila| V1[Legsta]
-    V -->|Klebsiella| V2[Kleborate]
-    V -->|Shigella| V3[ShigaTyper]
-    V -->|Streptococcus pyogenes / dysgalactiae| V4[EMM Typing]
-    V -->|Salmonella| V5[SeqSero2]
-    V -->|E. coli| V6[SerotypeFinder]
-    V -->|All samples| V7[PlasmidFinder]
-    V -->|Streptococcus pneumoniae| V8[SeroBA]
-    V -->|Pseudomonas aeruginosa| V9[pasty]
-    V -->|Acinetobacter baumannii| V10[Kaptive AB]
-    V -->|Vibrio parahaemolyticus| V11[Kaptive VP]
-    V -->|Neisseria meningitidis / H. influenzae| V12[PMGA]
-    V12 --> S[BMGAP2 AMR]
+    O --> SP[Species-Specific Modules]
+    L --> NM[PMGA]
+    NM --> S[BMGAP2 AMR]
     S --> T[BMGAP2 LocusExtractor]
     T --> U[BMGAP2 BMScan]
 
-    V1 --> W[generate_row]
-    V2 --> W
-    V3 --> W
-    V4 --> W
-    V5 --> W
-    V6 --> W
-    V7 --> W
-    V8 --> W
-    V9 --> W
-    V10 --> W
-    V11 --> W
-    U --> W
+    O --> X[summary_report]
+    P --> X
+    M --> X
+    L --> X
+    I --> X
+    SP --> X
+    U --> X
 
-    W --> X[sum_report.txt / nm_sum_report.txt / hi_sum_report.txt]
+    X --> Y[sum_report.txt\nnm_sum_report.txt\nhi_sum_report.txt]
 
-    style S fill:#9cf,stroke:#333
-    style T fill:#9cf,stroke:#333
-    style U fill:#9cf,stroke:#333
-    style V1 fill:#fef,stroke:#333
-    style V2 fill:#fef,stroke:#333
-    style V3 fill:#fef,stroke:#333
-    style V4 fill:#fef,stroke:#333
-    style V5 fill:#fef,stroke:#333
-    style V6 fill:#fef,stroke:#333
-    style V7 fill:#fef,stroke:#333
-    style V8 fill:#fef,stroke:#333
-    style V9 fill:#fef,stroke:#333
-    style V10 fill:#fef,stroke:#333
-    style V11 fill:#fef,stroke:#333
-    style V12 fill:#fef,stroke:#333
-    style X fill:#f96,stroke:#333,stroke-width:3px
+    style SP fill:#fef,stroke:#333,color:#000
+    style S fill:#9cf,stroke:#333,color:#000
+    style T fill:#9cf,stroke:#333,color:#000
+    style U fill:#9cf,stroke:#333,color:#000
+    style X fill:#f96,stroke:#333,stroke-width:2px,color:#000
+    style Y fill:#f96,stroke:#333,stroke-width:3px,color:#000
 ```
 
 ### 🧩 Modules
