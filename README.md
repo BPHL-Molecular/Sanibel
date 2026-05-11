@@ -15,7 +15,7 @@
 
 ## 🦠🧬 Overview
 
-Sanibel is Florida BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis pipeline. It performs quality control, *de novo* assembly, species identification, sequence typing and antimicrobial resistance (AMR) detection on paired-end Illumina short reads. 
+Sanibel is Florida BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis pipeline. It performs quality control, *de novo* assembly, taxonomic classification, species identification, sequence typing and antimicrobial resistance (AMR) detection on paired-end Illumina short reads. 
 
 
 Species-specific typing modules run automatically based on species identification results: *Legionella pneumophila* (Legsta), *Klebsiella* (Kleborate), *Shigella* (ShigaTyper), *Streptococcus pyogenes/dysgalactiae* (EMM typing), *Salmonella* (SeqSero2), *E. coli* (SerotypeFinder), *Streptococcus pneumoniae* (SeroBA), *Pseudomonas aeruginosa* (pasty), *Acinetobacter baumannii* (Kaptive), *Vibrio parahaemolyticus* (Kaptive), and *Neisseria meningitidis*/*Haemophilus influenzae* (PMGA). BMGAP2 provides enhanced AMR and antigen analysis for *Neisseria meningitidis* and *Haemophilus influenzae*. PlasmidFinder runs on all samples.
@@ -31,7 +31,7 @@ Species-specific typing modules run automatically based on species identificatio
 
 ### 💻 Resource Requirements
 
-Sanibel can run on any system with Nextflow and Apptainer installed, but is **strongly recommended to run on an HPC environment**. The most resource-intensive step is **Unicycler** (*de novo* assembly via SPAdes), which runs once per sample.
+Sanibel can run on any system with Nextflow and Apptainer installed, but is **strongly recommended to run on an HPC environment**. The most resource intensive step is **Unicycler** (*de novo* assembly via SPAdes), which runs once per sample.
 
 - **CPUs:** 20 recommended (runs 2 assemblies in parallel); minimum 4
 - **RAM:** 64 GB recommended; minimum 16 GB
@@ -86,7 +86,7 @@ export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
 
 > **HiPerGator users:** BMGAP2 is already installed and configured on the cluster. The `bmgap2_db` path in `params.yaml` is pre-set. Skip this section entirely.
 
-[BMGAP2](https://github.com/CDCgov/BMGAP2) (*Bacterial Meningitis Genome Analysis Pipeline 2*) runs automatically on every sample. The Python scripts it invokes check the MLST scheme internally and skip any sample that is not *N. meningitidis* or *H. influenzae*.
+[BMGAP2](https://github.com/CDCgov/BMGAP2) (*Bacterial Meningitis Genome Analysis Pipeline 2*) runs automatically on *Neisseria meningitidis* and *Haemophilus influenzae* samples. The custom python scripts check the MLST scheme internally and skip any sample that is not *N. meningitidis* or *H. influenzae*.
 
 For non-HiPerGator users, BMGAP2 must be installed before running the pipeline. Its scripts run directly on the host (not inside a container) and are invoked by the three `bmgap2_*` Nextflow modules. Follow the [BMGAP2 installation instructions](https://github.com/CDCgov/BMGAP2) to clone the repository and build all required databases, then set `bmgap2_db` in `params.yaml` to the `analysis_scripts` directory.
 
@@ -176,7 +176,7 @@ Sanibel is made possible thanks to the following tools:
 
 ### 📁 Output
 
-All per-sample results are written to `params.output/<sample_id>/`. Depending on which species are in the run, up to three summary files are written to `params.output/`:
+All results are written to `params.output/<sample_id>/`. Depending on which species are in the run, up to three summary files are written to `params.output/`:
 
 | File | Samples | Cols | Key fields |
 |------|---------|------|------------|
