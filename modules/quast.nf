@@ -1,15 +1,14 @@
 process quast {
-   input:
-      val x
-   output:
-      //path 'xfile.txt', emit: aLook
-      val "${params.output}/${x}"
-      //path "${params.output}/${x}_trim_2.fastq", emit: trimR2
-      
-   """     
-   
-   quast.py -o ${params.output}/${x}/${x}_assembly/quast_results/ ${params.output}/${x}/${x}_assembly/${x}.fasta
+    tag "${meta.id}"
+    publishDir "${params.output}/${meta.id}/assembly", mode: 'copy'
 
-     
-   """
+    input:
+        tuple val(meta), path(assembly)
+    output:
+        tuple val(meta), path("quast_results/report.tsv"), emit: report
+
+    script:
+    """
+    quast.py --threads ${task.cpus} -o quast_results ${assembly}
+    """
 }

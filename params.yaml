@@ -1,5 +1,9 @@
-input          : "/<full path to Sanibel>/fastqs"
-output    : "/<full path to Sanibel>/output"
+# Input / Output absolute paths, no trailing slash "/"
+input:  "/full/path/to/fastqs"
+output: "/full/path/to/output"
 
-# Note: The parameter "input" and "output" are the absolute path. Do not include the "/" at the end of the paths.
+# non-HiPerGator users: uncomment and set your BMGAP2 analysis_scripts directory
+# bmgap2_db:  "/full/path/to/bmgap2/analysis_scripts"
 
+# non-HiPerGator users: uncomment and set your Kraken2 database directory
+# kraken_db:  "/full/path/to/kraken2/database"

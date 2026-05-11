@@ -1,17 +1,20 @@
 process trimmomatic {
-   input:
-      val x
-   output:
-      //path 'xfile.txt', emit: aLook
-      val "${x}"
-      //path "${params.output}/${x}_trim_2.fastq", emit: trimR2
-      
-   """     
+    tag "${meta.id}"
+    publishDir "${params.output}/${meta.id}/trimmomatic", mode: 'copy'
 
-   trimmomatic PE -phred33 -trimlog ${params.output}/${x}/${x}.log ${params.output}/${x}/${x}_1.fastq.gz ${params.output}/${x}/${x}_2.fastq.gz ${params.output}/${x}/${x}_trim_1.fastq.gz ${params.output}/${x}/${x}_unpaired_trim_1.fastq.gz ${params.output}/${x}/${x}_trim_2.fastq.gz ${params.output}/${x}/${x}_unpaired_trim_2.fastq.gz ILLUMINACLIP:/Trimmomatic-0.39/adapters/NexteraPE-PE.fa:2:30:10 SLIDINGWINDOW:5:20 MINLEN:71 TRAILING:20
-   
-   rm ${params.output}/${x}/${x}_unpaired_trim_*.fastq.gz
-   rm ${params.output}/${x}/${x}_1.fastq.gz ${params.output}/${x}/${x}_2.fastq.gz
+    input:
+        tuple val(meta), path(reads)
+    output:
+        tuple val(meta), path("${meta.id}_trim_{1,2}.fastq.gz"), emit: reads
 
-   """
+    script:
+    def prefix = meta.id
+    """
+    trimmomatic PE -threads ${task.cpus} -phred33 \\
+        -trimlog ${prefix}.log \\
+        ${reads[0]} ${reads[1]} \\
+        ${prefix}_trim_1.fastq.gz ${prefix}_unpaired_trim_1.fastq.gz \\
+        ${prefix}_trim_2.fastq.gz ${prefix}_unpaired_trim_2.fastq.gz \\
+        ILLUMINACLIP:/usr/local/bin/adapters/NexteraPE-PE.fa:2:30:10 SLIDINGWINDOW:5:20 MINLEN:71 TRAILING:20
+    """
 }
