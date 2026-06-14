@@ -14,8 +14,6 @@ import sys
 
 NO_DATA = 'No data'
 
-# Helpers
-
 def normalize_le_value(val):
     if not val:
         return 'Not detected'
@@ -39,8 +37,6 @@ def find_gene(gene_dict, gene_name):
             return value
     return None
 
-
-# Per-file parsers
 
 def parse_assembly_stats(filepath):
     with open(filepath) as f:
@@ -141,6 +137,159 @@ def parse_pmga(filepath):
     except Exception as e:
         print(f"Warning: Could not parse PMGA file {filepath}: {e}", file=sys.stderr)
     return result
+
+
+def parse_aggregate_species(filepath):
+    empty = {'genus': NO_DATA, 'contamination_flag': NO_DATA}
+    try:
+        with open(filepath) as f:
+            f.readline()  # skip header
+            line = f.readline().strip()
+        if not line:
+            return empty
+        parts = line.split('\t')
+        genus       = parts[0] if len(parts) > 0 else NO_DATA
+        contam_flag = parts[4] if len(parts) > 4 else NO_DATA
+        return {'genus': genus, 'contamination_flag': contam_flag}
+    except Exception:
+        return empty
+
+
+def parse_skani(filepath):
+    EMPTY = {'ani': 'ANI < 80%', 'confirmed_species': 'NO ID', 'align_fraction': NO_DATA, 'reference': NO_DATA}
+    try:
+        rows = []
+        with open(filepath) as f:
+            f.readline()
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split('\t')
+                if len(parts) < 5:
+                    continue
+                try:
+                    ani = float(parts[2])
+                except ValueError:
+                    continue
+                rows.append((ani, parts))
+        if not rows:
+            return EMPTY
+        rows.sort(key=lambda x: x[0], reverse=True)
+        best_ani, best_parts = rows[0]
+        ref_basename = os.path.basename(best_parts[0])
+        if ref_basename.endswith('.fna'):
+            ref_basename = ref_basename[:-4]
+        confirmed_species = ref_basename if ref_basename else NO_DATA
+        align_fraction    = best_parts[4] if len(best_parts) > 4 else NO_DATA
+        # Ref_name is col 5; the accession is the first whitespace-delimited token
+        ref_name_col  = best_parts[5].strip() if len(best_parts) > 5 else ''
+        skani_ref_acc = ref_name_col.split()[0] if ref_name_col else NO_DATA
+        return {
+            'ani':               f"{best_ani:.3f}",
+            'confirmed_species': confirmed_species,
+            'align_fraction':    align_fraction,
+            'reference':         skani_ref_acc if skani_ref_acc else NO_DATA,
+        }
+    except Exception:
+        return EMPTY
+
+
+# Synonym pairs for 16S display label merging — mirrors SYNONYMOUS_PAIRS in aggregate_species_id.py
+_BLAST16S_SYNONYM_PAIRS = {
+    frozenset({'escherichia',    'shigella'}),
+    frozenset({'klebsiella',     'enterobacter'}),
+    frozenset({'klebsiella',     'raoultella'}),
+    frozenset({'salmonella',     'citrobacter'}),
+    frozenset({'yersinia',       'serratia'}),
+    frozenset({'hafnia',         'escherichia'}),
+    frozenset({'haemophilus',    'aggregatibacter'}),
+    frozenset({'haemophilus',    'pasteurella'}),
+    frozenset({'neisseria',      'kingella'}),
+    frozenset({'neisseria',      'eikenella'}),
+    frozenset({'streptococcus',  'lactococcus'}),
+    frozenset({'streptococcus',  'enterococcus'}),
+    frozenset({'staphylococcus', 'macrococcus'}),
+    frozenset({'staphylococcus', 'mammaliicoccus'}),
+    frozenset({'mycobacterium',  'mycobacteroides'}),
+    frozenset({'mycobacterium',  'mycolicibacterium'}),
+    frozenset({'campylobacter',  'arcobacter'}),
+    frozenset({'campylobacter',  'aliarcobacter'}),
+    frozenset({'campylobacter',  'helicobacter'}),
+    frozenset({'listeria',       'brochothrix'}),
+    frozenset({'bacillus',       'paenibacillus'}),
+}
+
+
+def parse_blast16s_result(filepath, final_genus=None):
+    MIN_LENGTH = 400
+    MIN_PIDENT = 97.0
+    qualifying = []
+    try:
+        with open(filepath) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split('\t')
+                if len(parts) < 13 or parts[0] == 'qseqid':
+                    continue
+                try:
+                    pident   = float(parts[2])
+                    length   = int(parts[3])
+                    sstart   = int(parts[8])
+                    send     = int(parts[9])
+                    bitscore = float(parts[11])
+                except ValueError:
+                    continue
+                if length < MIN_LENGTH or pident < MIN_PIDENT:
+                    continue
+                qseqid = parts[0]
+                stitle = parts[12].strip()
+                tokens = stitle.split()
+                genus  = tokens[0] if tokens else ''
+                qualifying.append((pident, length, genus, stitle, qseqid, sstart, send, bitscore))
+    except Exception:
+        pass
+    if not qualifying:
+        return {'pident': NO_DATA, 'species': NO_DATA}
+
+    # Sort by highest pident; closest to 1500 bp as tiebreaker; highest bitscore for edge cases
+    qualifying.sort(key=lambda r: (-r[0], abs(r[1] - 1500), -r[7]))
+    winner_pident, _wl, winner_genus, winner_stitle, _qid, _ss, _se, _bs = qualifying[0]
+    species = winner_stitle.split(' 16S ')[0].strip() if ' 16S ' in winner_stitle else winner_stitle
+
+    # If the initial winner comes from a contaminant contig, re-select from
+    # contigs that match final_genus.
+    if (final_genus is not None and
+            winner_genus.lower() != final_genus.lower()):
+        # Determine the best genus per contig (first = highest pident after sort)
+        contig_best = {}
+        for row in qualifying:
+            if row[4] not in contig_best:
+                contig_best[row[4]] = row[2]
+        matching = [r for r in qualifying
+                    if contig_best.get(r[4], '').lower() == final_genus.lower()]
+        if matching:
+            winner_pident, _wl, winner_genus, winner_stitle, _qid, _ss, _se, _bs = matching[0]
+            species = winner_stitle.split(' 16S ')[0].strip() if ' 16S ' in winner_stitle else winner_stitle
+    top_pi_row   = max(qualifying, key=lambda r: r[0])
+    top_pi_genus = top_pi_row[2]
+    if (top_pi_genus.lower() != winner_genus.lower() and
+            frozenset({winner_genus.lower(), top_pi_genus.lower()}) in _BLAST16S_SYNONYM_PAIRS):
+        species = f"{winner_genus}/{top_pi_genus} synonymous pair"
+
+    return {'pident': f"{winner_pident:.3f}", 'species': species}
+
+
+def skani_notes(ani_str):
+    """Return confirmation note based on ANI value."""
+    try:
+        if float(ani_str) >= 95.0:
+            return 'Confirmed (ANI >= 95%)'
+        return 'Unconfirmed - flagged for review/resequence'
+    except (ValueError, TypeError):
+        return NO_DATA
 
 
 # Per-file parsers — species-specific
@@ -349,7 +498,6 @@ def get_pseudomonas_serotype(sample_dir, sample_id):
 # BMGAP2 data parser
 
 def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
-    """Parse BMGAP2 AMR, LocusExtractor, and BMScan outputs for Nm/Hi samples."""
     d = {k: NO_DATA for k in [
         'penA_allele', 'penA_mutations', 'penA_phenotype',
         'gyrA_allele', 'gyrA_mutations', 'gyrA_phenotype',
@@ -516,10 +664,13 @@ def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
 
 HEADER_STANDARD = [
     'sampleID',
-    'speciesID_mash', 'nearest_neighbor_mash', 'mash_distance',
-    'speciesID_kraken', 'kraken_percent',
+    'mash_species', 'mash_reference', 'mash_distance',
+    'kraken_species', 'kraken_percent',
+    'blast_16s_species', 'blast_16s_pident',
+    'skani_species', 'skani_ani', 'skani_align_fraction', 'skani_reference',
+    'contamination_flag',
     'mlst_scheme', 'mlst_st', 'serotype',
-    'num_clean_reads', 'avg_readlength', 'avg_read_qual', 'est_coverage',
+    'num_clean_reads', 'avg_read_length', 'avg_read_qual', 'est_coverage',
     'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
     'annotated_cds',
 ]
@@ -584,6 +735,24 @@ def main():
         kr   = parse_kraken_report(f'{sid}.report')
         pmga = parse_pmga(f'{sid}sta.txt')
 
+        agg_path = f'{sid}_candidate_species.txt'
+        agg = parse_aggregate_species(agg_path) if os.path.isfile(agg_path) else \
+              {'genus': NO_DATA, 'contamination_flag': NO_DATA}
+
+        _sk_empty = {'ani': NO_DATA, 'confirmed_species': NO_DATA, 'align_fraction': NO_DATA, 'reference': NO_DATA}
+        skani_path = f'{sid}_skani.tsv'
+        sk = parse_skani(skani_path) if os.path.isfile(skani_path) else _sk_empty
+
+        blast16s_path   = f'{sid}_16s_blast.tsv'
+        blast16s_result = parse_blast16s_result(blast16s_path, final_genus=agg['genus'] if agg['genus'] != NO_DATA else None) \
+                          if os.path.isfile(blast16s_path) \
+                          else {'pident': NO_DATA, 'species': NO_DATA}
+
+        skani_ID_val     = sk['confirmed_species']
+        skani_ANI_val    = sk['ani']
+        skani_align_val  = sk['align_fraction']
+        skani_ID_ref_val = sk['reference']
+
         scheme  = mlst['scheme']
         pmga_sp = pmga['species'] or NO_DATA
 
@@ -597,6 +766,9 @@ def main():
             bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
             serotype = pmga['prediction'] or NO_DATA
             std_row = common + [
+                blast16s_result['species'], blast16s_result['pident'],
+                skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
+                agg['contamination_flag'],
                 scheme, mlst['st'], serotype,
                 rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
                 asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
@@ -624,6 +796,9 @@ def main():
             bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
             serotype = pmga['prediction'] or NO_DATA
             std_row = common + [
+                blast16s_result['species'], blast16s_result['pident'],
+                skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
+                agg['contamination_flag'],
                 scheme, mlst['st'], serotype,
                 rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
                 asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
@@ -667,6 +842,9 @@ def main():
                     break
 
             row = common + [
+                blast16s_result['species'], blast16s_result['pident'],
+                skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
+                agg['contamination_flag'],
                 scheme, mlst['st'], serotype,
                 rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
                 asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],

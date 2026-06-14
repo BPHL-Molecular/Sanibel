@@ -38,7 +38,7 @@ def main():
                 scheme = fields[1]
     except Exception as e:
         print(f"BMGAP2-AMR: Error reading MLST file - {e}", file=sys.stderr)
-        sys.exit(0)
+        sys.exit(1)
 
     if scheme not in ['neisseria', 'hinfluenzae']:
         print(f"BMGAP2-AMR: Skipping {sample_name} - not a meningitis species (scheme={scheme})")
@@ -52,13 +52,13 @@ def main():
     runast      = os.path.join(bmgap2_db, "amr_variants_component", "runAST.py")
 
     if not os.path.isdir(pmga_dir):
-        print(f"BMGAP2-AMR: Warning - PMGA directory not found: {pmga_dir}")
-        sys.exit(0)
+        print(f"BMGAP2-AMR: Error - PMGA directory not found: {pmga_dir}", file=sys.stderr)
+        sys.exit(1)
 
     json_files = glob.glob(f"{pmga_dir}/*blast-final-results.json*")
     if not json_files:
-        print(f"BMGAP2-AMR: Warning - No PMGA JSON file found in {pmga_dir}")
-        sys.exit(0)
+        print(f"BMGAP2-AMR: Error - No PMGA JSON file found in {pmga_dir}", file=sys.stderr)
+        sys.exit(1)
 
     pmga_json_file = json_files[0]
     print(f"BMGAP2-AMR: Found PMGA JSON: {pmga_json_file}")
@@ -122,8 +122,8 @@ def main():
 
     if not os.path.isfile(runast):
         print(f"BMGAP2-AMR: Error - runAST.py not found at {runast}", file=sys.stderr)
-        print(f"BMGAP2-AMR: Check bmgap2_db setting: {bmgap2_db}")
-        sys.exit(0)
+        print(f"BMGAP2-AMR: Check bmgap2_db setting: {bmgap2_db}", file=sys.stderr)
+        sys.exit(1)
 
     print(f"BMGAP2-AMR: Running AMR mutation analysis for {sample_name} (species: {species_code})")
 
@@ -152,7 +152,7 @@ def main():
         sys.exit(0)
     except Exception as e:
         print(f"BMGAP2-AMR: Unexpected error - {e}", file=sys.stderr)
-        sys.exit(0)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

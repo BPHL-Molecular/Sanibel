@@ -21,9 +21,16 @@ export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
 nextflow run sanibel.nf -profile apptainer -params-file params.yaml
 
 # Rename output directory with timestamp
-dt=$(date "+%Y%m%d%H%M%S")
+nxf_exit=$?
 output_dir=$(grep '^output:' params.yaml | sed 's/output:[[:space:]]*//' | tr -d '"')
-mv "$output_dir" "${output_dir}-${dt}"
+if [ $nxf_exit -eq 0 ] && [ -d "$output_dir" ]; then
+    dt=$(date "+%Y%m%d%H%M%S")
+    mv "$output_dir" "${output_dir}-${dt}"
+elif [ $nxf_exit -ne 0 ]; then
+    echo "Pipeline did not complete successfully." >&2
+else
+    echo "Pipeline exited 0 but output directory not found: $output_dir" >&2
+fi
 
 # Cleanup (disabled for troubleshooting runs)
 #rm -rf ./work ./cache
