@@ -4,6 +4,22 @@ All notable changes to Sanibel are documented in this file.
 
 ---
 
+## [2.0.1] — 2026-06-19
+
+### Improvements
+- **`environment.yaml`** — Added conda environment file for reproducible setup via `conda env create -f environment.yaml`; replaces the manual package-list install command.
+- **`sanibel.sh`** — Pinned Nextflow module to `nextflow/25.10.4`; Nextflow ≥ 26.0 is not supported due to DSL2 breaking changes.
+- **`sanibel.sh`** — Removed `./cache` from the cleanup line; `NXF_APPTAINER_CACHEDIR` is now the single persistent cache location.
+
+### README
+- Added Nextflow version constraint warning: ≥ 26.0 not supported.
+- Added git clone step to setup instructions.
+- Added Kraken2 and BMGAP2 setup section for non-Florida-BPHL users.
+- Generalized "HiPerGator" language to "Florida BPHL" throughout.
+- Changed mermaid flowchart direction from left-right to top-down.
+
+---
+
 ## [2.0.0] — 2026-05-04
 
 ### Bug Fixes

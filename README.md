@@ -23,10 +23,14 @@ Species-specific typing modules run automatically based on species identificatio
 
 ### ⚙️ Dependencies
 
-- **Nextflow** ≥ 22.10 — [installation guide](https://github.com/nextflow-io/nextflow)
-- **Apptainer/Singularity** — [installation guide](https://apptainer.org/docs/user/latest/)
-- **SLURM** workload manager (This applies only if HiPerGator is used)
-- **Conda** (for the SANIBEL environment)
+- **Nextflow** 23.04–25.x - [installation guide](https://github.com/nextflow-io/nextflow)
+- **Apptainer/Singularity** - [installation guide](https://apptainer.org/docs/user/latest/)
+- **Conda** - [installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
+- **SLURM** workload manager (required for HiPerGator; otherwise not required)
+
+All bioinformatics tools run inside containers, no additional software installation is required.
+
+> ⚠️ **Nextflow ≥ 26.0 is not supported.** That release introduced breaking changes to DSL2 module parsing. Use Nextflow 23.04–25.x.
 
 
 ### 💻 Resource Requirements
@@ -44,16 +48,23 @@ Sanibel can run on any system with Nextflow and Apptainer installed, but is **st
 
 ### 🛠️ Setup
 
-#### 1. Create the conda environment
+#### 1. Clone this repository and enter the repository directory
 
 ```bash
-$ conda create -n SANIBEL -c conda-forge -c bioconda python=3.10 pandas=1.5.3 openpyxl=3.1.5 biopython=1.78 mash=2.3 blast=2.17.0
+$ git clone https://github.com/BPHL-Molecular/Sanibel
+$ cd Sanibel/
+```
+
+#### 2. Create the conda environment
+
+```bash
+$ conda env create -f environment.yaml
 $ conda activate SANIBEL
 ```
 
 `pandas`, `openpyxl`, `biopython`, `mash`, and `blast` are required by the BMGAP2 modules (used for Nm/Hi samples).
 
-#### 2. Configure params.yaml
+#### 3. Configure params.yaml
 
 Edit `params.yaml` and set paths for your environment:
 
@@ -62,18 +73,20 @@ Edit `params.yaml` and set paths for your environment:
 input:  "/full/path/to/fastqs"
 output: "/full/path/to/output"
 
-# non-HiPerGator users: uncomment and set your BMGAP2 analysis_scripts directory
+# non-Florida-BPHL users: uncomment and set your BMGAP2 analysis_scripts directory
 # bmgap2_db:  "/full/path/to/bmgap2/analysis_scripts"
 
-# non-HiPerGator users: uncomment and set your Kraken2 database directory
+# non-Florida-BPHL users: uncomment and set your Kraken2 database directory
 # kraken_db:  "/full/path/to/kraken2/database"
 ```
 
-> **HiPerGator users:** only `input` and `output` need to be set. All other paths are pre-configured.
+> **Florida BPHL users:** only `input` and `output` need to be set. All other paths are pre-configured.
 
-> **Non-HiPerGator users:** uncomment `bmgap2_db` and `kraken_db` by removing the leading `#` and set their paths.
+> **Non-Florida BPHL users:** uncomment `bmgap2_db` and `kraken_db` by removing the leading `#` and set their paths.
 
-#### 3. Configure sanibel.sh
+#### 4. Configure sanibel.sh
+
+> At Florida BPHL we use **Apptainer** on HiPerGator for containerization. `sanibel.sh` is pre-configured for SLURM + Apptainer and is the recommended submission method for FL-BPHL users.
 
 Set `NXF_APPTAINER_CACHEDIR` to your image cache directory and add your email address for job notifications:
 
@@ -82,13 +95,15 @@ export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
 #SBATCH --mail-user=your@email.gov
 ```
 
-### BMGAP2 Setup
+#### 5. Kraken2 and BMGAP2 Setup for Non-Florida-BPHL Users
 
-> **HiPerGator users:** BMGAP2 is already installed and configured on the cluster. The `bmgap2_db` path in `params.yaml` is pre-set. Skip this section entirely.
+> **Florida BPHL users:** Kraken2 and BMGAP2 are already installed and configured on the cluster. The `kraken_db` and `bmgap2_db` paths in `params.yaml` are pre-set. Skip this section entirely.
+
+For non-Florida BPHL users, a Kraken2 database must be downloaded before running the pipeline. These are available [here](https://benlangmead.github.io/aws-indexes/k2). Once downloaded, set the location path in the `params.yaml` file.
 
 [BMGAP2](https://github.com/CDCgov/BMGAP2) (*Bacterial Meningitis Genome Analysis Pipeline 2*) runs automatically on *Neisseria meningitidis* and *Haemophilus influenzae* samples. The custom python scripts check the MLST scheme internally and skip any sample that is not *N. meningitidis* or *H. influenzae*.
 
-For non-HiPerGator users, BMGAP2 must be installed before running the pipeline. Its scripts run directly on the host (not inside a container) and are invoked by the three `bmgap2_*` Nextflow modules. Follow the [BMGAP2 installation instructions](https://github.com/CDCgov/BMGAP2) to clone the repository and build all required databases, then set `bmgap2_db` in `params.yaml` to the `analysis_scripts` directory.
+For non-Florida BPHL users, BMGAP2 must be installed before running the pipeline. Its scripts run directly on the host (not inside a container) and are invoked by the three `bmgap2_*` Nextflow modules. Follow the [BMGAP2 installation instructions](https://github.com/CDCgov/BMGAP2) to clone the repository and build all required databases, then set `bmgap2_db` in `params.yaml` to the `analysis_scripts` directory.
 
 
 ### How to Run
@@ -109,7 +124,7 @@ nextflow run sanibel.nf -profile apptainer -params-file params.yaml
 ### Workflow Diagram
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[Paired FASTQ Input] --> B[FastQC]
     B --> C[Trimmomatic]
     C --> D[BBTools]
@@ -146,7 +161,7 @@ flowchart LR
     SP --> X
     U --> X
 
-    X --> Y[sum_report.txt\nnm_sum_report.txt\nhi_sum_report.txt]
+    X --> Y[sum_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt]
 
     style SP fill:#fef,stroke:#333,color:#000
     style S fill:#9cf,stroke:#333,color:#000
