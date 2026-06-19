@@ -37,7 +37,7 @@ process blast_16s {
         -max_target_seqs 25 \\
         -max_hsps 1 \\
         -evalue 1e-10 \\
-        -perc_identity 80 \\
+        -perc_identity 97 \\
         -task megablast \\
         -num_threads ${task.cpus} \\
         >> ${prefix}_16s_blast.tsv

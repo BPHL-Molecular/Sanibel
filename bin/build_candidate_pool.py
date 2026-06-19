@@ -15,17 +15,14 @@ tools (desc), then mash_distance (asc), then blast16s_pident (desc).
 import re
 import sys
 
-MASH_TOP_N          = 3      # max Mash candidates to include
-
 KRAKEN_ADAPT_FACTOR = 0.15   # threshold = max(top_pct * factor, MIN_PCT)
 KRAKEN_MIN_PCT      = 5.0    # absolute floor for Kraken threshold
+KRAKEN_MIN_READS    = 10     # minimum clade read count for any Kraken candidate
 
 BLAST16S_MIN_LENGTH = 400    # minimum alignment length for 16S hit
 BLAST16S_MIN_PIDENT = 97.0   # minimum percent identity for 16S hit
-BLAST16S_WINDOW     = 1.0    # include hits within this % of top pident
-BLAST16S_TOP_N      = 5      # max 16S candidates to include
 
-POOL_CAP            = 8      # hard cap on total candidates returned
+POOL_CAP            = 15     # hard cap on total candidates returned
 
 NA = 'NA'
 
@@ -97,9 +94,10 @@ def parse_mash_distances(filepath):
     except OSError:
         pass
 
+    # Every distinct species among the Mash hits (already deduped to the
+    # closest hit per species in `best`), ranked by ascending distance.
     sorted_all = sorted(best.values(), key=lambda d: d['mash_distance'])
-    candidates = sorted_all[:MASH_TOP_N]
-    return candidates, best
+    return sorted_all, best
 
 
 # Kraken parsing
@@ -116,8 +114,15 @@ def parse_kraken_candidates(filepath):
                 if rank != 'S':
                     continue
                 try:
-                    pct = float(parts[0].strip())
+                    pct   = float(parts[0].strip())
+                    reads = int(parts[1].strip())
                 except ValueError:
+                    continue
+                # Floor on clade reads: the percentage column rounds to 0.00 at
+                # low abundance, so a single stray read would otherwise become a
+                # candidate. Applied here so both the above-threshold set and the
+                # foreign-genus picks below inherit the floor.
+                if reads < KRAKEN_MIN_READS:
                     continue
                 name = parts[5].strip()
                 name_tokens = name.split()
@@ -180,19 +185,17 @@ def parse_16s_candidates(filepath):
     if not qualifying:
         return []
 
-    top_pident   = qualifying[0][2]
-    window_floor = top_pident - BLAST16S_WINDOW
-
-    in_window = [r for r in qualifying if r[2] >= window_floor]
-
+    # Every distinct species among qualifying hits (deduped to its best pident).
+    # 16S is genus-conserved, so this contributes genus-level breadth to the pool;
+    # skani rejects the wrong ones by ANI downstream. POOL_CAP bounds the total.
     best = {}
-    for genus, species, pident in in_window:
+    for genus, species, pident in qualifying:
         key = f"{genus.lower()} {species.lower()}"
         if key not in best or pident > best[key][2]:
             best[key] = (genus, species, pident)
 
     sorted_cands = sorted(best.values(), key=lambda r: r[2], reverse=True)
-    return sorted_cands[:BLAST16S_TOP_N]
+    return sorted_cands
 
 
 # Merge / rank
