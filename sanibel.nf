@@ -45,6 +45,7 @@ include { seroba }                from './modules/seroba.nf'
 include { pasty }                 from './modules/pasty.nf'
 include { kaptive_ab }            from './modules/kaptive_ab.nf'
 include { kaptive_vp }            from './modules/kaptive_vp.nf'
+include { lissero }               from './modules/lissero.nf'
 include { summary_report }        from './modules/summary_report.nf'
 
 workflow {
@@ -218,12 +219,14 @@ workflow {
     pasty(ch_assembly_enriched.filter           { meta, _f -> meta.mash_species == 'Pseudomonas_aeruginosa' })
     kaptive_ab(ch_assembly_enriched.filter      { meta, _f -> meta.mash_species == 'Acinetobacter_baumannii' })
     kaptive_vp(ch_assembly_enriched.filter      { meta, _f -> meta.mash_species == 'Vibrio_parahaemolyticus' })
+    lissero(ch_assembly_enriched.filter         { meta, _f -> meta.mash_species == 'Listeria_monocytogenes' })
 
     ch_optional_barrier =
         legsta.out.done
             .mix(kleborate.out.done, shigatyper.out.done, emm_typing.out.done,
                  seqsero2.out.done, serotypefinder.out.done, plasmidfinder.out.done,
                  seroba.out.done, pasty.out.done, kaptive_ab.out.done, kaptive_vp.out.done,
+                 lissero.out.done,
                  ch_pre_report.map { meta, _f -> meta })
             .mix( ch_stats.map { meta, _s -> meta } )
             .mix( ch_skani.result.map { meta, _f -> meta } )

@@ -36,10 +36,15 @@ def parse_mash(distances_file):
                 accession = m.group(0)
                 break
     else:
-        accession = 'Unknown'
-        genus     = 'Unknown'
-        species   = 'unknown'
-        asm_name  = '.'
+        # update_mash_dist sketch names: Genus_species_<ACCESSION>
+        # (e.g. Enterobacter_hormaechei_GCF_019048245.1)
+        org_seg   = re.sub(r'\.fna.*', '', ref_id)
+        parts     = [p for p in org_seg.split('_') if p]
+        genus     = parts[0] if parts else 'Unknown'
+        species   = parts[1] if len(parts) > 1 else 'unknown'
+        m         = _ACC_RE.search(ref_id)
+        accession = m.group(0) if m else 'Unknown'
+        asm_name  = accession
 
     return genus, species, dist, accession, asm_name
 

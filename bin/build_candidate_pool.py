@@ -37,8 +37,9 @@ _ACC_RE = re.compile(r'GC[FA]_[A-Za-z0-9]+(?:\.[0-9]+)?|N[CZ]_[A-Za-z0-9]+(?:\.[
 
 def _parse_mash_ref(ref_name):
     """
-    Parse a Mash reference filename that uses '-.-' as a field separator.
-    Handles one or more consecutive '-.-' tokens (e.g. '-.-.-.-').
+    Parse a Mash reference name. Handles the legacy gembox format that uses
+    '-.-' as a field separator (one or more consecutive tokens, e.g. '-.-.-.-')
+    and the update_mash_dist format 'Genus_species_<ACCESSION>'.
     Returns (genus, species, accession) or (None, None, None) on failure.
     """
     try:
@@ -57,6 +58,12 @@ def _parse_mash_ref(ref_name):
             if m:
                 accession = m.group(0)
                 break
+        if accession == NA:
+            # New update_mash_dist names (Genus_species_<ACC>) have no '-.-';
+            # recover the accession from the whole reference name.
+            m = _ACC_RE.search(ref_name)
+            if m:
+                accession = m.group(0)
         return genus, species, accession
     except Exception:
         return None, None, None

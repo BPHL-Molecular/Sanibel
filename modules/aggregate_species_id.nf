@@ -1,6 +1,6 @@
 process aggregate_species_id {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/candidate_speciesID", mode: 'copy'
+    publishDir "${params.output}/${meta.id}/candidate_species", mode: 'copy'
 
     input:
         tuple val(meta), path(assembly_stats), path(kraken_report), path(blast_16s_tsv)

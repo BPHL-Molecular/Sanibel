@@ -195,8 +195,17 @@ def parse_skani(filepath):
         return EMPTY
 
 
-def parse_blast16s_result(filepath):
-    """Genus of the highest-identity 16S hit (16S does not reliably resolve species)."""
+def parse_blast16s_result(filepath, anchor_genera=None):
+    """
+    Genus of the top 16S hit, cross-checked against Mash/Kraken.
+
+    16S is genus-conserved and a contaminant contig can carry the single
+    highest-identity hit (e.g. a Staphylococcus 16S at 100% on an Acinetobacter
+    sample). To avoid reporting the contaminant, the top hit is restricted to
+    genera that agree with Mash or Kraken (anchor_genera); if no qualifying hit
+    agrees with either tool, the overall highest-identity hit is reported
+    instead. Reported as 'Genus spp.' since 16S does not resolve species.
+    """
     MIN_LENGTH = 400
     MIN_PIDENT = 97.0
     qualifying = []
@@ -227,8 +236,15 @@ def parse_blast16s_result(filepath):
 
     # Top hit = highest pident; closest to ~1500 bp as tiebreaker; highest bitscore.
     qualifying.sort(key=lambda r: (-r[0], abs(r[1] - 1500), -r[3]))
-    top_pident, _len, top_genus, _bs = qualifying[0]
-    return {'pident': f"{top_pident:.3f}", 'tophit': top_genus or NO_DATA}
+
+    # Prefer the highest-identity hit whose genus agrees with Mash or Kraken;
+    # fall back to the overall top hit if 16S agrees with neither.
+    anchor = {g.lower() for g in (anchor_genera or []) if g and g not in (NO_DATA, 'Unknown')}
+    chosen = next((r for r in qualifying if r[2].lower() in anchor), qualifying[0]) if anchor \
+             else qualifying[0]
+
+    pident, _len, genus, _bs = chosen
+    return {'pident': f"{pident:.3f}", 'tophit': f"{genus} spp." if genus else NO_DATA}
 
 
 # Per-file parsers — species-specific
@@ -431,6 +447,21 @@ def get_pseudomonas_serotype(sample_dir, sample_id):
                 return stype if stype else 'Not detected'
     except Exception as e:
         print(f"Warning: Could not parse pasty TSV for {sample_id}: {e}", file=sys.stderr)
+        return 'Not detected'
+
+
+def get_listeria_serotype(sample_dir, sample_id):
+    liss_txt = os.path.join(sample_dir, 'lissero', 'lissero_output.txt')
+    if not os.path.isfile(liss_txt):
+        return None
+    try:
+        with open(liss_txt) as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            for row in reader:
+                serotype = row.get('SEROTYPE', '').strip()
+                return serotype if serotype else 'Not detected'
+    except Exception as e:
+        print(f"Warning: Could not parse LisSero output for {sample_id}: {e}", file=sys.stderr)
         return 'Not detected'
 
 
@@ -683,7 +714,8 @@ def main():
         sk = parse_skani(skani_path) if os.path.isfile(skani_path) else _sk_empty
 
         blast16s_path   = f'{sid}_16s_blast.tsv'
-        blast16s_result = parse_blast16s_result(blast16s_path) \
+        anchor_16s      = [asm['genus'], kr['species'].split()[0] if kr['species'] != NO_DATA else None]
+        blast16s_result = parse_blast16s_result(blast16s_path, anchor_genera=anchor_16s) \
                           if os.path.isfile(blast16s_path) \
                           else {'pident': NO_DATA, 'tophit': NO_DATA}
 
@@ -774,6 +806,7 @@ def main():
                 lambda: get_acinetobacter_serotype(sample_dir, sid),
                 lambda: get_vibrio_serotype(sample_dir, sid),
                 lambda: get_pseudomonas_serotype(sample_dir, sid),
+                lambda: get_listeria_serotype(sample_dir, sid),
             ]:
                 result = getter()
                 if result is not None:
