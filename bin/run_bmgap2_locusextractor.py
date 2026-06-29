@@ -38,7 +38,7 @@ def main():
                 scheme = fields[1]
     except Exception as e:
         print(f"BMGAP2-LocusExtractor: Error reading MLST file - {e}", file=sys.stderr)
-        sys.exit(0)
+        sys.exit(1)
 
     if scheme not in ['neisseria', 'hinfluenzae']:
         print(
@@ -58,14 +58,14 @@ def main():
             f"BMGAP2-LocusExtractor: Error - Assembly directory not found: {assembly_dir}",
             file=sys.stderr
         )
-        sys.exit(0)
+        sys.exit(1)
 
     if not os.path.isfile(le_script):
         print(
             f"BMGAP2-LocusExtractor: Error - LocusExtractor script not found: {le_script}",
             file=sys.stderr
         )
-        sys.exit(0)
+        sys.exit(1)
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -119,7 +119,7 @@ def main():
 
     except Exception as e:
         print(f"BMGAP2-LocusExtractor: Error running LocusExtractor - {e}", file=sys.stderr)
-        sys.exit(0)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

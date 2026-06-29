@@ -38,7 +38,7 @@ def main():
                 scheme = fields[1]
     except Exception as e:
         print(f"BMGAP2-BMScan: Error reading MLST file - {e}", file=sys.stderr)
-        sys.exit(0)
+        sys.exit(1)
 
     if scheme not in ['neisseria', 'hinfluenzae']:
         print(
@@ -56,11 +56,11 @@ def main():
             f"BMGAP2-BMScan: Error - Assembly directory not found: {assembly_dir}",
             file=sys.stderr
         )
-        sys.exit(0)
+        sys.exit(1)
 
     if not os.path.isfile(bmscan):
         print(f"BMGAP2-BMScan: Error - BMScan script not found: {bmscan}", file=sys.stderr)
-        sys.exit(0)
+        sys.exit(1)
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -82,7 +82,7 @@ def main():
             print("BMGAP2-BMScan: Error running BMScan", file=sys.stderr)
             print(f"STDOUT: {result.stdout}", file=sys.stderr)
             print(f"STDERR: {result.stderr}", file=sys.stderr)
-            sys.exit(0)
+            sys.exit(1)
 
         print(
             f"BMGAP2-BMScan: Successfully completed species identification for {sample_name}"
@@ -91,7 +91,7 @@ def main():
 
     except Exception as e:
         print(f"BMGAP2-BMScan: Exception - {e}", file=sys.stderr)
-        sys.exit(0)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

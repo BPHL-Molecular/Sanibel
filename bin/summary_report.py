@@ -11,10 +11,13 @@ import json
 import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from sanibel_taxonomy import (
+    SYNONYMOUS_PAIRS, genus_of, detect_contamination, extract_contam_candidates,
+)
+
 
 NO_DATA = 'No data'
-
-# Helpers
 
 def normalize_le_value(val):
     if not val:
@@ -39,8 +42,6 @@ def find_gene(gene_dict, gene_name):
             return value
     return None
 
-
-# Per-file parsers
 
 def parse_assembly_stats(filepath):
     with open(filepath) as f:
@@ -141,6 +142,111 @@ def parse_pmga(filepath):
     except Exception as e:
         print(f"Warning: Could not parse PMGA file {filepath}: {e}", file=sys.stderr)
     return result
+
+
+def parse_aggregate_species(filepath):
+    empty = {'genus': NO_DATA, 'contamination_flag': NO_DATA}
+    try:
+        with open(filepath) as f:
+            f.readline()  # skip header
+            line = f.readline().strip()
+        if not line:
+            return empty
+        parts = line.split('\t')
+        genus       = parts[0] if len(parts) > 0 else NO_DATA
+        contam_flag = parts[4] if len(parts) > 4 else NO_DATA
+        return {'genus': genus, 'contamination_flag': contam_flag}
+    except Exception:
+        return empty
+
+
+def parse_skani(filepath):
+    EMPTY = {'ani': 'ANI < 80%', 'confirmed_species': 'NO ID', 'align_fraction': NO_DATA, 'reference': NO_DATA}
+    try:
+        rows = []
+        with open(filepath) as f:
+            f.readline()
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split('\t')
+                if len(parts) < 5:
+                    continue
+                try:
+                    ani = float(parts[2])
+                except ValueError:
+                    continue
+                rows.append((ani, parts))
+        if not rows:
+            return EMPTY
+        rows.sort(key=lambda x: x[0], reverse=True)
+        best_ani, best_parts = rows[0]
+        ref_basename = os.path.basename(best_parts[0])
+        if ref_basename.endswith('.fna'):
+            ref_basename = ref_basename[:-4]
+        # References are named <Genus_species>__<ACCESSION>.fna (multiple strains per
+        # candidate); recover the clean species label and accession from the filename,
+        # falling back to the legacy single-file naming + Ref_name column otherwise.
+        if '__' in ref_basename:
+            species_part, acc_part = ref_basename.split('__', 1)
+            confirmed_species = species_part if species_part else NO_DATA
+            skani_ref_acc     = acc_part if acc_part else NO_DATA
+        else:
+            confirmed_species = ref_basename if ref_basename else NO_DATA
+            ref_name_col      = best_parts[5].strip() if len(best_parts) > 5 else ''
+            skani_ref_acc     = ref_name_col.split()[0] if ref_name_col else NO_DATA
+        align_fraction = best_parts[4] if len(best_parts) > 4 else NO_DATA
+        return {
+            'ani':               f"{best_ani:.3f}",
+            'confirmed_species': confirmed_species,
+            'align_fraction':    align_fraction,
+            'reference':         skani_ref_acc if skani_ref_acc else NO_DATA,
+        }
+    except Exception:
+        return EMPTY
+
+
+def parse_blast16s_result(filepath, anchor_genera=None):
+    MIN_LENGTH = 400
+    MIN_PIDENT = 97.0
+    qualifying = []
+    try:
+        with open(filepath) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split('\t')
+                if len(parts) < 13 or parts[0] == 'qseqid':
+                    continue
+                try:
+                    pident   = float(parts[2])
+                    length   = int(parts[3])
+                    bitscore = float(parts[11])
+                except ValueError:
+                    continue
+                if length < MIN_LENGTH or pident < MIN_PIDENT:
+                    continue
+                stitle = parts[12].strip()
+                genus  = stitle.split()[0] if stitle else ''
+                qualifying.append((pident, length, genus, bitscore))
+    except Exception:
+        pass
+    if not qualifying:
+        return {'pident': NO_DATA, 'tophit': NO_DATA}
+
+    # Top hit = highest pident; closest to ~1500 bp as tiebreaker; highest bitscore.
+    qualifying.sort(key=lambda r: (-r[0], abs(r[1] - 1500), -r[3]))
+
+    # Prefer the highest-identity hit whose genus agrees with Mash or Kraken;
+    # fall back to the overall top hit if 16S agrees with neither.
+    anchor = {g.lower() for g in (anchor_genera or []) if g and g not in (NO_DATA, 'Unknown')}
+    chosen = next((r for r in qualifying if r[2].lower() in anchor), qualifying[0]) if anchor \
+             else qualifying[0]
+
+    pident, _len, genus, _bs = chosen
+    return {'pident': f"{pident:.3f}", 'tophit': f"{genus} spp." if genus else NO_DATA}
 
 
 # Per-file parsers — species-specific
@@ -346,10 +452,24 @@ def get_pseudomonas_serotype(sample_dir, sample_id):
         return 'Not detected'
 
 
+def get_listeria_serotype(sample_dir, sample_id):
+    liss_txt = os.path.join(sample_dir, 'lissero', 'lissero_output.txt')
+    if not os.path.isfile(liss_txt):
+        return None
+    try:
+        with open(liss_txt) as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            for row in reader:
+                serotype = row.get('SEROTYPE', '').strip()
+                return serotype if serotype else 'Not detected'
+    except Exception as e:
+        print(f"Warning: Could not parse LisSero output for {sample_id}: {e}", file=sys.stderr)
+        return 'Not detected'
+
+
 # BMGAP2 data parser
 
 def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
-    """Parse BMGAP2 AMR, LocusExtractor, and BMScan outputs for Nm/Hi samples."""
     d = {k: NO_DATA for k in [
         'penA_allele', 'penA_mutations', 'penA_phenotype',
         'gyrA_allele', 'gyrA_mutations', 'gyrA_phenotype',
@@ -516,10 +636,13 @@ def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
 
 HEADER_STANDARD = [
     'sampleID',
-    'speciesID_mash', 'nearest_neighbor_mash', 'mash_distance',
-    'speciesID_kraken', 'kraken_percent',
+    'mash_species', 'mash_reference', 'mash_distance',
+    'kraken_species', 'kraken_percent',
+    'blast_16s_tophit', 'blast_16s_pident',
+    'skani_species', 'skani_ani', 'skani_align_fraction', 'skani_reference',
+    'contamination_flag',
     'mlst_scheme', 'mlst_st', 'serotype',
-    'num_clean_reads', 'avg_readlength', 'avg_read_qual', 'est_coverage',
+    'num_clean_reads', 'avg_read_length', 'avg_read_qual', 'est_coverage',
     'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
     'annotated_cds',
 ]
@@ -584,6 +707,41 @@ def main():
         kr   = parse_kraken_report(f'{sid}.report')
         pmga = parse_pmga(f'{sid}sta.txt')
 
+        agg_path = f'{sid}_candidate_species.txt'
+        agg = parse_aggregate_species(agg_path) if os.path.isfile(agg_path) else \
+              {'genus': NO_DATA, 'contamination_flag': NO_DATA}
+
+        _sk_empty = {'ani': NO_DATA, 'confirmed_species': NO_DATA, 'align_fraction': NO_DATA, 'reference': NO_DATA}
+        skani_path = f'{sid}_skani.tsv'
+        sk = parse_skani(skani_path) if os.path.isfile(skani_path) else _sk_empty
+
+        skani_ID_val     = sk['confirmed_species']
+        skani_ANI_val    = sk['ani']
+        skani_align_val  = sk['align_fraction']
+        skani_ID_ref_val = sk['reference']
+
+        skani_genus  = genus_of(skani_ID_val) if skani_ID_val not in (NO_DATA, 'NO ID', '', None) else None
+        mash_genus   = asm['genus']
+        kraken_genus = kr['species'].split()[0] if kr['species'] != NO_DATA else None
+
+        blast16s_path   = f'{sid}_16s_blast.tsv'
+        anchor_16s      = [skani_genus] if skani_genus else [mash_genus, kraken_genus]
+        blast16s_result = parse_blast16s_result(blast16s_path, anchor_genera=anchor_16s) \
+                          if os.path.isfile(blast16s_path) \
+                          else {'pident': NO_DATA, 'tophit': NO_DATA}
+
+        consensus_genus = mash_genus if (mash_genus and kraken_genus and
+                                         mash_genus.lower() == kraken_genus.lower()) else None
+        if skani_genus and consensus_genus and skani_genus.lower() != consensus_genus.lower() \
+                and frozenset({skani_genus.lower(), consensus_genus.lower()}) in SYNONYMOUS_PAIRS:
+            skani_ID_val = f"{asm['genus']}_{asm['species']}"
+
+        if skani_genus and os.path.isfile(blast16s_path):
+            contamination_flag = detect_contamination(
+                extract_contam_candidates(blast16s_path), skani_genus)
+        else:
+            contamination_flag = agg['contamination_flag']
+
         scheme  = mlst['scheme']
         pmga_sp = pmga['species'] or NO_DATA
 
@@ -597,6 +755,9 @@ def main():
             bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
             serotype = pmga['prediction'] or NO_DATA
             std_row = common + [
+                blast16s_result['tophit'], blast16s_result['pident'],
+                skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
+                contamination_flag,
                 scheme, mlst['st'], serotype,
                 rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
                 asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
@@ -624,6 +785,9 @@ def main():
             bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
             serotype = pmga['prediction'] or NO_DATA
             std_row = common + [
+                blast16s_result['tophit'], blast16s_result['pident'],
+                skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
+                contamination_flag,
                 scheme, mlst['st'], serotype,
                 rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
                 asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
@@ -660,6 +824,7 @@ def main():
                 lambda: get_acinetobacter_serotype(sample_dir, sid),
                 lambda: get_vibrio_serotype(sample_dir, sid),
                 lambda: get_pseudomonas_serotype(sample_dir, sid),
+                lambda: get_listeria_serotype(sample_dir, sid),
             ]:
                 result = getter()
                 if result is not None:
@@ -667,6 +832,9 @@ def main():
                     break
 
             row = common + [
+                blast16s_result['tophit'], blast16s_result['pident'],
+                skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
+                contamination_flag,
                 scheme, mlst['st'], serotype,
                 rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
                 asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],

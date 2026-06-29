@@ -9,37 +9,44 @@
 
 nextflow.enable.dsl = 2
 
-include { fastqc }                 from './modules/fastqc.nf'
-include { trimmomatic }            from './modules/trimmomatic.nf'
-include { bbtools_adapters }       from './modules/bbtools.nf'
-include { bbtools_phix }           from './modules/bbtools.nf'
-include { fastqc2 }                from './modules/fastqc2.nf'
-include { multiqc }                from './modules/multiqc.nf'
-include { mash }                   from './modules/mash.nf'
-include { unicycler }              from './modules/unicycler.nf'
-include { quast }                  from './modules/quast.nf'
-include { kraken }                 from './modules/kraken.nf'
-include { parse_assembly }         from './modules/parse_assembly.nf'
-include { readssum }               from './modules/readssum.nf'
-include { prokka }                 from './modules/prokka.nf'
-include { amrfinder }              from './modules/amrfinder.nf'
-include { mlst }                   from './modules/mlst.nf'
-include { pmga }                   from './modules/pmga.nf'
-include { bmgap2_amr }             from './modules/bmgap2_amr.nf'
-include { bmgap2_locusextractor }  from './modules/bmgap2_locusextractor.nf'
-include { bmgap2_bmscan }          from './modules/bmgap2_bmscan.nf'
-include { legsta }                 from './modules/legsta.nf'
-include { kleborate }              from './modules/kleborate.nf'
-include { shigatyper }             from './modules/shigatyper.nf'
-include { emm_typing }             from './modules/emm_typing.nf'
-include { seqsero2 }               from './modules/seqsero2.nf'
-include { serotypefinder }         from './modules/serotypefinder.nf'
-include { plasmidfinder }          from './modules/plasmidfinder.nf'
-include { seroba }                 from './modules/seroba.nf'
-include { pasty }                  from './modules/pasty.nf'
-include { kaptive_ab }             from './modules/kaptive_ab.nf'
-include { kaptive_vp }             from './modules/kaptive_vp.nf'
-include { summary_report }         from './modules/summary_report.nf'
+include { fastqc }                from './modules/fastqc.nf'
+include { trimmomatic }           from './modules/trimmomatic.nf'
+include { bbtools_adapters }      from './modules/bbtools.nf'
+include { bbtools_phix }          from './modules/bbtools.nf'
+include { fastqc2 }               from './modules/fastqc2.nf'
+include { multiqc }               from './modules/multiqc.nf'
+include { mash }                  from './modules/mash.nf'
+include { unicycler }             from './modules/unicycler.nf'
+include { kraken }                from './modules/kraken.nf'
+include { quast }                 from './modules/quast.nf'
+include { parse_assembly }        from './modules/parse_assembly.nf'
+include { readssum }              from './modules/readssum.nf'
+include { prokka }                from './modules/prokka.nf'
+include { amrfinder }             from './modules/amrfinder.nf'
+include { mlst }                  from './modules/mlst.nf'
+include { pmga }                  from './modules/pmga.nf'
+include { download_16s_db }       from './modules/blast_16s.nf'
+include { blast_16s }             from './modules/blast_16s.nf'
+include { aggregate_species_id }  from './modules/aggregate_species_id.nf'
+include { build_candidates }      from './modules/build_candidates.nf'
+include { refseq_references }     from './modules/refseq_references.nf'
+include { skani }                 from './modules/skani.nf'
+include { bmgap2_amr }            from './modules/bmgap2_amr.nf'
+include { bmgap2_locusextractor } from './modules/bmgap2_locusextractor.nf'
+include { bmgap2_bmscan }         from './modules/bmgap2_bmscan.nf'
+include { legsta }                from './modules/legsta.nf'
+include { kleborate }             from './modules/kleborate.nf'
+include { shigatyper }            from './modules/shigatyper.nf'
+include { emm_typing }            from './modules/emm_typing.nf'
+include { seqsero2 }              from './modules/seqsero2.nf'
+include { serotypefinder }        from './modules/serotypefinder.nf'
+include { plasmidfinder }         from './modules/plasmidfinder.nf'
+include { seroba }                from './modules/seroba.nf'
+include { pasty }                 from './modules/pasty.nf'
+include { kaptive_ab }            from './modules/kaptive_ab.nf'
+include { kaptive_vp }            from './modules/kaptive_vp.nf'
+include { lissero }               from './modules/lissero.nf'
+include { summary_report }        from './modules/summary_report.nf'
 
 workflow {
     log.info """
@@ -159,6 +166,40 @@ workflow {
         .join(ch_meta_by_id)
         .map  { _id, report, emeta -> [ emeta, report ] }
 
+    // 16S BLAST (DB downloaded once, cached via storeDir)
+    ch_16s_db    = download_16s_db().db
+    ch_blast_16s = blast_16s(ch_assembly_enriched, ch_16s_db)
+
+    // 2-of-3 species vote (Mash + Kraken2 + 16S BLAST)
+    ch_aggregate = aggregate_species_id(
+        ch_stats.map { meta, stats -> [ meta.id, meta, stats ] }
+            .join(ch_kraken.out.map    { meta, r -> [ meta.id, r ] })
+            .join(ch_blast_16s.result.map { meta, r -> [ meta.id, r ] })
+            .map { _id, emeta, stats, kreport, blast -> [ emeta, stats, kreport, blast ] }
+    )
+
+    // Build ranked candidate species pool from all three pre-assembly tools
+    ch_pool = build_candidates(
+        ch_mash.distances
+            .map  { meta, d -> [ meta.id, d ] }
+            .join(ch_kraken.out.map    { meta, r -> [ meta.id, r ] })
+            .join(ch_blast_16s.result.map { meta, r -> [ meta.id, r ] })
+            .join(ch_meta_by_id)
+            .map  { _id, distances, kreport, blast, emeta -> [ emeta, distances, kreport, blast ] }
+    )
+
+    // Download one RefSeq reference genome per candidate in the pool
+    ch_refs = refseq_references(ch_pool.pool)
+
+    // Multi-reference ANI confirmation with skani
+    ch_skani = skani(
+        ch_assembly_enriched
+            .map  { meta, asm -> [ meta.id, asm ] }
+            .join(ch_refs.references.map { meta, d -> [ meta.id, d ] })
+            .join(ch_meta_by_id)
+            .map  { _id, asm, refs_dir, emeta -> [ emeta, asm, refs_dir ] }
+    )
+
     // BMGAP2 channels
     ch_bmgap2_amr = bmgap2_amr(
         ch_mlst.out.join(ch_pmga.out, by: 0)
@@ -178,14 +219,19 @@ workflow {
     pasty(ch_assembly_enriched.filter           { meta, _f -> meta.mash_species == 'Pseudomonas_aeruginosa' })
     kaptive_ab(ch_assembly_enriched.filter      { meta, _f -> meta.mash_species == 'Acinetobacter_baumannii' })
     kaptive_vp(ch_assembly_enriched.filter      { meta, _f -> meta.mash_species == 'Vibrio_parahaemolyticus' })
+    lissero(ch_assembly_enriched.filter         { meta, _f -> meta.mash_species == 'Listeria_monocytogenes' })
 
     ch_optional_barrier =
         legsta.out.done
             .mix(kleborate.out.done, shigatyper.out.done, emm_typing.out.done,
                  seqsero2.out.done, serotypefinder.out.done, plasmidfinder.out.done,
                  seroba.out.done, pasty.out.done, kaptive_ab.out.done, kaptive_vp.out.done,
+                 lissero.out.done,
                  ch_pre_report.map { meta, _f -> meta })
             .mix( ch_stats.map { meta, _s -> meta } )
+            .mix( ch_skani.result.map { meta, _f -> meta } )
+            .mix( ch_pool.pool.map { meta, _f -> meta } )
+            .mix( ch_blast_16s.result.map { meta, _f -> meta } )
             .map { _id -> 1 }
             .collect()
             .map { _ids -> true }
@@ -199,6 +245,9 @@ workflow {
         ch_kraken_enriched.map      { _meta, kr   -> kr   }.collect(),
         ch_pmga.out.map             { _meta, pmga_file -> pmga_file }.collect().ifEmpty([]),
         ch_neisseria_txt,
-        ch_hinfluenzae_txt
+        ch_hinfluenzae_txt,
+        ch_aggregate.out.map        { _meta, f -> f }.collect().ifEmpty([]),
+        ch_skani.result.map         { _meta, f -> f }.collect().ifEmpty([]),
+        ch_blast_16s.result.map     { _meta, f -> f }.collect().ifEmpty([])
     )
 }
