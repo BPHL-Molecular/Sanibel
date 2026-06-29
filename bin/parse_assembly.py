@@ -8,8 +8,12 @@ Output (stdout):
   GENUS,SPECIES,DIST,ACCESSION,ASM_NAME,CONTIGS,LARGEST,N50,L50,TOTAL,GC
 """
 
+import os
 import re
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from sanibel_taxonomy import find_accession
 
 
 def parse_mash(distances_file):
@@ -20,7 +24,6 @@ def parse_mash(distances_file):
     ref_id = fields[0]
     dist   = fields[2] if len(fields) > 2 else 'NA'
 
-    _ACC_RE = re.compile(r'GC[FA]_[A-Za-z0-9]+(?:\.[0-9]+)?|N[CZ]_[A-Za-z0-9]+(?:\.[0-9]+)?')
     if '-.-' in ref_id:
         segs     = ref_id.split('-.-')
         org_part = segs[-1]
@@ -31,9 +34,9 @@ def parse_mash(distances_file):
         asm_name = '_'.join(parts[2:]) if len(parts) > 2 else '.'
         accession = 'Unknown'
         for seg in segs[:-1]:
-            m = _ACC_RE.search(seg)
-            if m:
-                accession = m.group(0)
+            acc = find_accession(seg)
+            if acc:
+                accession = acc
                 break
     else:
         # update_mash_dist sketch names: Genus_species_<ACCESSION>
@@ -42,8 +45,7 @@ def parse_mash(distances_file):
         parts     = [p for p in org_seg.split('_') if p]
         genus     = parts[0] if parts else 'Unknown'
         species   = parts[1] if len(parts) > 1 else 'unknown'
-        m         = _ACC_RE.search(ref_id)
-        accession = m.group(0) if m else 'Unknown'
+        accession = find_accession(ref_id) or 'Unknown'
         asm_name  = accession
 
     return genus, species, dist, accession, asm_name

@@ -1,7 +1,6 @@
-process refseq_references {
+process candidate_references {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/refseq_references", mode: 'copy'
-    errorStrategy 'ignore'
+    publishDir "${params.output}/${meta.id}/candidate_references", mode: 'copy'
 
     input:
         tuple val(meta), path(candidate_pool)

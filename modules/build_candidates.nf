@@ -12,7 +12,6 @@ process build_candidates {
     def prefix = meta.id
     """
     build_candidate_pool.py \\
-        ${prefix} \\
         ${distances} \\
         ${kraken_report} \\
         ${blast16s} \\

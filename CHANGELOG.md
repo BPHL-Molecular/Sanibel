@@ -4,19 +4,34 @@ All notable changes to Sanibel are documented in this file.
 
 ---
 
+## [Unreleased]
+
+### Maintenance — Behavior-Preserving Refactor
+Internal cleanup to reduce duplication. No change to pipeline outputs.
+
+- **`bin/sanibel_taxonomy.py`** — Now the single home for the shared 16S-BLAST and Kraken row parsers (`iter_blast16s_rows`, `iter_kraken_species_rows`), the 16S thresholds (`BLAST16S_MIN_LENGTH`, `BLAST16S_MIN_PIDENT`), the accession regex (`ACCESSION_RE` / `find_accession`), and `species_of`. `aggregate_species_id.py`, `build_candidate_pool.py`, `parse_assembly.py`, and `summary_report.py` import these instead of each carrying their own copy.
+- **`bin/build_candidate_pool.py`** — Dropped the unused `sample_id` argument; **`modules/build_candidates.nf`** no longer passes it.
+- **`bin/summary_report.py`** — Collapsed the three duplicated standard-row blocks (neisseria / hinfluenzae / other) into one.
+- **`bin/bmgap2_helpers.py`** (new) — Shared MLST-scheme / sample-name boilerplate for the three `run_bmgap2_*.py` host scripts. The per-script meningitis re-check is preserved.
+- **`modules/kaptive.nf`** (new) — Single parameterized Kaptive module (`variant` of `ab` / `vp`), invoked via include aliases; replaces `kaptive_ab.nf` and `kaptive_vp.nf`. Output filenames and publish dirs unchanged.
+- **`sanibel.nf`** — Added a `rebind()` helper for the repeated re-key / join / re-emit idiom.
+- **`nextflow.config`** — Added process-level `cpus` / `memory` defaults (per-process blocks override where they differ) and a `withName: 'bmgap2_.*'` selector for the shared BMGAP2 settings. Removed the redundant module-level `errorStrategy` from `candidate_references.nf`.
+
+---
+
 ## [2.1.0] — 2026-06-26
 
 ### Species Identification — Candidate Pool + skani ANI Confirmation
 Replaced the previous Kraken2/Mash agreement heuristic with a two-stage workflow:
 three tools (Mash and Kraken2 on the reads, 16S rRNA BLAST on the assembly) nominate
-a ranked pool of candidate species, one RefSeq reference genome is downloaded per
-candidate, and `skani` confirms the species by ANI. New `sum_report.txt` columns:
+a ranked pool of candidate species, multiple RefSeq reference genomes (N=5 by
+default) are downloaded per candidate, and `skani` confirms the species by ANI. New `sum_report.txt` columns:
 `blast_16s_tophit`, `blast_16s_pident`, `skani_species`, `skani_ani`,
 `skani_align_fraction`, `skani_reference`, `contamination_flag`.
 
 - **`modules/blast_16s.nf`** — Downloads the NCBI `16S_ribosomal_RNA` BLAST database once (cached via `storeDir`) and megablasts each assembly. `perc_identity` set to 97 to match downstream filters.
 - **`bin/build_candidate_pool.py`** / **`modules/build_candidates.nf`** — Builds the ranked candidate pool from all three tools. Includes every distinct Mash species and every qualifying 16S species; Kraken2 candidates now require a minimum clade-read count (`KRAKEN_MIN_READS = 10`) so low-abundance `0.00%` taxa no longer enter the pool. Pool capped at 15.
-- **`modules/refseq_references.nf`** — Downloads one RefSeq genome per candidate via `datasets` (accession first, taxon-name fallback). Downloads parallelized (`xargs -P 3`) with `maxForks 4` to bound concurrent NCBI sessions; `errorStrategy 'ignore'`.
+- **`modules/candidate_references.nf`** — Downloads one RefSeq genome per candidate via `datasets` (accession first, taxon-name fallback). Downloads parallelized (`xargs -P 3`) with `maxForks 4` to bound concurrent NCBI sessions; `errorStrategy 'ignore'`.
 - **`modules/skani.nf`** — ANI confirmation against all downloaded references at once; the best ANI hit drives the species call.
 - **`bin/aggregate_species_id.py`** / **`modules/aggregate_species_id.nf`** — Retained to supply `contamination_flag` (a foreign 16S genus on overlapping contigs), with a synonymous-genus table to avoid false positives between 16S-indistinguishable genera. Output published to `candidate_species/`.
 - **`bin/summary_report.py`** — Reports 16S at genus level as `Genus spp.` (`blast_16s_tophit`), cross-checked against Mash and Kraken so a contaminant contig is not reported as the top hit. Removed the unused `skani_notes` helper.
@@ -36,12 +51,12 @@ Made skani the source of truth for the reported organism, the 16S anchor, and th
 ### Multi-Reference skani ANI
 Recovers ANI above the 95% species boundary for clinical isolates whose representative RefSeq strain is divergent (*E. coli* vs K-12, *L. monocytogenes* vs EGD-e). Supersedes the single-genome download described above.
 
-- **`modules/refseq_references.nf`**: downloads up to N RefSeq genomes per candidate species instead of one. Lists accessions with `datasets summary genome taxon ... --limit N` (`--limit` is not valid on the taxon download), always includes the sketch representative, fetches them in a single `datasets download genome accession` call, and names each file `Genus_species__<accession>.fna`. skani picks the best ANI across all strains; keeping the representative makes the reference set a strict superset, so ANI cannot regress versus the single-genome behavior.
+- **`modules/candidate_references.nf`**: downloads up to N RefSeq genomes per candidate species instead of one. Lists accessions with `datasets summary genome taxon ... --limit N` (`--limit` is not valid on the taxon download), always includes the sketch representative, fetches them in a single `datasets download genome accession` call, and names each file `Genus_species__<accession>.fna`. skani picks the best ANI across all strains; keeping the representative makes the reference set a strict superset, so ANI cannot regress versus the single-genome behavior.
 - **`bin/summary_report.py`**: `parse_skani` reads the new per-accession filenames, reporting a clean `Genus_species` label and the winning strain's accession.
 - **`nextflow.config`**: new `params.refseq_refs_per_candidate` (default 5).
 
 ### Added
-- **`modules/lissero.nf`** — New LisSero serogroup-typing module for *Listeria monocytogenes*. Runs on the assembly and is gated by `meta.mash_species == 'Listeria_monocytogenes'`, mirroring the other species-specific modules. Container: `quay.io/biocontainers/lissero:0.4.10--pyhdfd78af_0`.
+- **`modules/lissero.nf`** — New LisSero serogroup-typing module for *Listeria monocytogenes*. Runs on the assembly and is gated by `meta.species == 'Listeria_monocytogenes'`, mirroring the other species-specific modules. Container: `quay.io/biocontainers/lissero:0.4.10--pyhdfd78af_0`.
 - **`sanibel.nf`** — Included and invoked `lissero`; added `lissero.out.done` to the summary-report barrier.
 - **`nextflow.config`** — Added `withName: lissero` resource/container block (`errorStrategy = 'ignore'`).
 - **`summary_report.py`** — Added `get_listeria_serotype()` parser; the LisSero `SEROTYPE` value now populates the `serotype` column of `sum_report.txt`.
@@ -148,7 +163,7 @@ BMGAP2 runs automatically on every sample; the python scripts check the MLST sch
 |--------|-------|-------|
 | `fastqc` / `fastqc2` | 0.11.9 | 0.12.1 |
 | `trimmomatic` | 0.39 | 0.40 |
-| `bbtools` | 38.76 | 39.77 |
+| `bbtools` | 38.76 | 39.34 |
 | `multiqc` | 1.8 | 1.33 |
 | `mash` | 2.2 | 2.3 |
 | `unicycler` | 0.4.7 | 0.5.1 |

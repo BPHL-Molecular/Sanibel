@@ -18,12 +18,13 @@ from collections import Counter
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from sanibel_taxonomy import (
     SYNONYMOUS_PAIRS, detect_contamination, extract_contam_candidates,
+    iter_blast16s_rows, iter_kraken_species_rows,
+    BLAST16S_MIN_LENGTH, BLAST16S_MIN_PIDENT,
 )
 
-# Thresholds for 16S BLAST filtering
-MIN_LENGTH    = 400    # minimum alignment length (bp)
-MIN_PIDENT    = 97.0   # genus-level identity threshold (%)
-SP_PIDENT     = 98.7   # species-level identity threshold (%)
+# Species-level identity threshold (%); genus-level thresholds are shared via
+# BLAST16S_MIN_LENGTH / BLAST16S_MIN_PIDENT in sanibel_taxonomy.
+SP_PIDENT = 98.7
 
 
 def parse_mash(assembly_stats):
@@ -40,51 +41,20 @@ def parse_mash(assembly_stats):
 
 
 def parse_kraken(kraken_report):
-    with open(kraken_report) as fh:
-        for line in fh:
-            parts = line.strip().split('\t')
-            if len(parts) < 6:
-                continue
-            rank = parts[3].strip()
-            if rank == 'S':
-                name = parts[5].strip()
-                words = name.split()
-                genus   = words[0] if len(words) > 0 else None
-                species = words[1] if len(words) > 1 else None
-                if genus:
-                    return genus, species
+    for genus, species, _pct, _reads in iter_kraken_species_rows(kraken_report):
+        if genus:
+            return genus, species
     return None, None
 
 
 def parse_blast16s(blast_tsv):
     rows = []
-    with open(blast_tsv) as fh:
-        for line in fh:
-            line = line.strip()
-            if not line:
-                continue
-            parts = line.split('\t')
-            if len(parts) < 13:
-                continue
-            if parts[0] == 'qseqid':
-                continue
-            qseqid = parts[0]
-            try:
-                pident   = float(parts[2])
-                length   = int(parts[3])
-                sstart   = int(parts[8])
-                send     = int(parts[9])
-                bitscore = float(parts[11])
-            except ValueError:
-                continue
-            if length < MIN_LENGTH or pident < MIN_PIDENT:
-                continue
-            words   = parts[12].strip().split()
-            genus   = words[0] if len(words) > 0 else None
-            species = words[1] if len(words) > 1 else None
-            stitle  = parts[12].strip()
-            if genus:
-                rows.append((genus, species, pident, length, stitle, qseqid, sstart, send, bitscore))
+    for hit in iter_blast16s_rows(blast_tsv):
+        if hit.length < BLAST16S_MIN_LENGTH or hit.pident < BLAST16S_MIN_PIDENT:
+            continue
+        if hit.genus:
+            rows.append((hit.genus, hit.species, hit.pident, hit.length,
+                         hit.stitle, hit.qseqid, hit.sstart, hit.send, hit.bitscore))
 
     if not rows:
         return None, None, None, {}, []

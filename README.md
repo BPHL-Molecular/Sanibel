@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Pipeline-Sanibel%202.0-blue?style=plastic" />
-  <img src="https://img.shields.io/badge/Nextflow-≥22.10-brightgreen?style=plastic&logo=nextflow" />
+  <img src="https://img.shields.io/badge/Pipeline-Sanibel%202.1-blue?style=plastic" />
+  <img src="https://img.shields.io/badge/Nextflow-≥23.04-brightgreen?style=plastic&logo=nextflow" />
   <img src="https://img.shields.io/badge/Python-3.10+-yellow?style=plastic&logo=python" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-red?style=plastic" />
 </p>
@@ -155,7 +155,7 @@ flowchart TD
     G --> CP[build_candidates]
     I --> CP
     W --> CP
-    CP --> RR[refseq_references<br/>N genomes per candidate]
+    CP --> RR[candidate_references<br/>N genomes per candidate]
     RR --> SK[skani ANI]
 
     G --> AG[aggregate_species_id<br/>contamination]

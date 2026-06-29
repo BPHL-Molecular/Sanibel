@@ -13,6 +13,9 @@ import os
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from bmgap2_helpers import read_scheme_and_sample
+
 
 def main():
     if len(sys.argv) != 5:
@@ -27,25 +30,7 @@ def main():
     bmgap2_db = sys.argv[3]
     cpus      = sys.argv[4]
 
-    items       = mypath.strip().split("/")
-    sample_name = items[-1]
-
-    scheme = ""
-    try:
-        with open(mlst_file) as f:
-            fields = f.readline().strip().split()
-            if len(fields) > 1:
-                scheme = fields[1]
-    except Exception as e:
-        print(f"BMGAP2-BMScan: Error reading MLST file - {e}", file=sys.stderr)
-        sys.exit(1)
-
-    if scheme not in ['neisseria', 'hinfluenzae']:
-        print(
-            f"BMGAP2-BMScan: Skipping {sample_name} "
-            f"- not a meningitis species (scheme={scheme})"
-        )
-        sys.exit(0)
+    _scheme, sample_name = read_scheme_and_sample(mypath, mlst_file, "BMGAP2-BMScan")
 
     assembly_dir = f"{mypath}/assembly"
     output_dir   = f"{mypath}/bmgap2_bmscan"

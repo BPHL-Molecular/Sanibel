@@ -14,6 +14,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from sanibel_taxonomy import (
     SYNONYMOUS_PAIRS, genus_of, detect_contamination, extract_contam_candidates,
+    iter_blast16s_rows, BLAST16S_MIN_LENGTH, BLAST16S_MIN_PIDENT,
 )
 
 
@@ -208,31 +209,11 @@ def parse_skani(filepath):
 
 
 def parse_blast16s_result(filepath, anchor_genera=None):
-    MIN_LENGTH = 400
-    MIN_PIDENT = 97.0
     qualifying = []
-    try:
-        with open(filepath) as fh:
-            for line in fh:
-                line = line.strip()
-                if not line:
-                    continue
-                parts = line.split('\t')
-                if len(parts) < 13 or parts[0] == 'qseqid':
-                    continue
-                try:
-                    pident   = float(parts[2])
-                    length   = int(parts[3])
-                    bitscore = float(parts[11])
-                except ValueError:
-                    continue
-                if length < MIN_LENGTH or pident < MIN_PIDENT:
-                    continue
-                stitle = parts[12].strip()
-                genus  = stitle.split()[0] if stitle else ''
-                qualifying.append((pident, length, genus, bitscore))
-    except Exception:
-        pass
+    for hit in iter_blast16s_rows(filepath):
+        if hit.length < BLAST16S_MIN_LENGTH or hit.pident < BLAST16S_MIN_PIDENT:
+            continue
+        qualifying.append((hit.pident, hit.length, hit.genus or '', hit.bitscore))
     if not qualifying:
         return {'pident': NO_DATA, 'tophit': NO_DATA}
 
@@ -751,65 +732,8 @@ def main():
             kr['species'], kr['percent'],
         ]
 
-        if scheme == 'neisseria':
-            bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
+        if scheme in ('neisseria', 'hinfluenzae'):
             serotype = pmga['prediction'] or NO_DATA
-            std_row = common + [
-                blast16s_result['tophit'], blast16s_result['pident'],
-                skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
-                contamination_flag,
-                scheme, mlst['st'], serotype,
-                rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
-                asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
-                asm['total_length'], asm['gc_content'], cds,
-            ]
-            rows_std.append(std_row)
-            nm_row = [
-                sid,
-                pmga_sp,
-                bm['bmgap2_species'], bm['bmgap2_mlst_st'], bm['bmgap2_mlst_cc'],
-                pmga['serotype_notes'],
-                pmga['prediction'] or NO_DATA,
-                bm['predicted_resistance'],
-                bm['penA_allele'], bm['penA_mutations'], bm['penA_phenotype'],
-                bm['gyrA_allele'], bm['gyrA_mutations'], bm['gyrA_phenotype'],
-                bm['parC_allele'], bm['parC_phenotype'],
-                bm['rpoB_allele'], bm['rpoB_phenotype'],
-                bm['ponA_allele'], bm['ponA_phenotype'],
-                bm['FHbp_variant'], bm['FHbp_subfamily'], bm['FHbp_peptide'],
-                bm['NadA_variant'], bm['NhbA_peptide'], bm['vaccine_4CMenB_coverage'],
-            ]
-            rows_nm.append(nm_row)
-
-        elif scheme == 'hinfluenzae':
-            bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
-            serotype = pmga['prediction'] or NO_DATA
-            std_row = common + [
-                blast16s_result['tophit'], blast16s_result['pident'],
-                skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
-                contamination_flag,
-                scheme, mlst['st'], serotype,
-                rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
-                asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
-                asm['total_length'], asm['gc_content'], cds,
-            ]
-            rows_std.append(std_row)
-            hi_row = [
-                sid,
-                pmga_sp,
-                bm['bmgap2_species'], bm['bmgap2_mlst_st'], bm['bmgap2_mlst_cc'],
-                pmga['serotype_notes'],
-                pmga['prediction'] or NO_DATA,
-                bm['predicted_resistance'],
-                bm['penA_allele'], bm['penA_mutations'], bm['penA_phenotype'],
-                bm['gyrA_allele'], bm['gyrA_mutations'], bm['gyrA_phenotype'],
-                bm['parC_allele'], bm['parC_phenotype'],
-                bm['rpoB_allele'], bm['rpoB_phenotype'],
-                bm['folA_allele'], bm['folA_phenotype'],
-                bm['blaTEM1_status'], bm['blaROB1_status'],
-            ]
-            rows_hi.append(hi_row)
-
         else:
             # Species-specific serotype from published output dirs
             serotype = NO_DATA
@@ -831,16 +755,53 @@ def main():
                     serotype = result
                     break
 
-            row = common + [
-                blast16s_result['tophit'], blast16s_result['pident'],
-                skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
-                contamination_flag,
-                scheme, mlst['st'], serotype,
-                rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
-                asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
-                asm['total_length'], asm['gc_content'], cds,
+        std_row = common + [
+            blast16s_result['tophit'], blast16s_result['pident'],
+            skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
+            contamination_flag,
+            scheme, mlst['st'], serotype,
+            rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
+            asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
+            asm['total_length'], asm['gc_content'], cds,
+        ]
+        rows_std.append(std_row)
+
+        if scheme == 'neisseria':
+            bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
+            nm_row = [
+                sid,
+                pmga_sp,
+                bm['bmgap2_species'], bm['bmgap2_mlst_st'], bm['bmgap2_mlst_cc'],
+                pmga['serotype_notes'],
+                pmga['prediction'] or NO_DATA,
+                bm['predicted_resistance'],
+                bm['penA_allele'], bm['penA_mutations'], bm['penA_phenotype'],
+                bm['gyrA_allele'], bm['gyrA_mutations'], bm['gyrA_phenotype'],
+                bm['parC_allele'], bm['parC_phenotype'],
+                bm['rpoB_allele'], bm['rpoB_phenotype'],
+                bm['ponA_allele'], bm['ponA_phenotype'],
+                bm['FHbp_variant'], bm['FHbp_subfamily'], bm['FHbp_peptide'],
+                bm['NadA_variant'], bm['NhbA_peptide'], bm['vaccine_4CMenB_coverage'],
             ]
-            rows_std.append(row)
+            rows_nm.append(nm_row)
+
+        elif scheme == 'hinfluenzae':
+            bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
+            hi_row = [
+                sid,
+                pmga_sp,
+                bm['bmgap2_species'], bm['bmgap2_mlst_st'], bm['bmgap2_mlst_cc'],
+                pmga['serotype_notes'],
+                pmga['prediction'] or NO_DATA,
+                bm['predicted_resistance'],
+                bm['penA_allele'], bm['penA_mutations'], bm['penA_phenotype'],
+                bm['gyrA_allele'], bm['gyrA_mutations'], bm['gyrA_phenotype'],
+                bm['parC_allele'], bm['parC_phenotype'],
+                bm['rpoB_allele'], bm['rpoB_phenotype'],
+                bm['folA_allele'], bm['folA_phenotype'],
+                bm['blaTEM1_status'], bm['blaROB1_status'],
+            ]
+            rows_hi.append(hi_row)
 
     def write_report(path, header, rows):
         with open(path, 'w') as fh:
