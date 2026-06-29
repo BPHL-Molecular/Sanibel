@@ -36,12 +36,6 @@ _ACC_RE = re.compile(r'GC[FA]_[A-Za-z0-9]+(?:\.[0-9]+)?|N[CZ]_[A-Za-z0-9]+(?:\.[
 # Mash parsing
 
 def _parse_mash_ref(ref_name):
-    """
-    Parse a Mash reference name. Handles the legacy gembox format that uses
-    '-.-' as a field separator (one or more consecutive tokens, e.g. '-.-.-.-')
-    and the update_mash_dist format 'Genus_species_<ACCESSION>'.
-    Returns (genus, species, accession) or (None, None, None) on failure.
-    """
     try:
         segs = ref_name.split('-.-')
         name_part = segs[-1]
@@ -101,8 +95,6 @@ def parse_mash_distances(filepath):
     except OSError:
         pass
 
-    # Every distinct species among the Mash hits (already deduped to the
-    # closest hit per species in `best`), ranked by ascending distance.
     sorted_all = sorted(best.values(), key=lambda d: d['mash_distance'])
     return sorted_all, best
 
@@ -125,10 +117,6 @@ def parse_kraken_candidates(filepath):
                     reads = int(parts[1].strip())
                 except ValueError:
                     continue
-                # Floor on clade reads: the percentage column rounds to 0.00 at
-                # low abundance, so a single stray read would otherwise become a
-                # candidate. Applied here so both the above-threshold set and the
-                # foreign-genus picks below inherit the floor.
                 if reads < KRAKEN_MIN_READS:
                     continue
                 name = parts[5].strip()
@@ -192,9 +180,6 @@ def parse_16s_candidates(filepath):
     if not qualifying:
         return []
 
-    # Every distinct species among qualifying hits (deduped to its best pident).
-    # 16S is genus-conserved, so this contributes genus-level breadth to the pool;
-    # skani rejects the wrong ones by ANI downstream. POOL_CAP bounds the total.
     best = {}
     for genus, species, pident in qualifying:
         key = f"{genus.lower()} {species.lower()}"

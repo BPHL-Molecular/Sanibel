@@ -26,6 +26,20 @@ candidate, and `skani` confirms the species by ANI. New `sum_report.txt` columns
 - **`nextflow.config`** — Mash container pinned to `staphb/mash:2.3-RefSeqProkv235`, baking in a current (2026) RefSeq prokaryote sketch from `update_mash_dist`, replacing the stale 2019 gembox sketch.
 - **`bin/parse_assembly.py`** / **`bin/build_candidate_pool.py`** — Parse the new `Genus_species_<ACCESSION>` sketch naming and recover the accession via the existing `_ACC_RE` regex (legacy `-.-` format still supported).
 
+### skani as Species-ID and Contamination Arbiter
+Made skani the source of truth for the reported organism, the 16S anchor, and the contamination flag. The report previously inherited these from Mash, which is unstable on mixed or divergent samples (e.g. a contaminated *Acinetobacter* flipping to *Staphylococcus* and inverting the contamination flag).
+
+- **`bin/sanibel_taxonomy.py`** (new): single home for the 16S-synonymous genus table and the contig-overlap contamination logic, imported by both `aggregate_species_id.py` and `summary_report.py` so the two cannot drift.
+- **`bin/aggregate_species_id.py`**: imports the shared module; contamination detection now also suppresses synonymous-genus pairs (e.g. *Escherichia*/*Shigella*), matching the table's stated intent.
+- **`bin/summary_report.py`**: `blast_16s_tophit` is anchored on the skani genus; `contamination_flag` is recomputed against the skani genus; the reported organism is relabeled to the Mash/Kraken consensus when skani's winner is a 16S-synonymous genus of it (*Escherichia*/*Shigella*). Each path falls back to the prior Mash/Kraken behavior when skani returns no result.
+
+### Multi-Reference skani ANI
+Recovers ANI above the 95% species boundary for clinical isolates whose representative RefSeq strain is divergent (*E. coli* vs K-12, *L. monocytogenes* vs EGD-e). Supersedes the single-genome download described above.
+
+- **`modules/refseq_references.nf`**: downloads up to N RefSeq genomes per candidate species instead of one. Lists accessions with `datasets summary genome taxon ... --limit N` (`--limit` is not valid on the taxon download), always includes the sketch representative, fetches them in a single `datasets download genome accession` call, and names each file `Genus_species__<accession>.fna`. skani picks the best ANI across all strains; keeping the representative makes the reference set a strict superset, so ANI cannot regress versus the single-genome behavior.
+- **`bin/summary_report.py`**: `parse_skani` reads the new per-accession filenames, reporting a clean `Genus_species` label and the winning strain's accession.
+- **`nextflow.config`**: new `params.refseq_refs_per_candidate` (default 5).
+
 ### Added
 - **`modules/lissero.nf`** — New LisSero serogroup-typing module for *Listeria monocytogenes*. Runs on the assembly and is gated by `meta.mash_species == 'Listeria_monocytogenes'`, mirroring the other species-specific modules. Container: `quay.io/biocontainers/lissero:0.4.10--pyhdfd78af_0`.
 - **`sanibel.nf`** — Included and invoked `lissero`; added `lissero.out.done` to the summary-report barrier.

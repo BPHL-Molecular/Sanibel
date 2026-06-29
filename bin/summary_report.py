@@ -11,6 +11,11 @@ import json
 import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from sanibel_taxonomy import (
+    SYNONYMOUS_PAIRS, genus_of, detect_contamination, extract_contam_candidates,
+)
+
 
 NO_DATA = 'No data'
 
@@ -180,11 +185,18 @@ def parse_skani(filepath):
         ref_basename = os.path.basename(best_parts[0])
         if ref_basename.endswith('.fna'):
             ref_basename = ref_basename[:-4]
-        confirmed_species = ref_basename if ref_basename else NO_DATA
-        align_fraction    = best_parts[4] if len(best_parts) > 4 else NO_DATA
-        # Ref_name is col 5; the accession is the first whitespace-delimited token
-        ref_name_col  = best_parts[5].strip() if len(best_parts) > 5 else ''
-        skani_ref_acc = ref_name_col.split()[0] if ref_name_col else NO_DATA
+        # References are named <Genus_species>__<ACCESSION>.fna (multiple strains per
+        # candidate); recover the clean species label and accession from the filename,
+        # falling back to the legacy single-file naming + Ref_name column otherwise.
+        if '__' in ref_basename:
+            species_part, acc_part = ref_basename.split('__', 1)
+            confirmed_species = species_part if species_part else NO_DATA
+            skani_ref_acc     = acc_part if acc_part else NO_DATA
+        else:
+            confirmed_species = ref_basename if ref_basename else NO_DATA
+            ref_name_col      = best_parts[5].strip() if len(best_parts) > 5 else ''
+            skani_ref_acc     = ref_name_col.split()[0] if ref_name_col else NO_DATA
+        align_fraction = best_parts[4] if len(best_parts) > 4 else NO_DATA
         return {
             'ani':               f"{best_ani:.3f}",
             'confirmed_species': confirmed_species,
@@ -196,16 +208,6 @@ def parse_skani(filepath):
 
 
 def parse_blast16s_result(filepath, anchor_genera=None):
-    """
-    Genus of the top 16S hit, cross-checked against Mash/Kraken.
-
-    16S is genus-conserved and a contaminant contig can carry the single
-    highest-identity hit (e.g. a Staphylococcus 16S at 100% on an Acinetobacter
-    sample). To avoid reporting the contaminant, the top hit is restricted to
-    genera that agree with Mash or Kraken (anchor_genera); if no qualifying hit
-    agrees with either tool, the overall highest-identity hit is reported
-    instead. Reported as 'Genus spp.' since 16S does not resolve species.
-    """
     MIN_LENGTH = 400
     MIN_PIDENT = 97.0
     qualifying = []
@@ -713,16 +715,32 @@ def main():
         skani_path = f'{sid}_skani.tsv'
         sk = parse_skani(skani_path) if os.path.isfile(skani_path) else _sk_empty
 
-        blast16s_path   = f'{sid}_16s_blast.tsv'
-        anchor_16s      = [asm['genus'], kr['species'].split()[0] if kr['species'] != NO_DATA else None]
-        blast16s_result = parse_blast16s_result(blast16s_path, anchor_genera=anchor_16s) \
-                          if os.path.isfile(blast16s_path) \
-                          else {'pident': NO_DATA, 'tophit': NO_DATA}
-
         skani_ID_val     = sk['confirmed_species']
         skani_ANI_val    = sk['ani']
         skani_align_val  = sk['align_fraction']
         skani_ID_ref_val = sk['reference']
+
+        skani_genus  = genus_of(skani_ID_val) if skani_ID_val not in (NO_DATA, 'NO ID', '', None) else None
+        mash_genus   = asm['genus']
+        kraken_genus = kr['species'].split()[0] if kr['species'] != NO_DATA else None
+
+        blast16s_path   = f'{sid}_16s_blast.tsv'
+        anchor_16s      = [skani_genus] if skani_genus else [mash_genus, kraken_genus]
+        blast16s_result = parse_blast16s_result(blast16s_path, anchor_genera=anchor_16s) \
+                          if os.path.isfile(blast16s_path) \
+                          else {'pident': NO_DATA, 'tophit': NO_DATA}
+
+        consensus_genus = mash_genus if (mash_genus and kraken_genus and
+                                         mash_genus.lower() == kraken_genus.lower()) else None
+        if skani_genus and consensus_genus and skani_genus.lower() != consensus_genus.lower() \
+                and frozenset({skani_genus.lower(), consensus_genus.lower()}) in SYNONYMOUS_PAIRS:
+            skani_ID_val = f"{asm['genus']}_{asm['species']}"
+
+        if skani_genus and os.path.isfile(blast16s_path):
+            contamination_flag = detect_contamination(
+                extract_contam_candidates(blast16s_path), skani_genus)
+        else:
+            contamination_flag = agg['contamination_flag']
 
         scheme  = mlst['scheme']
         pmga_sp = pmga['species'] or NO_DATA
@@ -739,7 +757,7 @@ def main():
             std_row = common + [
                 blast16s_result['tophit'], blast16s_result['pident'],
                 skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
-                agg['contamination_flag'],
+                contamination_flag,
                 scheme, mlst['st'], serotype,
                 rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
                 asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
@@ -769,7 +787,7 @@ def main():
             std_row = common + [
                 blast16s_result['tophit'], blast16s_result['pident'],
                 skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
-                agg['contamination_flag'],
+                contamination_flag,
                 scheme, mlst['st'], serotype,
                 rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
                 asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
@@ -816,7 +834,7 @@ def main():
             row = common + [
                 blast16s_result['tophit'], blast16s_result['pident'],
                 skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
-                agg['contamination_flag'],
+                contamination_flag,
                 scheme, mlst['st'], serotype,
                 rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
                 asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],

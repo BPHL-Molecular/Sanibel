@@ -11,15 +11,19 @@ Output (stdout, TSV):
 Confidence values: high (all 3 agree), medium (2 of 3 agree), low (no majority)
 """
 
+import os
 import sys
 from collections import Counter
 
-# Thresholds for 16S BLAST filtering and contamination detection
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from sanibel_taxonomy import (
+    SYNONYMOUS_PAIRS, detect_contamination, extract_contam_candidates,
+)
+
+# Thresholds for 16S BLAST filtering
 MIN_LENGTH    = 400    # minimum alignment length (bp)
 MIN_PIDENT    = 97.0   # genus-level identity threshold (%)
 SP_PIDENT     = 98.7   # species-level identity threshold (%)
-CONTAM_PIDENT = 99.0   # minimum pident for contamination candidates
-CONTAM_LENGTH = 1400   # minimum length for contamination candidates
 
 
 def parse_mash(assembly_stats):
@@ -88,39 +92,9 @@ def parse_blast16s(blast_tsv):
     rows.sort(key=lambda r: (-r[2], abs(r[3] - 1500), -r[8]))
     winner_genus, winner_species, winner_strain = _select_winner(rows)
 
-    contam_candidates = {}
-    for g, s, pi, ln, title, qseqid, ss, se, _bs in rows:
-        if pi >= CONTAM_PIDENT and ln >= CONTAM_LENGTH:
-            if qseqid not in contam_candidates:
-                contam_candidates[qseqid] = (g, ss, se)
+    contam_candidates = extract_contam_candidates(blast_tsv)
 
     return winner_genus, winner_species, winner_strain, contam_candidates, rows
-
-
-# Genera indistinguishable by 16S; never flag each other as contamination
-SYNONYMOUS_PAIRS = {
-    frozenset({'escherichia',   'shigella'}),
-    frozenset({'klebsiella',    'enterobacter'}),
-    frozenset({'klebsiella',    'raoultella'}),
-    frozenset({'salmonella',    'citrobacter'}),
-    frozenset({'yersinia',      'serratia'}),
-    frozenset({'hafnia',        'escherichia'}),
-    frozenset({'haemophilus',   'aggregatibacter'}),
-    frozenset({'haemophilus',   'pasteurella'}),
-    frozenset({'neisseria',     'kingella'}),
-    frozenset({'neisseria',     'eikenella'}),
-    frozenset({'streptococcus', 'lactococcus'}),
-    frozenset({'streptococcus', 'enterococcus'}),
-    frozenset({'staphylococcus', 'macrococcus'}),
-    frozenset({'staphylococcus', 'mammaliicoccus'}),
-    frozenset({'mycobacterium', 'mycobacteroides'}),
-    frozenset({'mycobacterium', 'mycolicibacterium'}),
-    frozenset({'campylobacter', 'arcobacter'}),
-    frozenset({'campylobacter', 'aliarcobacter'}),
-    frozenset({'campylobacter', 'helicobacter'}),
-    frozenset({'listeria',      'brochothrix'}),
-    frozenset({'bacillus',      'paenibacillus'}),
-}
 
 
 def _select_winner(rows, sp_pident=SP_PIDENT):
@@ -139,28 +113,6 @@ def _select_winner(rows, sp_pident=SP_PIDENT):
         winner_strain = f"{winner_genus}/{top_pi_genus} synonymous pair"
 
     return winner_genus, winner_species, winner_strain
-
-
-def _ranges_overlap(s1, e1, s2, e2):
-    lo1, hi1 = min(s1, e1), max(s1, e1)
-    lo2, hi2 = min(s2, e2), max(s2, e2)
-    return lo1 <= hi2 and lo2 <= hi1
-
-
-def detect_contamination(contam_candidates, final_genus):
-    if len(contam_candidates) < 2:
-        return 'None'
-    contigs = list(contam_candidates.items())
-    for i in range(len(contigs)):
-        qid_a, (genus_a, s_a, e_a) = contigs[i]
-        for j in range(i + 1, len(contigs)):
-            qid_b, (genus_b, s_b, e_b) = contigs[j]
-            if _ranges_overlap(s_a, e_a, s_b, e_b):
-                if genus_a.lower() != final_genus.lower():
-                    return f"Possible contamination: {genus_a} detected on contig {qid_a}"
-                if genus_b.lower() != final_genus.lower():
-                    return f"Possible contamination: {genus_b} detected on contig {qid_b}"
-    return 'None'
 
 
 def vote(mash, kraken, blast16s):

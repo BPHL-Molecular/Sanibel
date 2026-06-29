@@ -18,6 +18,9 @@
 Sanibel is Florida BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis pipeline. It performs quality control, *de novo* assembly, taxonomic classification, species identification, sequence typing and antimicrobial resistance (AMR) detection on paired-end Illumina short reads. 
 
 
+Species identification uses a candidate-pool design: Mash, Kraken2, and 16S rRNA BLAST nominate a ranked pool of candidate species, multiple RefSeq genomes are downloaded per candidate, and skani confirms the species by whole-genome ANI against the ≥ 95% boundary. skani is the arbiter for the reported organism and the contamination flag.
+
+
 Species-specific typing modules run automatically based on species identification results: *Legionella pneumophila* (Legsta), *Klebsiella* (Kleborate), *Shigella* (ShigaTyper), *Streptococcus pyogenes/dysgalactiae* (EMM typing), *Salmonella* (SeqSero2), *E. coli* (SerotypeFinder), *Streptococcus pneumoniae* (SeroBA), *Pseudomonas aeruginosa* (pasty), *Acinetobacter baumannii* (Kaptive), *Vibrio parahaemolyticus* (Kaptive), *Listeria monocytogenes* (LisSero), and *Neisseria meningitidis*/*Haemophilus influenzae* (PMGA). BMGAP2 provides enhanced AMR and antigen analysis for *Neisseria meningitidis* and *Haemophilus influenzae*. PlasmidFinder runs on all samples.
 
 
@@ -140,12 +143,24 @@ flowchart TD
     H --> K[AMRFinder]
     H --> L[MLST]
     H --> M[Prokka]
+    H --> W[16S rRNA BLAST]
 
     G --> O[parse_assembly]
     J --> O
     O --> M
     O --> P[readssum]
     D --> P
+
+    %% Species ID: candidate pool to multi-reference skani ANI
+    G --> CP[build_candidates]
+    I --> CP
+    W --> CP
+    CP --> RR[refseq_references<br/>N genomes per candidate]
+    RR --> SK[skani ANI]
+
+    G --> AG[aggregate_species_id<br/>contamination]
+    I --> AG
+    W --> AG
 
     O --> SP[Species-Specific Modules]
     L --> NM[PMGA]
@@ -158,12 +173,15 @@ flowchart TD
     M --> X
     L --> X
     I --> X
+    SK --> X
+    AG --> X
     SP --> X
     U --> X
 
     X --> Y[sum_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt]
 
     style SP fill:#fef,stroke:#333,color:#000
+    style SK fill:#9f9,stroke:#333,stroke-width:2px,color:#000
     style S fill:#9cf,stroke:#333,color:#000
     style T fill:#9cf,stroke:#333,color:#000
     style U fill:#9cf,stroke:#333,color:#000
@@ -181,7 +199,7 @@ Sanibel is made possible thanks to the following tools:
 
 **Assembly & Annotation** — [Mash](https://github.com/marbl/Mash) · [Unicycler](https://github.com/rrwick/Unicycler) · [QUAST](https://github.com/ablab/quast) · [Prokka](https://github.com/tseemann/prokka)
 
-**Typing & Classification** — [Kraken2](https://github.com/DerrickWood/kraken2) · [MLST](https://github.com/tseemann/mlst)
+**Typing & Classification** — [Kraken2](https://github.com/DerrickWood/kraken2) · [MLST](https://github.com/tseemann/mlst) · [skani](https://github.com/bluenote-1577/skani) · [BLAST](https://blast.ncbi.nlm.nih.gov) · [NCBI Datasets](https://github.com/ncbi/datasets)
 
 **AMR & Mobile Genetic Elements** — [AMRFinderPlus](https://github.com/ncbi/amr) · [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder)
 
@@ -195,7 +213,7 @@ All results are written to `params.output/<sample_id>/`. Depending on which spec
 
 | File | Samples | Cols | Key fields |
 |------|---------|------|------------|
-| `sum_report.txt` | All | 21 | ID · species (Mash/Kraken) · MLST scheme/ST · serotype · QC metrics (reads, coverage, assembly stats, GC, CDS) |
+| `sum_report.txt` | All | 27 | ID · species (skani ANI, Mash, Kraken) · 16S top hit · skani ANI/reference · contamination flag · MLST scheme/ST · serotype · QC metrics (reads, coverage, assembly stats, GC, CDS) |
 | `nm_sum_report.txt` | *N. meningitidis* only | 26 | ID · PMGA serogroup · BMGAP2 AMR alleles/phenotypes · vaccine antigen coverage (4CMenB) |
 | `hi_sum_report.txt` | *H. influenzae* only | 23 | ID · PMGA capsule type · BMGAP2 AMR alleles/phenotypes |
 
