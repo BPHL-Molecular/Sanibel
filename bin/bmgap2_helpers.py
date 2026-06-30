@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-bmgap2_helpers.py — shared boilerplate for the run_bmgap2_*.py host scripts.
+bmgap2_helpers.py - shared boilerplate for the run_bmgap2_*.py host scripts.
 
 The three BMGAP2 steps (AMR, LocusExtractor, BMScan) each derive the sample name
 from the output path and read the MLST scheme to decide whether to run, skipping
 (exit 0) any sample that is not Neisseria meningitidis or H. influenzae. This
 per-script re-check is the intended safety net even though the pipeline already
-gates BMGAP2 on genus upstream — keep it.
+gates BMGAP2 on genus upstream.
 """
 
 import sys
@@ -18,9 +18,7 @@ def read_scheme_and_sample(mypath, mlst_file, tool_tag):
     """Return (scheme, sample_name) for a BMGAP2 step.
 
     Exits 1 if the MLST file cannot be read; exits 0 with a skip message if the
-    sample's MLST scheme is not a meningitis species. Behavior and messages match
-    the original per-script logic exactly (tool_tag is the per-step prefix, e.g.
-    'BMGAP2-AMR').
+    sample's MLST scheme is not a meningitis species.
     """
     sample_name = mypath.strip().split('/')[-1]
 

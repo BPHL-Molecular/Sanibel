@@ -48,8 +48,6 @@ include { kaptive as kaptive_vp } from './modules/kaptive.nf'
 include { lissero }               from './modules/lissero.nf'
 include { summary_report }        from './modules/summary_report.nf'
 
-// Re-key a [meta, payload] channel by sample id, join the latest enriched meta,
-// and re-emit [enriched_meta, payload]. Replaces the repeated map -> join -> map idiom.
 def rebind(ch, metaCh) {
     ch.map  { meta, x -> [ meta.id, x ] }
       .join(metaCh)

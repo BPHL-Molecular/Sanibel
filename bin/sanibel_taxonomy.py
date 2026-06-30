@@ -2,11 +2,6 @@
 """
 sanibel_taxonomy.py — shared taxonomy / contamination primitives.
 
-Single source of truth for the 16S-synonymous genus table, the contig-overlap
-contamination logic, and the low-level Mash / Kraken / 16S-BLAST parsers shared by
-aggregate_species_id.py, build_candidate_pool.py, parse_assembly.py and
-summary_report.py. Keeping these in one place stops the synonym table, the
-thresholds, and the BLAST/Kraken column layout from drifting between callers.
 """
 
 import re
@@ -17,12 +12,10 @@ CONTAM_PIDENT = 99.0
 CONTAM_LENGTH = 1400
 
 # Minimum identity/length for a 16S hit to count as a species-ID candidate
-# (shared by the candidate pool, the 2-of-3 vote, and the report).
 BLAST16S_MIN_LENGTH = 400
 BLAST16S_MIN_PIDENT = 97.0
 
-# RefSeq/GenBank accession pattern (GCF_*, GCA_*, NC_*, NZ_*) used when recovering
-# the accession from a Mash sketch reference name.
+# RefSeq/GenBank accession pattern (GCF_*, GCA_*, NC_*, NZ_*)
 ACCESSION_RE = re.compile(
     r'GC[FA]_[A-Za-z0-9]+(?:\.[0-9]+)?|N[CZ]_[A-Za-z0-9]+(?:\.[0-9]+)?'
 )
@@ -82,8 +75,7 @@ def ranges_overlap(s1, e1, s2, e2):
     return lo1 <= hi2 and lo2 <= hi1
 
 
-# Parsed 16S BLAST hit. Columns follow blast_16s.nf outfmt 6:
-# qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle
+# Parsed 16S BLAST hit
 BlastHit = namedtuple(
     'BlastHit', 'qseqid pident length sstart send bitscore stitle genus species'
 )
@@ -120,11 +112,6 @@ def iter_blast16s_rows(path):
 
 
 def iter_kraken_species_rows(path):
-    """Yield (genus, species, pct, reads) for each species-rank ('S') Kraken row.
-
-    Columns follow the standard Kraken2 report: pct, clade_reads, taxon_reads,
-    rank, taxid, name.
-    """
     try:
         fh = open(path)
     except OSError:

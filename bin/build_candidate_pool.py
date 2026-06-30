@@ -52,8 +52,6 @@ def _parse_mash_ref(ref_name):
                 accession = acc
                 break
         if accession == NA:
-            # New update_mash_dist names (Genus_species_<ACC>) have no '-.-';
-            # recover the accession from the whole reference name.
             acc = find_accession(ref_name)
             if acc:
                 accession = acc

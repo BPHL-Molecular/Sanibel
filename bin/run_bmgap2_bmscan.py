@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-run_bmgap2_bmscan.py — species identification for Neisseria / H. influenzae samples.
+run_bmgap2_bmscan.py - species identification for Neisseria / H. influenzae samples.
 
 Usage:
     run_bmgap2_bmscan.py <mypath> <mlst_file> <bmgap2_db> <cpus>

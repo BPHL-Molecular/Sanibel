@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-summary_report.py — Build Sanibel summary reports from individual tool outputs.
+summary_report.py - Build Sanibel summary reports from individual tool outputs.
 
 """
 
@@ -186,9 +186,6 @@ def parse_skani(filepath):
         ref_basename = os.path.basename(best_parts[0])
         if ref_basename.endswith('.fna'):
             ref_basename = ref_basename[:-4]
-        # References are named <Genus_species>__<ACCESSION>.fna (multiple strains per
-        # candidate); recover the clean species label and accession from the filename,
-        # falling back to the legacy single-file naming + Ref_name column otherwise.
         if '__' in ref_basename:
             species_part, acc_part = ref_basename.split('__', 1)
             confirmed_species = species_part if species_part else NO_DATA
@@ -217,11 +214,8 @@ def parse_blast16s_result(filepath, anchor_genera=None):
     if not qualifying:
         return {'pident': NO_DATA, 'tophit': NO_DATA}
 
-    # Top hit = highest pident; closest to ~1500 bp as tiebreaker; highest bitscore.
     qualifying.sort(key=lambda r: (-r[0], abs(r[1] - 1500), -r[3]))
 
-    # Prefer the highest-identity hit whose genus agrees with Mash or Kraken;
-    # fall back to the overall top hit if 16S agrees with neither.
     anchor = {g.lower() for g in (anchor_genera or []) if g and g not in (NO_DATA, 'Unknown')}
     chosen = next((r for r in qualifying if r[2].lower() in anchor), qualifying[0]) if anchor \
              else qualifying[0]
@@ -230,7 +224,7 @@ def parse_blast16s_result(filepath, anchor_genera=None):
     return {'pident': f"{pident:.3f}", 'tophit': f"{genus} spp." if genus else NO_DATA}
 
 
-# Per-file parsers — species-specific
+# Per-file parsers - species-specific
 
 def get_ecoli_serotype(sample_dir, sample_id):
     ecoli_json = os.path.join(sample_dir, 'serotypefinder', 'data.json')

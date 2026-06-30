@@ -10,9 +10,6 @@ process kaptive {
         val meta, emit: done
 
     script:
-    // Per-variant locus/serotype databases and output names. Output filenames are
-    // unchanged from the original kaptive_ab / kaptive_vp modules so summary_report.py
-    // still finds them (note ab uses the _oc suffix, vp uses _o).
     def cfg = [
         ab: [ k: [ db: 'ab_k', out: "${meta.id}_ab_k.txt"  ],
               o: [ db: 'ab_o', out: "${meta.id}_ab_oc.txt" ] ],

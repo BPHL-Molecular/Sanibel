@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """
-2-of-3 majority vote for species identification.
 
 Usage: aggregate_species_id.py <assembly_stats_csv> <kraken_report> <blast_16s_tsv>
 

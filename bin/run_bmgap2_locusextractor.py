@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-run_bmgap2_locusextractor.py — vaccine antigen typing for Neisseria / H. influenzae samples.
+run_bmgap2_locusextractor.py - vaccine antigen typing for Neisseria / H. influenzae samples.
 
 Usage:
     run_bmgap2_locusextractor.py <mypath> <mlst_file> <bmgap2_db>
