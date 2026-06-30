@@ -1,6 +1,5 @@
 process candidate_references {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/candidate_references", mode: 'copy'
 
     input:
         tuple val(meta), path(candidate_pool)

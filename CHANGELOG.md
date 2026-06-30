@@ -17,9 +17,9 @@ Internal cleanup to reduce duplication. No change to pipeline outputs.
 - **`sanibel.nf`** — Added a `rebind()` helper for the repeated re-key / join / re-emit idiom.
 - **`nextflow.config`** — Added process-level `cpus` / `memory` defaults (per-process blocks override where they differ) and a `withName: 'bmgap2_.*'` selector for the shared BMGAP2 settings. Removed the redundant module-level `errorStrategy` from `candidate_references.nf`.
 
----
-
-## [2.1.0] — 2026-06-26
+### Output — Smaller per-sample output
+- **`modules/candidate_references.nf`** — No longer publishes the downloaded RefSeq reference genomes to `<sample>/candidate_references/`. They stay internal to the run (skani still reads them from `work/`), removing the largest per-run output artifact. Reference provenance remains in `_skani.tsv`.
+- **`modules/skani.nf`** — Publishes only `_skani.tsv`; the internal `_skani_species.txt` routing file is no longer copied to `<sample>/skani/`. Its content still drives species routing.
 
 ### Species Identification — Candidate Pool + skani ANI Confirmation
 Replaced the previous Kraken2/Mash agreement heuristic with a two-stage workflow:
