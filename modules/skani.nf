@@ -12,6 +12,7 @@ process skani {
     script:
     def prefix  = meta.id
     def min_ani = params.skani_routing_min_ani
+    def min_af  = params.skani_routing_min_af
     """
     skani dist \\
         -t ${task.cpus} \\
@@ -20,7 +21,7 @@ process skani {
         -o ${prefix}_skani.tsv
 
     tail -n +2 ${prefix}_skani.tsv | sort -t\$'\\t' -k3 -gr | head -1 \\
-        | awk -F'\\t' -v thr=${min_ani} '\$3 >= thr { n=split(\$1,a,"/"); f=a[n]; sub(/\\.fna\$/,"",f); split(f,b,"__"); print b[1] }' \\
+        | awk -F'\\t' -v thr=${min_ani} -v af=${min_af} '\$3 >= thr && \$5 >= af { n=split(\$1,a,"/"); f=a[n]; sub(/\\.fna\$/,"",f); split(f,b,"__"); print b[1] }' \\
         > ${prefix}_skani_species.txt || true
     """
 }

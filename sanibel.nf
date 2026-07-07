@@ -195,8 +195,11 @@ workflow {
     ch_meta_typed = ch_meta_by_id
         .join(ch_skani.species.map { meta, f -> [ meta.id, f.text.trim() ] }, remainder: true)
         .map { id, meta, sp ->
-            def species = sp ?: meta.mash_species
-            def genus   = sp ? sp.tokenize('_')[0] : meta.mash_genus
+            // skani writes a species only when ANI and alignment fraction both clear
+            // threshold; below that there is no confident WGS ID, so mark Unknown rather
+            // than fall back to the Mash top hit (which can be a wrong genus).
+            def species = sp ?: 'Unknown'
+            def genus   = sp ? sp.tokenize('_')[0] : 'Unknown'
             [ id, meta + [ species: species, genus: genus ] ]
         }
 

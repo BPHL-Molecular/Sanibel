@@ -224,6 +224,51 @@ def parse_blast16s_result(filepath, anchor_genera=None):
     return {'pident': f"{pident:.3f}", 'tophit': f"{genus} spp." if genus else NO_DATA}
 
 
+# QC verdicts
+
+def compute_id_qc(sk, min_ani, min_af):
+    """Species-ID confidence from the top skani hit (ANI + alignment fraction)."""
+    species = sk.get('confirmed_species', NO_DATA)
+    ani     = sk.get('ani', NO_DATA)
+    af      = sk.get('align_fraction', NO_DATA)
+    if species in (NO_DATA, 'NO ID', '', None) or ani in (NO_DATA, 'ANI < 80%', '', None):
+        return 'NO ID (ANI <80%)'
+    try:
+        ani_v = float(ani)
+        af_v  = float(af)
+    except (TypeError, ValueError):
+        return 'NO ID (ANI <80%)'
+    if ani_v < min_ani:
+        return f'No WGS ID (ANI <{min_ani:g}%)'
+    if af_v < min_af:
+        return f'No WGS ID (AF <{min_af:g}%)'
+    return 'Pass'
+
+
+def compute_assembly_qc(coverage, num_contigs, n50, min_cov, warn_contigs, fail_contigs, min_n50):
+    """Assembly QC from coverage, contig count and N50. Pass / Warn / Fail with reasons."""
+    try:
+        cov     = float(coverage)
+        contigs = int(float(num_contigs))
+        n50_v   = int(float(n50))
+    except (TypeError, ValueError):
+        return NO_DATA
+    fails, warns = [], []
+    if cov < min_cov:
+        fails.append(f'coverage {cov:.1f}x <{min_cov:g}')
+    if contigs > fail_contigs:
+        fails.append(f'contigs {contigs} >{fail_contigs}')
+    elif contigs >= warn_contigs:
+        warns.append(f'contigs {contigs} >={warn_contigs}')
+    if n50_v < min_n50:
+        warns.append(f'N50 {n50_v} <{min_n50}')
+    if fails:
+        return 'Fail: ' + '; '.join(fails + warns)
+    if warns:
+        return 'Warn: ' + '; '.join(warns)
+    return 'Pass'
+
+
 # Per-file parsers - species-specific
 
 def get_ecoli_serotype(sample_dir, sample_id):
@@ -614,12 +659,12 @@ HEADER_STANDARD = [
     'mash_species', 'mash_reference', 'mash_distance',
     'kraken_species', 'kraken_percent',
     'blast_16s_tophit', 'blast_16s_pident',
-    'skani_species', 'skani_ani', 'skani_align_fraction', 'skani_reference',
+    'skani_species', 'skani_ani', 'skani_align_fraction', 'skani_reference', 'species_id_qc',
     'contamination_flag',
     'mlst_scheme', 'mlst_st', 'serotype',
     'num_clean_reads', 'avg_read_length', 'avg_read_qual', 'est_coverage',
     'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
-    'annotated_cds',
+    'annotated_cds', 'assembly_qc',
 ]
 
 HEADER_NM = [
@@ -653,6 +698,12 @@ def main():
     parser.add_argument('--outdir',          required=True, help='Pipeline output directory')
     parser.add_argument('--neisseria_txt',   default=None,  help='Neisseria MLST CC lookup table')
     parser.add_argument('--hinfluenzae_txt', default=None,  help='H. influenzae MLST CC lookup table')
+    parser.add_argument('--min_ani',      type=float, default=95.0,  help='ID QC: min skani ANI (%) for a confident species ID')
+    parser.add_argument('--min_af',       type=float, default=50.0,  help='ID QC: min skani alignment fraction (%) for a confident species ID')
+    parser.add_argument('--min_coverage', type=float, default=40.0,  help='Assembly QC: Fail below this coverage (x)')
+    parser.add_argument('--warn_contigs', type=int,   default=200,   help='Assembly QC: Warn at or above this contig count')
+    parser.add_argument('--fail_contigs', type=int,   default=500,   help='Assembly QC: Fail above this contig count')
+    parser.add_argument('--min_n50',      type=int,   default=15000, help='Assembly QC: Warn below this N50 (bp)')
     args = parser.parse_args()
 
     outdir          = args.outdir
@@ -749,14 +800,19 @@ def main():
                     serotype = result
                     break
 
+        species_id_qc = compute_id_qc(sk, args.min_ani, args.min_af)
+        assembly_qc = compute_assembly_qc(
+            rm['coverage'], asm['num_contigs'], asm['n50'],
+            args.min_coverage, args.warn_contigs, args.fail_contigs, args.min_n50)
+
         std_row = common + [
             blast16s_result['tophit'], blast16s_result['pident'],
-            skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
+            skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val, species_id_qc,
             contamination_flag,
             scheme, mlst['st'], serotype,
             rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
             asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
-            asm['total_length'], asm['gc_content'], cds,
+            asm['total_length'], asm['gc_content'], cds, assembly_qc,
         ]
         rows_std.append(std_row)
 

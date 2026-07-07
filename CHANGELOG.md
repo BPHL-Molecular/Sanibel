@@ -6,6 +6,16 @@ All notable changes to Sanibel are documented in this file.
 
 ## [Unreleased]
 
+### Species ID QC — Confidence Gating + QC Columns
+Added quality-control gating and reporting for species identification and assembly quality.
+
+- **`modules/skani.nf`** — Species routing now requires the top hit to clear both ANI (`skani_routing_min_ani`, default 95) **and** query alignment fraction (`skani_routing_min_af`, default 50). The AF gate rejects high-identity hits that cover only part of the genome.
+- **`sanibel.nf`** — When skani returns no confident species, `meta.species` / `meta.genus` are set to `Unknown` instead of falling back to the Mash top hit, so species-specific typing (serotypers, PMGA, BMGAP2) is withheld for those samples. MLST, AMRFinder, and PlasmidFinder are unaffected. Prevents mis-routing on divergent/mixed samples (e.g. a Mash top hit of *Staphylococcus* on a non-ID *Bacillaceae*).
+- **`bin/summary_report.py`** — Two new `sum_report.txt` columns:
+  - `species_id_qc` (after `skani_reference`): `Pass` / `No WGS ID (ANI <95%)` / `No WGS ID (AF <50%)` / `NO ID (ANI <80%)`, derived from the top skani hit's ANI and alignment fraction. `skani_species` still shows the raw top hit for review.
+  - `assembly_qc` (last column): `Pass` / `Warn` / `Fail` with reasons, from coverage (`<40x` Fail), contig count (`>=200` Warn, `>500` Fail), and N50 (`<15000` Warn).
+- **`nextflow.config`** / **`modules/summary_report.nf`** — New tunable params `skani_routing_min_af` (50), `qc_min_coverage` (40), `qc_warn_contigs` (200), `qc_fail_contigs` (500), `qc_min_n50` (15000), passed through to `summary_report.py`.
+
 ### Maintenance — Behavior-Preserving Refactor
 Internal cleanup to reduce duplication. No change to pipeline outputs.
 
@@ -56,7 +66,7 @@ Recovers ANI above the 95% species boundary for clinical isolates whose represen
 - **`nextflow.config`**: new `params.refseq_refs_per_candidate` (default 5).
 
 ### Added
-- **`modules/lissero.nf`** — New LisSero serogroup-typing module for *Listeria monocytogenes*. Runs on the assembly and is gated by `meta.species == 'Listeria_monocytogenes'`, mirroring the other species-specific modules. Container: `quay.io/biocontainers/lissero:0.4.10--pyhdfd78af_0`.
+- **`modules/lissero.nf`** — New LisSero serogroup-typing module for *Listeria monocytogenes*. Runs on the assembly and is gated by `meta.species == 'Listeria_monocytogenes'`, mirroring the other species-specific modules. Container: `staphb/lissero:0.4.10`.
 - **`sanibel.nf`** — Included and invoked `lissero`; added `lissero.out.done` to the summary-report barrier.
 - **`nextflow.config`** — Added `withName: lissero` resource/container block (`errorStrategy = 'ignore'`).
 - **`summary_report.py`** — Added `get_listeria_serotype()` parser; the LisSero `SEROTYPE` value now populates the `serotype` column of `sum_report.txt`.
