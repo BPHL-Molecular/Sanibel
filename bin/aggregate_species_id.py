@@ -5,9 +5,9 @@ Usage: aggregate_species_id.py <assembly_stats_csv> <kraken_report> <blast_16s_t
 
 Output (stdout, TSV):
   genus  species  confidence  evidence  contamination_flag
-  where evidence = mash:G/S|kraken:G/S|blast16s:G/S/Strain name
+  where evidence = mash:G/S|kraken:G/S|blast16s:G/S
 
-Confidence values: high (all 3 agree), medium (2 of 3 agree), low (no majority)
+Confidence values: high (all 3 agree on genus+species), medium (2 agree), low (otherwise)
 """
 
 import os
@@ -16,7 +16,7 @@ from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from sanibel_taxonomy import (
-    SYNONYMOUS_PAIRS, detect_contamination, extract_contam_candidates,
+    detect_contamination, extract_contam_candidates,
     iter_blast16s_rows, iter_kraken_species_rows,
     BLAST16S_MIN_LENGTH, BLAST16S_MIN_PIDENT,
 )
@@ -56,32 +56,24 @@ def parse_blast16s(blast_tsv):
                          hit.stitle, hit.qseqid, hit.sstart, hit.send, hit.bitscore))
 
     if not rows:
-        return None, None, None, {}, []
+        return None, None, {}, []
 
     rows.sort(key=lambda r: (-r[2], abs(r[3] - 1500), -r[8]))
-    winner_genus, winner_species, winner_strain = _select_winner(rows)
+    winner_genus, winner_species = _select_winner(rows)
 
     contam_candidates = extract_contam_candidates(blast_tsv)
 
-    return winner_genus, winner_species, winner_strain, contam_candidates, rows
+    return winner_genus, winner_species, contam_candidates, rows
 
 
 def _select_winner(rows, sp_pident=SP_PIDENT):
     if not rows:
-        return None, None, None
+        return None, None
     sorted_rows = sorted(rows, key=lambda r: (-r[2], abs(r[3] - 1500), -r[8]))
-    best_g, best_s, best_pi, _ln, best_stitle, _qid, _ss, _se, _bs = sorted_rows[0]
+    best_g, best_s, best_pi, _ln, _stitle, _qid, _ss, _se, _bs = sorted_rows[0]
     winner_genus   = best_g
     winner_species = best_s if best_pi >= sp_pident else None
-    winner_strain  = best_stitle.split(' 16S ')[0].strip() if ' 16S ' in best_stitle else best_stitle
-
-    top_pi_row   = max(sorted_rows, key=lambda r: r[2])
-    top_pi_genus = top_pi_row[0]
-    if (top_pi_genus.lower() != winner_genus.lower() and
-            frozenset({winner_genus.lower(), top_pi_genus.lower()}) in SYNONYMOUS_PAIRS):
-        winner_strain = f"{winner_genus}/{top_pi_genus} synonymous pair"
-
-    return winner_genus, winner_species, winner_strain
+    return winner_genus, winner_species
 
 
 def vote(mash, kraken, blast16s):
@@ -103,36 +95,34 @@ def vote(mash, kraken, blast16s):
     if not genus_counts:
         return 'Unknown', 'unknown', 'low', evidence
 
-    top_genus_lower, top_genus_count = genus_counts.most_common(1)[0]
+    top_genus_lower = genus_counts.most_common(1)[0][0]
 
     winner_genus = next(
         g for g, _s in sources.values()
         if g is not None and g.lower() == top_genus_lower
     )
 
-    agreeing = {
-        name: s
-        for name, (g, s) in sources.items()
+    agreeing = [
+        s for g, s in sources.values()
         if g is not None and g.lower() == top_genus_lower and s is not None
-    }
+    ]
 
     if not agreeing:
         winner_species = 'unknown'
-        species_count  = 0
     else:
-        species_counts = Counter(s.lower() for s in agreeing.values())
-        top_sp_lower, species_count = species_counts.most_common(1)[0]
-        winner_species = next(
-            s for s in agreeing.values()
-            if s is not None and s.lower() == top_sp_lower
-        )
+        top_sp_lower   = Counter(s.lower() for s in agreeing).most_common(1)[0][0]
+        winner_species = next(s for s in agreeing if s.lower() == top_sp_lower)
 
-    if top_genus_count >= 2 and species_count >= 2:
-        confidence = 'high' if top_genus_count == 3 and species_count == 3 else 'medium'
-    elif top_genus_count >= 2:
-        confidence = 'medium'
-    else:
+    # Confidence reflects genus + species agreement on the winner, not genus alone.
+    if winner_species in (None, 'unknown'):
         confidence = 'low'
+    else:
+        agree = sum(
+            1 for g, s in sources.values()
+            if g is not None and s is not None
+            and g.lower() == winner_genus.lower() and s.lower() == winner_species.lower()
+        )
+        confidence = 'high' if agree >= 3 else 'medium' if agree == 2 else 'low'
 
     return winner_genus, winner_species, confidence, evidence
 
@@ -147,7 +137,7 @@ def main():
 
     mash     = parse_mash(assembly_stats)
     kraken   = parse_kraken(kraken_report)
-    blast16s_genus, blast16s_species, blast16s_strain, contam_candidates, blast16s_rows = parse_blast16s(blast_tsv)
+    blast16s_genus, blast16s_species, contam_candidates, blast16s_rows = parse_blast16s(blast_tsv)
     blast16s = (blast16s_genus, blast16s_species)
 
     genus, species, confidence, evidence = vote(mash, kraken, blast16s)
@@ -164,13 +154,13 @@ def main():
             if contig_best_genus.get(r[5], '').lower() == genus.lower()
         ]
         if matching_rows:
-            blast16s_genus, blast16s_species, blast16s_strain = _select_winner(matching_rows)
+            blast16s_genus, blast16s_species = _select_winner(matching_rows)
 
     orig_genus, orig_species = blast16s
     if orig_genus is not None:
-        old_token  = f"blast16s:{orig_genus} {orig_species}"
-        strain_val = blast16s_strain if blast16s_strain is not None else f"{blast16s_genus} {blast16s_species}"
-        evidence   = evidence.replace(old_token, f"blast16s:{strain_val}")
+        old_token = f"blast16s:{orig_genus} {orig_species}"
+        gs = f"{blast16s_genus} {blast16s_species}" if blast16s_species else f"{blast16s_genus} sp."
+        evidence  = evidence.replace(old_token, f"blast16s:{gs}")
     else:
         evidence = (evidence + '|' if evidence else '') + 'blast16s:No data'
 

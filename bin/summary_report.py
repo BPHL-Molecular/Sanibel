@@ -162,7 +162,7 @@ def parse_aggregate_species(filepath):
 
 
 def parse_skani(filepath):
-    EMPTY = {'ani': 'ANI < 80%', 'confirmed_species': 'NO ID', 'align_fraction': NO_DATA, 'reference': NO_DATA}
+    EMPTY = {'ani': 'ANI < 80%', 'confirmed_species': 'Inconclusive', 'align_fraction': NO_DATA, 'reference': NO_DATA}
     try:
         rows = []
         with open(filepath) as f:
@@ -227,22 +227,17 @@ def parse_blast16s_result(filepath, anchor_genera=None):
 # QC verdicts
 
 def compute_id_qc(sk, min_ani, min_af):
-    """Species-ID confidence from the top skani hit (ANI + alignment fraction)."""
-    species = sk.get('confirmed_species', NO_DATA)
-    ani     = sk.get('ani', NO_DATA)
-    af      = sk.get('align_fraction', NO_DATA)
-    if species in (NO_DATA, 'NO ID', '', None) or ani in (NO_DATA, 'ANI < 80%', '', None):
-        return 'NO ID (ANI <80%)'
+    """Species-ID QC from the top skani hit: PASS only if ANI and alignment fraction both clear
+    threshold, otherwise NO ID. The AF still gates the decision but stays visible in
+    skani_align_fraction, so the label is uniform."""
+    ani = sk.get('ani', NO_DATA)
+    af  = sk.get('align_fraction', NO_DATA)
     try:
         ani_v = float(ani)
         af_v  = float(af)
     except (TypeError, ValueError):
-        return 'NO ID (ANI <80%)'
-    if ani_v < min_ani:
-        return f'No WGS ID (ANI <{min_ani:g}%)'
-    if af_v < min_af:
-        return f'No WGS ID (AF <{min_af:g}%)'
-    return 'Pass'
+        return 'NO ID (ANI < 95%)'
+    return 'PASS' if ani_v >= min_ani and af_v >= min_af else 'NO ID (ANI < 95%)'
 
 
 def compute_assembly_qc(coverage, num_contigs, n50, min_cov, warn_contigs, fail_contigs, min_n50):

@@ -8,8 +8,10 @@ Usage:
 Output (stdout, TSV):
     species  tools  accession  mash_distance  kraken_pct  blast16s_pident
 
-Each row is one candidate species. Rows are ordered by number of supporting
-tools (desc), then mash_distance (asc), then blast16s_pident (desc).
+Each row is one candidate species. Each tool's top-3 (mash by distance, kraken by
+reads, 16S by pident) is seeded into the pool regardless of corroboration; the
+remaining slots fill by number of supporting tools (desc), then mash_distance (asc),
+then blast16s_pident (desc), capped at POOL_CAP.
 """
 
 import os
@@ -25,6 +27,7 @@ KRAKEN_ADAPT_FACTOR = 0.15   # threshold = max(top_pct * factor, MIN_PCT)
 KRAKEN_MIN_PCT      = 5.0    # absolute floor for Kraken threshold
 KRAKEN_MIN_READS    = 10     # minimum clade read count for any Kraken candidate
 
+SEED_TOP            = 3      # per-tool top-N guaranteed into the pool regardless of corroboration
 POOL_CAP            = 15     # hard cap on total candidates returned
 
 NA = 'NA'
@@ -126,6 +129,17 @@ def parse_kraken_candidates(filepath):
     return above + foreign_top
 
 
+def kraken_seed_rows(filepath, n):
+    """Top-n Kraken species by clade reads, ignoring the abundance floor (seeding only)."""
+    rows = [
+        (genus, species, pct, reads)
+        for genus, species, pct, reads in iter_kraken_species_rows(filepath)
+        if reads >= KRAKEN_MIN_READS and species is not None
+    ]
+    rows.sort(key=lambda x: x[3], reverse=True)
+    return [(g, s, pct) for g, s, pct, _r in rows[:n]]
+
+
 # 16S BLAST parsing
 
 def parse_16s_candidates(filepath):
@@ -152,7 +166,7 @@ def parse_16s_candidates(filepath):
 
 # Merge / rank
 
-def merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands):
+def merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands, kraken_seeds, seed_keys):
     pool = {}  # species_key -> dict
 
     def _upsert(genus, species, tool, accession=NA,
@@ -160,6 +174,7 @@ def merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands):
         key = f"{genus.lower()} {species.lower()}"
         if key not in pool:
             pool[key] = {
+                'key':              key,
                 'display_species':  f"{genus} {species}",
                 'tools':            [],
                 'accession':        accession,
@@ -195,16 +210,27 @@ def merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands):
         acc = mash_all[key]['accession'] if key in mash_all else NA
         _upsert(genus, species, '16S', accession=acc, blast16s_pident=pident)
 
-    ranked = sorted(
-        pool.values(),
-        key=lambda e: (
+    # Kraken-by-reads seeds that fell below the abundance floor and are not otherwise in the
+    # pool: add them so skani still evaluates the nearest genome each tool points at. Species
+    # already present keep their existing tool tags (no unearned kraken2 vote).
+    for genus, species, pct in kraken_seeds:
+        key = f"{genus.lower()} {species.lower()}"
+        if key not in pool:
+            acc = mash_all[key]['accession'] if key in mash_all else NA
+            _upsert(genus, species, 'kraken2', accession=acc, kraken_pct=pct)
+
+    def _rank(e):
+        return (
             -len(e['tools']),
             e['mash_distance'] if e['mash_distance'] is not None else 1.0,
             -(e['blast16s_pident'] if e['blast16s_pident'] is not None else 0.0),
         )
-    )
 
-    return ranked[:POOL_CAP]
+    # Seeds are guaranteed; remaining slots fill by consensus rank.
+    seeds = sorted((e for e in pool.values() if e['key'] in seed_keys), key=_rank)
+    fill  = sorted((e for e in pool.values() if e['key'] not in seed_keys), key=_rank)
+
+    return (seeds + fill)[:POOL_CAP]
 
 
 # Formatting helpers
@@ -242,9 +268,17 @@ def main():
 
     mash_cands, mash_all = parse_mash_distances(mash_tab)
     kraken_cands         = parse_kraken_candidates(kraken_report)
+    kraken_seeds         = kraken_seed_rows(kraken_report, SEED_TOP)
     blast16s_cands       = parse_16s_candidates(blast16s_tsv)
 
-    ranked = merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands)
+    # Guarantee each tool's top-N is evaluated by skani, even without corroboration.
+    seed_keys = set()
+    seed_keys.update(c['species_key'] for c in mash_cands[:SEED_TOP])
+    seed_keys.update(f"{g.lower()} {s.lower()}" for g, s, _p in kraken_seeds)
+    seed_keys.update(f"{g.lower()} {s.lower()}" for g, s, _pi in blast16s_cands[:SEED_TOP])
+
+    ranked = merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands,
+                              kraken_seeds, seed_keys)
 
     print('\t'.join(HEADER))
     for entry in ranked:
