@@ -27,12 +27,6 @@ process summary_report {
     summary_report.py \
         --outdir   "${outdir}" \
         --neisseria_txt   ${neisseria_txt} \
-        --hinfluenzae_txt ${hinfluenzae_txt} \
-        --min_ani      ${params.skani_routing_min_ani} \
-        --min_af       ${params.skani_routing_min_af} \
-        --min_coverage ${params.qc_min_coverage} \
-        --warn_contigs ${params.qc_warn_contigs} \
-        --fail_contigs ${params.qc_fail_contigs} \
-        --min_n50      ${params.qc_min_n50}
+        --hinfluenzae_txt ${hinfluenzae_txt}
     """
 }

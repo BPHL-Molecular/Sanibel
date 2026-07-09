@@ -20,6 +20,17 @@ from sanibel_taxonomy import (
 
 NO_DATA = 'No data'
 
+# Hardcoded species-ID / QC thresholds (not runtime-configurable).
+# SP_MIN_ANI and SP_MIN_AF must match the routing thresholds in modules/skani.nf.
+SP_MIN_ANI      = 95.0
+SP_MIN_AF       = 50.0
+SP_REVIEW_ANI   = 94.0
+QC_MIN_COVERAGE = 40.0
+QC_WARN_CONTIGS = 200
+QC_FAIL_CONTIGS = 500
+QC_MIN_N50      = 15000
+
+
 def normalize_le_value(val):
     if not val:
         return 'Not detected'
@@ -226,10 +237,10 @@ def parse_blast16s_result(filepath, anchor_genera=None):
 
 # QC verdicts
 
-def compute_id_qc(sk, min_ani, min_af):
-    """Species-ID QC from the top skani hit: PASS only if ANI and alignment fraction both clear
-    threshold, otherwise NO ID. The AF still gates the decision but stays visible in
-    skani_align_fraction, so the label is uniform."""
+def compute_id_qc(sk, min_ani, min_af, review_ani):
+    """Species-ID QC from the top skani hit. PASS when ANI and alignment fraction both clear
+    threshold; REVIEW for a borderline ANI just under the boundary; otherwise NO ID. The AF gates
+    the decision but stays visible in skani_align_fraction, so the label is uniform."""
     ani = sk.get('ani', NO_DATA)
     af  = sk.get('align_fraction', NO_DATA)
     try:
@@ -237,11 +248,20 @@ def compute_id_qc(sk, min_ani, min_af):
         af_v  = float(af)
     except (TypeError, ValueError):
         return 'NO ID (ANI < 95%)'
-    return 'PASS' if ani_v >= min_ani and af_v >= min_af else 'NO ID (ANI < 95%)'
+    if af_v < min_af:
+        return 'NO ID (ANI < 95%)'
+    if ani_v >= min_ani:
+        return 'PASS'
+    if ani_v >= review_ani:
+        return 'REVIEW (borderline ANI)'
+    return 'NO ID (ANI < 95%)'
 
 
-def compute_assembly_qc(coverage, num_contigs, n50, min_cov, warn_contigs, fail_contigs, min_n50):
-    """Assembly QC from coverage, contig count and N50. Pass / Warn / Fail with reasons."""
+def compute_assembly_qc(coverage, num_contigs, n50, min_cov, warn_contigs, fail_contigs, min_n50,
+                        contaminated):
+    """Assembly QC from coverage, contig count, N50, and the contamination flag.
+    Precedence: FAIL (metrics) > REVIEW (contamination) > Warning > PASS. Reasons name the
+    threshold, not the per-sample value, to standardize data entry."""
     try:
         cov     = float(coverage)
         contigs = int(float(num_contigs))
@@ -250,18 +270,20 @@ def compute_assembly_qc(coverage, num_contigs, n50, min_cov, warn_contigs, fail_
         return NO_DATA
     fails, warns = [], []
     if cov < min_cov:
-        fails.append(f'coverage {cov:.1f}x <{min_cov:g}')
+        fails.append(f'coverage <{min_cov:g}x')
     if contigs > fail_contigs:
-        fails.append(f'contigs {contigs} >{fail_contigs}')
+        fails.append(f'contigs >{fail_contigs}')
     elif contigs >= warn_contigs:
-        warns.append(f'contigs {contigs} >={warn_contigs}')
+        warns.append(f'contigs >={warn_contigs}')
     if n50_v < min_n50:
-        warns.append(f'N50 {n50_v} <{min_n50}')
+        warns.append(f'N50 <{min_n50}')
     if fails:
-        return 'Fail: ' + '; '.join(fails + warns)
+        return 'FAIL: ' + '; '.join(fails + warns)
+    if contaminated:
+        return 'REVIEW (Contamination)'
     if warns:
-        return 'Warn: ' + '; '.join(warns)
-    return 'Pass'
+        return 'Warning: ' + '; '.join(warns)
+    return 'PASS'
 
 
 # Per-file parsers - species-specific
@@ -652,7 +674,7 @@ def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
 HEADER_STANDARD = [
     'sampleID',
     'mash_species', 'mash_reference', 'mash_distance',
-    'kraken_species', 'kraken_percent',
+    'kraken2_species', 'kraken2_percent',
     'blast_16s_tophit', 'blast_16s_pident',
     'skani_species', 'skani_ani', 'skani_align_fraction', 'skani_reference', 'species_id_qc',
     'contamination_flag',
@@ -693,12 +715,6 @@ def main():
     parser.add_argument('--outdir',          required=True, help='Pipeline output directory')
     parser.add_argument('--neisseria_txt',   default=None,  help='Neisseria MLST CC lookup table')
     parser.add_argument('--hinfluenzae_txt', default=None,  help='H. influenzae MLST CC lookup table')
-    parser.add_argument('--min_ani',      type=float, default=95.0,  help='ID QC: min skani ANI (%) for a confident species ID')
-    parser.add_argument('--min_af',       type=float, default=50.0,  help='ID QC: min skani alignment fraction (%) for a confident species ID')
-    parser.add_argument('--min_coverage', type=float, default=40.0,  help='Assembly QC: Fail below this coverage (x)')
-    parser.add_argument('--warn_contigs', type=int,   default=200,   help='Assembly QC: Warn at or above this contig count')
-    parser.add_argument('--fail_contigs', type=int,   default=500,   help='Assembly QC: Fail above this contig count')
-    parser.add_argument('--min_n50',      type=int,   default=15000, help='Assembly QC: Warn below this N50 (bp)')
     args = parser.parse_args()
 
     outdir          = args.outdir
@@ -795,10 +811,11 @@ def main():
                     serotype = result
                     break
 
-        species_id_qc = compute_id_qc(sk, args.min_ani, args.min_af)
+        species_id_qc = compute_id_qc(sk, SP_MIN_ANI, SP_MIN_AF, SP_REVIEW_ANI)
+        contaminated = contamination_flag not in ('None', NO_DATA)
         assembly_qc = compute_assembly_qc(
             rm['coverage'], asm['num_contigs'], asm['n50'],
-            args.min_coverage, args.warn_contigs, args.fail_contigs, args.min_n50)
+            QC_MIN_COVERAGE, QC_WARN_CONTIGS, QC_FAIL_CONTIGS, QC_MIN_N50, contaminated)
 
         std_row = common + [
             blast16s_result['tophit'], blast16s_result['pident'],

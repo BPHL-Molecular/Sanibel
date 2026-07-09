@@ -164,8 +164,10 @@ def main():
     else:
         evidence = (evidence + '|' if evidence else '') + 'blast16s:No data'
 
+    disp_genus, disp_species = ('Inconclusive', 'unknown') if confidence == 'low' else (genus, species)
+
     print('genus\tspecies\tconfidence\tevidence\tcontamination_flag')
-    print(f"{genus}\t{species}\t{confidence}\t{evidence}\t{contam_flag}")
+    print(f"{disp_genus}\t{disp_species}\t{confidence}\t{evidence}\t{contam_flag}")
 
 
 if __name__ == '__main__':

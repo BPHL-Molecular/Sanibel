@@ -6,15 +6,19 @@ All notable changes to Sanibel are documented in this file.
 
 ## [Unreleased]
 
-### Species ID QC — Confidence Gating + QC Columns
-Added quality-control gating and reporting for species identification and assembly quality.
+### Species ID QC, Candidate Pool, and Report Labels
+Quality-control gating and reporting for species identification and assembly quality.
 
-- **`modules/skani.nf`** — Species routing now requires the top hit to clear both ANI (`skani_routing_min_ani`, default 95) **and** query alignment fraction (`skani_routing_min_af`, default 50). The AF gate rejects high-identity hits that cover only part of the genome.
-- **`sanibel.nf`** — When skani returns no confident species, `meta.species` / `meta.genus` are set to `Unknown` instead of falling back to the Mash top hit, so species-specific typing (serotypers, PMGA, BMGAP2) is withheld for those samples. MLST, AMRFinder, and PlasmidFinder are unaffected. Prevents mis-routing on divergent/mixed samples (e.g. a Mash top hit of *Staphylococcus* on a non-ID *Bacillaceae*).
-- **`bin/summary_report.py`** — Two new `sum_report.txt` columns:
-  - `species_id_qc` (after `skani_reference`): `Pass` / `No WGS ID (ANI <95%)` / `No WGS ID (AF <50%)` / `NO ID (ANI <80%)`, derived from the top skani hit's ANI and alignment fraction. `skani_species` still shows the raw top hit for review.
-  - `assembly_qc` (last column): `Pass` / `Warn` / `Fail` with reasons, from coverage (`<40x` Fail), contig count (`>=200` Warn, `>500` Fail), and N50 (`<15000` Warn).
-- **`nextflow.config`** / **`modules/summary_report.nf`** — New tunable params `skani_routing_min_af` (50), `qc_min_coverage` (40), `qc_warn_contigs` (200), `qc_fail_contigs` (500), `qc_min_n50` (15000), passed through to `summary_report.py`.
+- **`modules/skani.nf`**: species routing requires the top hit to clear both ANI (default 95) and query alignment fraction (default 50); the AF gate rejects high-identity hits covering only part of the genome.
+- **`sanibel.nf`**: when skani returns no confident species, `meta.species` / `meta.genus` become `Unknown` instead of falling back to the Mash top hit, so species-specific typing (serotypers, PMGA, BMGAP2) is withheld. MLST, AMRFinder, and PlasmidFinder are unaffected.
+- **`bin/build_candidate_pool.py`**: each tool's top-3 (mash by distance, kraken by reads, 16S by pident) is seeded into the candidate pool regardless of corroboration, then the rest fill by consensus rank, so skani always evaluates the closest genome each tool points at (fixes the tight-complex case where an uncorroborated Mash top hit was evicted).
+- **`bin/aggregate_species_id.py`**: `candidate_species.txt` confidence requires genus+species agreement (genus-only agreement no longer scores medium); the 16S evidence token shows genus+species only (strain / synonymous-pair text dropped); low-confidence rows report `Inconclusive` / `unknown`.
+- **`bin/summary_report.py`**: two new `sum_report.txt` columns:
+  - `species_id_qc` (after `skani_reference`): `PASS` (ANI >= 95 and AF >= 50) / `REVIEW (borderline ANI)` (94 to <95) / `NO ID (ANI < 95%)`. `skani_species` still shows the raw top hit, or `Inconclusive` when skani finds nothing.
+  - `assembly_qc` (last column): `PASS` / `Warning: <reasons>` / `FAIL: <reasons>` / `REVIEW (Contamination)`, from coverage (< 40x), contigs (>= 200 warn, > 500 fail), N50 (< 15000), and the contamination flag; reasons name the threshold, not the sample value.
+- **`modules/kraken.nf`** and **`bin/summary_report.py`**: Kraken2 output moves to `<sample>/kraken2/` and its columns are renamed `kraken2_species` / `kraken2_percent`, to disambiguate Kraken v1 vs v2.
+- **`modules/candidate_references.nf`**: publishes `<sample>/reference_genomes/<id>_reference_genomes.txt`, a manifest of the reference accessions skani compared against (the genomes themselves stay unpublished).
+- **`modules/skani.nf`** and **`bin/summary_report.py`**: the species-ID and assembly-QC thresholds (95% ANI / 50% AF / 94% review; coverage 40x, contigs 200 warn / 500 fail, N50 15000; 5 refs per candidate) are hardcoded constants, not `nextflow.config` params, so they cannot be overridden at runtime.
 
 ### Maintenance — Behavior-Preserving Refactor
 Internal cleanup to reduce duplication. No change to pipeline outputs.
@@ -28,7 +32,7 @@ Internal cleanup to reduce duplication. No change to pipeline outputs.
 - **`nextflow.config`** — Added process-level `cpus` / `memory` defaults (per-process blocks override where they differ) and a `withName: 'bmgap2_.*'` selector for the shared BMGAP2 settings. Removed the redundant module-level `errorStrategy` from `candidate_references.nf`.
 
 ### Output — Smaller per-sample output
-- **`modules/candidate_references.nf`** — No longer publishes the downloaded RefSeq reference genomes to `<sample>/candidate_references/`. They stay internal to the run (skani still reads them from `work/`), removing the largest per-run output artifact. Reference provenance remains in `_skani.tsv`.
+- **`modules/candidate_references.nf`** — No longer publishes the downloaded RefSeq reference genomes to `<sample>/candidate_references/`. They stay internal to the run (skani still reads them from `work/`), removing the largest per-run output artifact. Reference provenance remains in `_skani.tsv` and a published `reference_genomes/` accession manifest.
 - **`modules/skani.nf`** — Publishes only `_skani.tsv`; the internal `_skani_species.txt` routing file is no longer copied to `<sample>/skani/`. Its content still drives species routing.
 
 ### Species Identification — Candidate Pool + skani ANI Confirmation
@@ -63,7 +67,7 @@ Recovers ANI above the 95% species boundary for clinical isolates whose represen
 
 - **`modules/candidate_references.nf`**: downloads up to N RefSeq genomes per candidate species instead of one. Lists accessions with `datasets summary genome taxon ... --limit N` (`--limit` is not valid on the taxon download), always includes the sketch representative, fetches them in a single `datasets download genome accession` call, and names each file `Genus_species__<accession>.fna`. skani picks the best ANI across all strains; keeping the representative makes the reference set a strict superset, so ANI cannot regress versus the single-genome behavior.
 - **`bin/summary_report.py`**: `parse_skani` reads the new per-accession filenames, reporting a clean `Genus_species` label and the winning strain's accession.
-- **`nextflow.config`**: new `params.refseq_refs_per_candidate` (default 5).
+- **`modules/candidate_references.nf`**: fetches 5 RefSeq genomes per candidate (hardcoded).
 
 ### Added
 - **`modules/lissero.nf`** — New LisSero serogroup-typing module for *Listeria monocytogenes*. Runs on the assembly and is gated by `meta.species == 'Listeria_monocytogenes'`, mirroring the other species-specific modules. Container: `staphb/lissero:0.4.10`.

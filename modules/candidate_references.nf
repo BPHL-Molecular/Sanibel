@@ -1,15 +1,17 @@
 process candidate_references {
     tag "${meta.id}"
+    publishDir "${params.output}/${meta.id}/reference_genomes", mode: 'copy', pattern: '*_reference_genomes.txt'
 
     input:
         tuple val(meta), path(candidate_pool)
 
     output:
         tuple val(meta), path("${meta.id}_references/"),      emit: references
+        path("${meta.id}_reference_genomes.txt"),             emit: manifest
 
     script:
     def prefix = meta.id
-    def n_refs = params.refseq_refs_per_candidate
+    def n_refs = 5
     """
     mkdir -p ${prefix}_references
     export REF_DIR="\$PWD/${prefix}_references"
@@ -75,6 +77,10 @@ process candidate_references {
     tail -n +2 ${candidate_pool} | while IFS=\$'\\t' read -r species tools accession rest; do
         [ -n "\${species}" ] && printf '%s\\0%s\\0' "\${species}" "\${accession}"
     done | xargs -0 -n 2 -P 3 bash -c 'download_candidate "\$0" "\$1"'
+
+    # Manifest of the references skani will use (record only; the genomes themselves are not published)
+    ls ${prefix}_references/*.fna 2>/dev/null | xargs -r -n1 basename \\
+        | sed 's/\\.fna\$//; s/__/_/' | sort > ${prefix}_reference_genomes.txt
 
     # Fail the process only when no references were downloaded at all
     n_downloaded=\$(find ${prefix}_references -name "*.fna" | wc -l)

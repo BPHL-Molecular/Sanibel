@@ -11,8 +11,8 @@ process skani {
 
     script:
     def prefix  = meta.id
-    def min_ani = params.skani_routing_min_ani
-    def min_af  = params.skani_routing_min_af
+    def min_ani = 95   // species boundary; keep in sync with bin/summary_report.py SP_MIN_ANI
+    def min_af  = 50   // query alignment fraction; keep in sync with SP_MIN_AF
     """
     skani dist \\
         -t ${task.cpus} \\
