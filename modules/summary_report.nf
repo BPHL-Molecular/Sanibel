@@ -20,6 +20,7 @@ process summary_report {
         path "sum_report.txt",    emit: summary
         path "nm_sum_report.txt", emit: nm_summary, optional: true
         path "hi_sum_report.txt", emit: hi_summary, optional: true
+        path "*_mqc.tsv",         emit: mqc_tables, optional: true
 
     script:
     def outdir = params.output

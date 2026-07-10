@@ -1,0 +1,80 @@
+# Sanibel MultiQC dashboard configuration
+# Consumed by the multiqc_global process, staged alongside the logo asset.
+
+title: "Sanibel: Bacterial WGS Analysis Report"
+subtitle: "Florida BPHL bacterial whole genome sequencing QC, species ID and typing"
+intro_text: >
+  Interactive run-level dashboard for the Sanibel pipeline. Sanibel's consensus
+  results (species identification, QC verdicts, MLST/serotyping and predicted
+  antimicrobial resistance) lead the report as color-coded tables, followed by
+  the supporting per-tool QC modules ordered by pipeline step.
+
+report_header_info:
+  - Pipeline: "Sanibel, Florida BPHL Bacterial WGS Analysis"
+  - Version: "v2.1"
+  - Contact: "bphl-sebioinformatics@flhealth.gov"
+  - Laboratory: "Florida Bureau of Public Health Laboratories"
+
+custom_logo: "sanibel_pipeline_logo_v2.svg"
+custom_logo_url: "https://github.com/BPHL-Molecular/Sanibel/blob/main/assets/sanibel_pipeline_logo_v2.svg"
+custom_logo_title: "Florida BPHL, Sanibel Pipeline"
+custom_logo_width: 220
+
+extra_fn_clean_exts:
+  - "_original"
+  - "_clean"
+
+module_order:
+  - fastqc:
+      name: "FastQC (raw reads)"
+      anchor: "fastqc_raw"
+      info: "Quality of the original raw reads, before trimming and decontamination."
+      path_filters:
+        - "*/fastqc/*"
+  - bbmap:
+      name: "BBTools (adapter and PhiX removal)"
+      anchor: "bbtools"
+      info: "BBDuk adapter-trimming and PhiX-removal statistics."
+  - fastqc:
+      name: "FastQC (clean reads)"
+      anchor: "fastqc_clean"
+      info: "Quality of the cleaned reads used for assembly and typing."
+      path_filters:
+        - "*/fastqc2/*"
+  - kraken:
+      name: "Kraken2 (read taxonomy)"
+      anchor: "kraken2"
+  - quast:
+      name: "QUAST (assembly metrics)"
+  - prokka:
+      name: "Prokka (annotation)"
+
+report_section_order:
+  sanibel_species: { order: 3000 }
+  sanibel_typing:  { order: 2990 }
+
+custom_content:
+  order:
+    - sanibel_species
+    - sanibel_typing
+
+table_columns_visible:
+  fastqc:
+    percent_duplicates: false
+    percent_fails: false
+    avg_sequence_length: false
+
+table_cond_formatting_rules:
+  species_id_qc:
+    pass:
+      - s_eq: "PASS"
+    warn:
+      - s_contains: "REVIEW"
+    fail:
+      - s_contains: "NO ID"
+
+  contamination_flag:
+    pass:
+      - s_eq: "None"
+    fail:
+      - s_contains: "Possible contamination"

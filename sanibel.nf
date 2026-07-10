@@ -261,5 +261,10 @@ workflow {
     )
 
     // Run-level interactive MultiQC across all samples
-    multiqc_global( ch_summary.summary )
+    multiqc_global(
+        ch_summary.summary,
+        channel.value(file("${projectDir}/assets/multiqc_config.yaml",         checkIfExists: true)),
+        channel.value(file("${projectDir}/assets/sanibel_pipeline_logo_v2.svg", checkIfExists: true)),
+        channel.value(file("${projectDir}/nextflow.config",                     checkIfExists: true))
+    )
 }

@@ -17,6 +17,9 @@ conda activate SANIBEL
 # Path to container image cache directory
 export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
 
+# Plain text Nextflow log (no ANSI colors/hyperlinks) so logs can read cleanly
+export NXF_ANSI_LOG=false
+
 # Run pipeline
 nextflow run sanibel.nf -profile apptainer -params-file params.yaml
 

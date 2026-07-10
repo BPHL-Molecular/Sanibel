@@ -699,6 +699,67 @@ HEADER_HI = [
     'blaTEM1_status', 'blaROB1_status',
 ]
 
+# MultiQC custom-content emitters
+
+# Column selections are indices into HEADER_STANDARD.
+MQC_SPECIES_COLS   = [0, 8, 9, 10, 1, 4, 5, 6, 12, 13]
+MQC_SPECIES_HEADER = ['Sample', 'skani_species', 'skani_ani', 'skani_align_fraction',
+                      'mash_species', 'kraken2_species', 'kraken2_percent',
+                      'blast_16s_tophit', 'species_id_qc', 'contamination_flag']
+
+MQC_TYPING_COLS    = [0, 15, 16, 17]
+MQC_TYPING_HEADER  = ['Sample', 'mlst_scheme', 'mlst_st', 'serotype']
+
+
+def _mqc_preamble(section_id, section_name, description, pconfig=None):
+    lines = [
+        f"# id: '{section_id}'",
+        f"# section_name: '{section_name}'",
+        f"# description: '{description}'",
+        "# plot_type: 'table'",
+    ]
+    if pconfig:
+        lines.append("# pconfig:")
+        for k, v in pconfig.items():
+            lines.append(f"#     {k}: '{v}'")
+    return lines
+
+
+def _write_mqc(path, preamble_lines, header, cols, rows):
+    with open(path, 'w') as fh:
+        for pl in preamble_lines:
+            fh.write(pl + '\n')
+        fh.write('\t'.join(header) + '\n')
+        for row in sorted(rows, key=lambda r: r[0]):
+            fh.write('\t'.join(str(row[i]) for i in cols) + '\n')
+    print(f"summary_report.py: wrote {path} ({len(rows)} sample(s))")
+
+
+def emit_sanibel_mqc_tables(rows_std):
+    if not rows_std:
+        return
+    _write_mqc(
+        'sanibel_species_mqc.tsv',
+        _mqc_preamble(
+            'sanibel_species', 'Species ID and QC',
+            'skani ANI-confirmed consensus species with orthogonal Mash, '
+            'Kraken2 and 16S calls plus QC verdicts.',
+            pconfig={'id': 'sanibel_species_table', 'namespace': 'Sanibel',
+                     'col1_header': 'Sample'},
+        ),
+        MQC_SPECIES_HEADER, MQC_SPECIES_COLS, rows_std,
+    )
+    _write_mqc(
+        'sanibel_typing_mqc.tsv',
+        _mqc_preamble(
+            'sanibel_typing', 'MLST and Serotyping',
+            'MLST scheme and sequence type, and species-specific serotype.',
+            pconfig={'id': 'sanibel_typing_table', 'namespace': 'Sanibel',
+                     'col1_header': 'Sample'},
+        ),
+        MQC_TYPING_HEADER, MQC_TYPING_COLS, rows_std,
+    )
+
 
 # Main
 
@@ -870,6 +931,9 @@ def main():
         write_report('nm_sum_report.txt', HEADER_NM,       rows_nm)
     if rows_hi:
         write_report('hi_sum_report.txt', HEADER_HI,       rows_hi)
+
+    # Additive: MultiQC custom-content tables (does not change the .txt reports)
+    emit_sanibel_mqc_tables(rows_std)
 
     if not (rows_std or rows_nm or rows_hi):
         print('summary_report.py: no rows generated.', file=sys.stderr)
