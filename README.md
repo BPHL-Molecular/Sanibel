@@ -15,26 +15,22 @@
 
 ## 🦠🧬 Overview
 
-Sanibel is Florida BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis pipeline. It performs quality control, *de novo* assembly, taxonomic classification, species identification, sequence typing and antimicrobial resistance (AMR) detection on paired-end Illumina short reads. 
+Sanibel is Florida BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis pipeline. It performs quality control, *de novo* assembly, taxonomic classification, species identification, sequence typing and antimicrobial resistance (AMR) detection on paired-end Illumina short reads.
 
-
-Species identification uses a candidate-pool design: Mash, Kraken2, and 16S rRNA BLAST nominate a ranked pool of candidate species, multiple RefSeq genomes are downloaded per candidate, and skani confirms the species by whole-genome ANI. skani is the arbiter for the reported organism and the contamination flag. A confident call requires ANI ≥ 95% and alignment fraction ≥ 50%; samples that miss either threshold are flagged in the `species_id_qc` column and skip species-specific typing rather than falling back to a lower-confidence Mash call.
-
+Species identification uses a candidate-pool design: Mash, Kraken2, and 16S rRNA BLAST nominate a ranked pool of candidate species, multiple RefSeq genomes are downloaded per candidate, and skani confirms the species by whole-genome ANI. skani is the arbiter for the reported organism and the contamination flag. A confident call requires ANI ≥ 95% and alignment fraction ≥ 50% for a positive ID.
 
 Species-specific typing modules run automatically based on species identification results: *Legionella pneumophila* (Legsta), *Klebsiella* (Kleborate), *Shigella* (ShigaTyper), *Streptococcus pyogenes/dysgalactiae* (EMM typing), *Salmonella* (SeqSero2), *E. coli* (SerotypeFinder), *Streptococcus pneumoniae* (SeroBA), *Pseudomonas aeruginosa* (pasty), *Acinetobacter baumannii* (Kaptive), *Vibrio parahaemolyticus* (Kaptive), *Listeria monocytogenes* (LisSero), and *Neisseria meningitidis*/*Haemophilus influenzae* (PMGA). BMGAP2 provides enhanced AMR and antigen analysis for *Neisseria meningitidis* and *Haemophilus influenzae*. PlasmidFinder runs on all samples.
 
-
 ### ⚙️ Dependencies
 
-- **Nextflow** 23.04–25.x - [installation guide](https://github.com/nextflow-io/nextflow)
+- **Nextflow** 23.04–26.x - [installation guide](https://github.com/nextflow-io/nextflow)
 - **Apptainer/Singularity** - [installation guide](https://apptainer.org/docs/user/latest/)
 - **Conda** - [installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
 - **SLURM** workload manager (required for HiPerGator; otherwise not required)
 
 All bioinformatics tools run inside containers, no additional software installation is required.
 
-> ⚠️ **Nextflow ≥ 26.0 is not supported.** That release introduced breaking changes to DSL2 module parsing. Use Nextflow 23.04–25.x.
-
+> ℹ️ Sanibel runs on both legacy Nextflow (23.04–25.x) and the new 26+ releases.
 
 ### 💻 Resource Requirements
 
@@ -46,8 +42,7 @@ Sanibel can run on any system with Nextflow and Apptainer installed, but is **st
 
 > **Running locally with fewer CPUs:** Nextflow will still run but your machine will be oversubscribed during assembly. Each Unicycler job requests 10 CPUs by default, on a machine with fewer cores the OS will time-share threads and assembly will complete more slowly but will not fail. You can lower the `cpus` value for `unicycler` in `nextflow.config` to match your hardware.
 
-**Estimated runtime** (12 samples, 20 CPUs, HPC): ~3–4 hours total, dominated by Unicycler (~25 min/sample, 2 running in parallel).
-
+**Estimated runtime** (12 samples, 20 CPUs, HPC): ~2 hours total.
 
 ### 🛠️ Setup
 
@@ -65,8 +60,6 @@ $ conda env create -f environment.yaml
 $ conda activate SANIBEL
 ```
 
-`pandas`, `openpyxl`, `biopython`, `mash`, and `blast` are required by the BMGAP2 modules (used for Nm/Hi samples).
-
 #### 3. Configure params.yaml
 
 Edit `params.yaml` and set paths for your environment:
@@ -77,25 +70,25 @@ input:  "/full/path/to/fastqs"
 output: "/full/path/to/output"
 
 # non-Florida-BPHL users: uncomment and set your BMGAP2 analysis_scripts directory
-# bmgap2_db:  "/full/path/to/bmgap2/analysis_scripts"
+#bmgap2_db:  "/full/path/to/bmgap2/analysis_scripts"
 
 # non-Florida-BPHL users: uncomment and set your Kraken2 database directory
-# kraken_db:  "/full/path/to/kraken2/database"
+#kraken_db:  "/full/path/to/kraken2/database"
 ```
 
 > **Florida BPHL users:** only `input` and `output` need to be set. All other paths are pre-configured.
-
 > **Non-Florida BPHL users:** uncomment `bmgap2_db` and `kraken_db` by removing the leading `#` and set their paths.
 
 #### 4. Configure sanibel.sh
 
-> At Florida BPHL we use **Apptainer** on HiPerGator for containerization. `sanibel.sh` is pre-configured for SLURM + Apptainer and is the recommended submission method for FL-BPHL users.
+> At Florida BPHL we use **Apptainer** on HiPerGator for containerization. `sanibel.sh` is pre-configured for SLURM + Apptainer and is the recommended submission method for HiPerGator users.
 
-Set `NXF_APPTAINER_CACHEDIR` to your image cache directory and add your email address for job notifications:
+Add your email address for job notifications and set `NXF_APPTAINER_CACHEDIR` to your image cache directory:
 
 ```bash
-export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
 #SBATCH --mail-user=your@email.gov
+export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
+
 ```
 
 #### 5. Kraken2 and BMGAP2 Setup for Non-Florida-BPHL Users
@@ -108,11 +101,9 @@ For non-Florida BPHL users, a Kraken2 database must be downloaded before running
 
 For non-Florida BPHL users, BMGAP2 must be installed before running the pipeline. Its scripts run directly on the host (not inside a container) and are invoked by the three `bmgap2_*` Nextflow modules. Follow the [BMGAP2 installation instructions](https://github.com/CDCgov/BMGAP2) to clone the repository and build all required databases, then set `bmgap2_db` in `params.yaml` to the `analysis_scripts` directory.
 
-
 ### How to Run
 
 Place input FASTQ files in the directory specified by `params.input`. Both Illumina native (`SAMPLE_S1_L001_R1_001.fastq.gz`) and simplified (`SAMPLE_1.fastq.gz`) naming conventions are supported.
-
 
 ### 🐊 HiPerGator Usage
 ```bash
@@ -179,6 +170,7 @@ flowchart TD
     U --> X
 
     X --> Y[sum_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt]
+    X --> MG[multiqc_global] --> IR[interactive_report.html]
 
     style SP fill:#fef,stroke:#333,color:#000
     style SK fill:#9f9,stroke:#333,stroke-width:2px,color:#000
@@ -187,6 +179,7 @@ flowchart TD
     style U fill:#9cf,stroke:#333,color:#000
     style X fill:#f96,stroke:#333,stroke-width:2px,color:#000
     style Y fill:#f96,stroke:#333,stroke-width:3px,color:#000
+    style IR fill:#f96,stroke:#333,stroke-width:3px,color:#000
 ```
 
 ### 🧩 Modules

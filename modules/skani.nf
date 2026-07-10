@@ -1,6 +1,6 @@
 process skani {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/skani", mode: 'copy', pattern: '*_skani.tsv'
+    publishDir { "${params.output}/${meta.id}/skani" }, mode: 'copy', pattern: '*_skani.tsv'
 
     input:
         tuple val(meta), path(assembly), path(references_dir)
@@ -11,8 +11,8 @@ process skani {
 
     script:
     def prefix  = meta.id
-    def min_ani = 95   // species boundary; keep in sync with bin/summary_report.py SP_MIN_ANI
-    def min_af  = 50   // query alignment fraction; keep in sync with SP_MIN_AF
+    def min_ani = 95
+    def min_af  = 50
     """
     skani dist \\
         -t ${task.cpus} \\

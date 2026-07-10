@@ -1,6 +1,6 @@
 process candidate_references {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/reference_genomes", mode: 'copy', pattern: '*_reference_genomes.txt'
+    publishDir { "${params.output}/${meta.id}/reference_genomes" }, mode: 'copy', pattern: '*_reference_genomes.txt'
 
     input:
         tuple val(meta), path(candidate_pool)
@@ -34,20 +34,20 @@ process candidate_references {
         safe_name=\$(echo "\${species}" | tr ' ' '_')
         workdir="dl_\${safe_name}"
 
-        # 1. List up to N RefSeq accessions for this species.
+        # 1. List up to N RefSeq accessions for this species
         acc_list=\$(datasets summary genome taxon "\${species}" \\
             --assembly-source refseq \\
             --limit "\${N_REFS}" \\
             --report ids_only --as-json-lines 2>/dev/null \\
             | grep -oE 'GC[FA]_[0-9]+\\.[0-9]+' || true)
 
-        # 2. Always include the sketch representative (strict superset of the old
+        # 2. Always include the sketch representative
         if [ "\${accession}" != "NA" ] && [ -n "\${accession}" ]; then
             acc_list=\$(printf '%s\\n%s\\n' "\${acc_list}" "\${accession}")
         fi
         acc_list=\$(printf '%s\\n' "\${acc_list}" | grep -oE 'GC[FA]_[0-9]+\\.[0-9]+' | sort -u || true)
 
-        # 3. Download the selected accessions in a single call and split per accession.
+        # 3. Download the selected accessions in a single call and split per accession
         if [ -n "\${acc_list}" ]; then
             datasets download genome accession \${acc_list} \\
                 --include genome \\
@@ -58,7 +58,7 @@ process candidate_references {
             rm -rf "\${workdir}.zip" "\${workdir}_dir" 2>/dev/null || true
         fi
 
-        # 4. Last-resort fallback (summary/download produced nothing): old reference path.
+        # 4. Last-resort fallback (summary/download produced nothing): old reference path
         if ! ls "\${REF_DIR}/\${safe_name}__"*.fna >/dev/null 2>&1; then
             refwork="ref_\${safe_name}"
             datasets download genome taxon "\${species}" \\

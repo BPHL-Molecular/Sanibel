@@ -16,7 +16,7 @@ process download_16s_db {
 
 process blast_16s {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/blast_16s", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/blast_16s" }, mode: 'copy'
 
     input:
         tuple val(meta), path(assembly)

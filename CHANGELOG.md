@@ -6,6 +6,13 @@ All notable changes to Sanibel are documented in this file.
 
 ## [Unreleased]
 
+### Nextflow 26 Native Support
+Sanibel now runs on **Nextflow 26.04+**, which makes the v2 (strict) script parser the default.
+
+- **`modules/*.nf`** — All dynamic `publishDir` directives rewritten as closures (`publishDir { "…/${meta.id}/…" }, mode: 'copy'`). Under the v2 parser a bare `publishDir "…${meta.id}…", mode: 'copy'` path is evaluated eagerly at process-definition time, before `meta` is in scope, raising `No such variable: meta` at module load (the v1 parser deferred it). The closure defers evaluation to task runtime and is valid on both parsers. Single-argument directives (`tag`, `containerOptions`, `storeDir`) auto-defer and were unaffected.
+- **`sanibel.sh`** — Loads the default `nextflow` module (Nextflow 26.x on HiPerGator) instead of pinning `nextflow/25.10.4`.
+- Parameters are set via `-params-file`; on Nextflow 26 bare `--flag` CLI values are always strings.
+
 ### Species ID QC, Candidate Pool, and Report Labels
 Quality-control gating and reporting for species identification and assembly quality.
 

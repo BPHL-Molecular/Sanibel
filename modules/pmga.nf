@@ -1,6 +1,6 @@
 process pmga {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/pmga", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/pmga" }, mode: 'copy'
 
     input:
         tuple val(meta), path(assembly), path(mlst_out)

@@ -20,8 +20,6 @@ from sanibel_taxonomy import (
 
 NO_DATA = 'No data'
 
-# Hardcoded species-ID / QC thresholds (not runtime-configurable).
-# SP_MIN_ANI and SP_MIN_AF must match the routing thresholds in modules/skani.nf.
 SP_MIN_ANI      = 95.0
 SP_MIN_AF       = 50.0
 SP_REVIEW_ANI   = 94.0
@@ -238,9 +236,6 @@ def parse_blast16s_result(filepath, anchor_genera=None):
 # QC verdicts
 
 def compute_id_qc(sk, min_ani, min_af, review_ani):
-    """Species-ID QC from the top skani hit. PASS when ANI and alignment fraction both clear
-    threshold; REVIEW for a borderline ANI just under the boundary; otherwise NO ID. The AF gates
-    the decision but stays visible in skani_align_fraction, so the label is uniform."""
     ani = sk.get('ani', NO_DATA)
     af  = sk.get('align_fraction', NO_DATA)
     try:
@@ -259,9 +254,6 @@ def compute_id_qc(sk, min_ani, min_af, review_ani):
 
 def compute_assembly_qc(coverage, num_contigs, n50, min_cov, warn_contigs, fail_contigs, min_n50,
                         contaminated):
-    """Assembly QC from coverage, contig count, N50, and the contamination flag.
-    Precedence: FAIL (metrics) > REVIEW (contamination) > Warning > PASS. Reasons name the
-    threshold, not the per-sample value, to standardize data entry."""
     try:
         cov     = float(coverage)
         contigs = int(float(num_contigs))
@@ -677,11 +669,11 @@ HEADER_STANDARD = [
     'kraken2_species', 'kraken2_percent',
     'blast_16s_tophit', 'blast_16s_pident',
     'skani_species', 'skani_ani', 'skani_align_fraction', 'skani_reference', 'species_id_qc',
-    'contamination_flag',
+    'contamination_flag', 'assembly_qc',
     'mlst_scheme', 'mlst_st', 'serotype',
     'num_clean_reads', 'avg_read_length', 'avg_read_qual', 'est_coverage',
     'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
-    'annotated_cds', 'assembly_qc',
+    'annotated_cds',
 ]
 
 HEADER_NM = [
@@ -820,11 +812,11 @@ def main():
         std_row = common + [
             blast16s_result['tophit'], blast16s_result['pident'],
             skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val, species_id_qc,
-            contamination_flag,
+            contamination_flag, assembly_qc,
             scheme, mlst['st'], serotype,
             rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
             asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
-            asm['total_length'], asm['gc_content'], cds, assembly_qc,
+            asm['total_length'], asm['gc_content'], cds,
         ]
         rows_std.append(std_row)
 

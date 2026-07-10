@@ -15,6 +15,7 @@ include { bbtools_adapters }      from './modules/bbtools.nf'
 include { bbtools_phix }          from './modules/bbtools.nf'
 include { fastqc2 }               from './modules/fastqc2.nf'
 include { multiqc }               from './modules/multiqc.nf'
+include { multiqc_global }        from './modules/multiqc.nf'
 include { mash }                  from './modules/mash.nf'
 include { unicycler }             from './modules/unicycler.nf'
 include { kraken }                from './modules/kraken.nf'
@@ -195,9 +196,6 @@ workflow {
     ch_meta_typed = ch_meta_by_id
         .join(ch_skani.species.map { meta, f -> [ meta.id, f.text.trim() ] }, remainder: true)
         .map { id, meta, sp ->
-            // skani writes a species only when ANI and alignment fraction both clear
-            // threshold; below that there is no confident WGS ID, so mark Unknown rather
-            // than fall back to the Mash top hit (which can be a wrong genus).
             def species = sp ?: 'Unknown'
             def genus   = sp ? sp.tokenize('_')[0] : 'Unknown'
             [ id, meta + [ species: species, genus: genus ] ]
@@ -218,7 +216,7 @@ workflow {
     ch_bmgap2_le  = bmgap2_locusextractor(ch_bmgap2_amr.out)
     ch_bmgap2_bmscan = bmgap2_bmscan(ch_bmgap2_le.out)
 
-    // Species-specific analyses (gate on the skani-confirmed species)
+    // Species-specific analyses
     legsta(ch_assembly_typed.filter      { meta, _a -> meta.species == 'Legionella_pneumophila' })
     kleborate(ch_assembly_typed.filter   { meta, _a -> meta.genus   == 'Klebsiella' })
     shigatyper(ch_clean_typed.filter     { meta, _r -> meta.genus   == 'Shigella' })
@@ -247,7 +245,7 @@ workflow {
             .collect()
             .map { _ids -> true }
 
-    summary_report(
+    ch_summary = summary_report(
         ch_optional_barrier,
         ch_stats.map { _meta, stats -> stats }.collect(),
         ch_readssum.out.map         { _meta, rm   -> rm   }.collect(),
@@ -261,4 +259,7 @@ workflow {
         ch_skani.result.map         { _meta, f -> f }.collect().ifEmpty([]),
         ch_blast_16s.result.map     { _meta, f -> f }.collect().ifEmpty([])
     )
+
+    // Run-level interactive MultiQC across all samples
+    multiqc_global( ch_summary.summary )
 }

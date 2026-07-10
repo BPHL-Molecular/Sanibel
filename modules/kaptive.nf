@@ -1,6 +1,6 @@
 process kaptive {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/kaptive_${variant}", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/kaptive_${variant}" }, mode: 'copy'
 
     input:
         tuple val(meta), path(assembly)

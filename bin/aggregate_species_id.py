@@ -21,10 +21,7 @@ from sanibel_taxonomy import (
     BLAST16S_MIN_LENGTH, BLAST16S_MIN_PIDENT,
 )
 
-# Species-level identity threshold (%); genus-level thresholds are shared via
-# BLAST16S_MIN_LENGTH / BLAST16S_MIN_PIDENT in sanibel_taxonomy.
 SP_PIDENT = 98.7
-
 
 def parse_mash(assembly_stats):
     with open(assembly_stats) as fh:
@@ -113,7 +110,7 @@ def vote(mash, kraken, blast16s):
         top_sp_lower   = Counter(s.lower() for s in agreeing).most_common(1)[0][0]
         winner_species = next(s for s in agreeing if s.lower() == top_sp_lower)
 
-    # Confidence reflects genus + species agreement on the winner, not genus alone.
+    # Confidence reflects genus + species agreement on the winner
     if winner_species in (None, 'unknown'):
         confidence = 'low'
     else:

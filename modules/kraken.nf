@@ -1,6 +1,6 @@
 process kraken {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/kraken2", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/kraken2" }, mode: 'copy'
 
     input:
         tuple val(meta), path(reads)

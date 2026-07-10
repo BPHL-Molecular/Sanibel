@@ -1,6 +1,6 @@
 process prokka {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/assembly", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/assembly" }, mode: 'copy'
 
     input:
         tuple val(meta), path(assembly), path(assembly_stats)

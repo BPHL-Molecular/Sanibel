@@ -1,6 +1,6 @@
 process summary_report {
     tag "summary"
-    publishDir "${params.output}", mode: 'copy'
+    publishDir { "${params.output}" }, mode: 'copy'
 
     input:
         val  barrier

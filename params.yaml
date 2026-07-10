@@ -3,7 +3,7 @@ input:  "/full/path/to/fastqs"
 output: "/full/path/to/output"
 
 # non-Florida-BPHL users: uncomment and set your BMGAP2 analysis_scripts directory
-# bmgap2_db:  "/full/path/to/bmgap2/analysis_scripts"
+#bmgap2_db:  "/full/path/to/bmgap2/analysis_scripts"
 
 # non-Florida-BPHL users: uncomment and set your Kraken2 database directory
-# kraken_db:  "/full/path/to/kraken2/database"
+#kraken_db:  "/full/path/to/kraken2/database"

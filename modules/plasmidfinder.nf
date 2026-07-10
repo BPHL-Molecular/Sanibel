@@ -1,6 +1,6 @@
 process plasmidfinder {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/plasmidfinder", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/plasmidfinder" }, mode: 'copy'
 
     input:
         tuple val(meta), path(reads)

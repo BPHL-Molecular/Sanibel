@@ -1,6 +1,6 @@
 process kleborate {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/kleborate", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/kleborate" }, mode: 'copy'
 
     input:
         tuple val(meta), path(assembly)

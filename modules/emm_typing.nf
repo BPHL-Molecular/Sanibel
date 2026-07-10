@@ -1,6 +1,6 @@
 process emm_typing {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/emm_typing", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/emm_typing" }, mode: 'copy'
     containerOptions "--bind ${task.workDir}:/EMBOSS-6.6.0/emboss/.libs"
 
     input:

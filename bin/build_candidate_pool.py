@@ -23,12 +23,12 @@ from sanibel_taxonomy import (
     BLAST16S_MIN_LENGTH, BLAST16S_MIN_PIDENT,
 )
 
-KRAKEN_ADAPT_FACTOR = 0.15   # threshold = max(top_pct * factor, MIN_PCT)
-KRAKEN_MIN_PCT      = 5.0    # absolute floor for Kraken threshold
-KRAKEN_MIN_READS    = 10     # minimum clade read count for any Kraken candidate
+KRAKEN_ADAPT_FACTOR = 0.15
+KRAKEN_MIN_PCT      = 5.0
+KRAKEN_MIN_READS    = 10
 
-SEED_TOP            = 3      # per-tool top-N guaranteed into the pool regardless of corroboration
-POOL_CAP            = 15     # hard cap on total candidates returned
+SEED_TOP            = 3
+POOL_CAP            = 15
 
 NA = 'NA'
 
@@ -210,9 +210,6 @@ def merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands, kraken_
         acc = mash_all[key]['accession'] if key in mash_all else NA
         _upsert(genus, species, '16S', accession=acc, blast16s_pident=pident)
 
-    # Kraken-by-reads seeds that fell below the abundance floor and are not otherwise in the
-    # pool: add them so skani still evaluates the nearest genome each tool points at. Species
-    # already present keep their existing tool tags (no unearned kraken2 vote).
     for genus, species, pct in kraken_seeds:
         key = f"{genus.lower()} {species.lower()}"
         if key not in pool:
@@ -271,7 +268,6 @@ def main():
     kraken_seeds         = kraken_seed_rows(kraken_report, SEED_TOP)
     blast16s_cands       = parse_16s_candidates(blast16s_tsv)
 
-    # Guarantee each tool's top-N is evaluated by skani, even without corroboration.
     seed_keys = set()
     seed_keys.update(c['species_key'] for c in mash_cands[:SEED_TOP])
     seed_keys.update(f"{g.lower()} {s.lower()}" for g, s, _p in kraken_seeds)

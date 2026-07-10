@@ -4,9 +4,7 @@ bmgap2_helpers.py - shared boilerplate for the run_bmgap2_*.py host scripts.
 
 The three BMGAP2 steps (AMR, LocusExtractor, BMScan) each derive the sample name
 from the output path and read the MLST scheme to decide whether to run, skipping
-(exit 0) any sample that is not Neisseria meningitidis or H. influenzae. This
-per-script re-check is the intended safety net even though the pipeline already
-gates BMGAP2 on genus upstream.
+(exit 0) any sample that is not Neisseria meningitidis or H. influenzae.
 """
 
 import sys

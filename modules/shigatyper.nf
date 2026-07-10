@@ -1,6 +1,6 @@
 process shigatyper {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/shigatyper", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/shigatyper" }, mode: 'copy'
 
     input:
         tuple val(meta), path(reads)
