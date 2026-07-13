@@ -2,63 +2,84 @@
 # Consumed by the multiqc_global process, staged alongside the logo asset.
 
 title: "Sanibel: Bacterial WGS Analysis Report"
-subtitle: "Florida BPHL bacterial whole genome sequencing QC, species ID and typing"
 intro_text: >
-  Interactive run-level dashboard for the Sanibel pipeline. Sanibel's consensus
-  results (species identification, QC verdicts, MLST/serotyping and predicted
-  antimicrobial resistance) lead the report as color-coded tables, followed by
-  the supporting per-tool QC modules ordered by pipeline step.
+  Interactive summary report (species ID, QC, serotyping, predicted antimicrobial resistenance).
 
 report_header_info:
-  - Pipeline: "Sanibel, Florida BPHL Bacterial WGS Analysis"
+  - Pipeline: "Sanibel (https://github.com/BPHL-Molecular/Sanibel)"
   - Version: "v2.1"
   - Contact: "bphl-sebioinformatics@flhealth.gov"
   - Laboratory: "Florida Bureau of Public Health Laboratories"
 
-custom_logo: "sanibel_pipeline_logo_v2.svg"
-custom_logo_url: "https://github.com/BPHL-Molecular/Sanibel/blob/main/assets/sanibel_pipeline_logo_v2.svg"
-custom_logo_title: "Florida BPHL, Sanibel Pipeline"
+# MultiQC embeds the logo as a data URI but always labels it image/png, so an SVG
+# here renders as a broken image. Use a real PNG. custom_logo_url is only the
+# click-through link, it does not load the image.
+custom_logo: "sanibel_pipeline_logo_v2.png"
+custom_logo_dark: "sanibel_pipeline_logo_v2.png"
+custom_logo_url: "https://github.com/BPHL-Molecular/Sanibel"
+custom_logo_title: "Florida BPHL Sanibel Pipeline"
 custom_logo_width: 220
 
 extra_fn_clean_exts:
   - "_original"
   - "_clean"
 
+# A table renders as a violin by default when its rows exceed max_table_rows. Set
+# it to 1 so General Statistics opens as a violin. The Sanibel tables opt out with
+# no_violin in their own pconfig (see bin/summary_report.py) and stay as tables.
+max_table_rows: 1
+
+# Drop these modules outright: their sections AND their General Statistics columns go.
+exclude_modules:
+  - "bbmap"
+  - "kraken"
+
+# FastQC runs once, on the clean reads only (raw is additionally ignored in the
+# process), so no raw section and no raw General Statistics columns.
+# QUAST and Prokka are not listed: they still run (feeding General Statistics),
+# and their sections are dropped via remove_sections below.
 module_order:
-  - fastqc:
-      name: "FastQC (raw reads)"
-      anchor: "fastqc_raw"
-      info: "Quality of the original raw reads, before trimming and decontamination."
-      path_filters:
-        - "*/fastqc/*"
-  - bbmap:
-      name: "BBTools (adapter and PhiX removal)"
-      anchor: "bbtools"
-      info: "BBDuk adapter-trimming and PhiX-removal statistics."
   - fastqc:
       name: "FastQC (clean reads)"
       anchor: "fastqc_clean"
-      info: "Quality of the cleaned reads used for assembly and typing."
       path_filters:
         - "*/fastqc2/*"
-  - kraken:
-      name: "Kraken2 (read taxonomy)"
-      anchor: "kraken2"
-  - quast:
-      name: "QUAST (assembly metrics)"
-  - prokka:
-      name: "Prokka (annotation)"
 
+# Remove these sections from the report. The modules still run and still populate
+# General Statistics (unlike exclude_modules, which would drop those columns too).
+remove_sections:
+  - "fastqc_clean_fastqc_sequence_counts"
+  - "fastqc_clean_fastqc_per_base_sequence_quality"
+  - "fastqc_clean_fastqc_per_sequence_quality_scores"
+  - "fastqc_clean_fastqc_clean_per_base_sequence_content"
+  - "fastqc_clean_fastqc_per_sequence_gc_content"
+  - "fastqc_clean_fastqc_per_base_n_content"
+  - "fastqc_clean_fastqc_sequence_length_distribution"
+  - "fastqc_clean_fastqc_sequence_duplication_levels"
+  - "fastqc_clean_fastqc_overrepresented_sequences"
+  - "fastqc_clean_fastqc_top_overrepresented_sequences"
+  - "fastqc_clean_fastqc_adapter_content"
+  - "fastqc_clean_fastqc_status_checks"
+  - "quast-stats"
+  - "quast-contigs"
+  - "prokka"
+
+# Species ID, then General Statistics, then typing. Software Versions falls last.
 report_section_order:
   sanibel_species: { order: 3000 }
-  sanibel_typing:  { order: 2990 }
+  general_stats:   { order: 2900 }
+  sanibel_typing:  { order: 2800 }
 
 custom_content:
   order:
     - sanibel_species
     - sanibel_typing
 
+# Prokka's organism is the Mash call, not skani, so hide it to avoid contradicting
+# the Species ID table. CDS/bases/contigs stay.
 table_columns_visible:
+  prokka:
+    organism: false
   fastqc:
     percent_duplicates: false
     percent_fails: false

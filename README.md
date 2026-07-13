@@ -170,7 +170,7 @@ flowchart TD
     U --> X
 
     X --> Y[sum_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt]
-    X --> MG[multiqc_global] --> IR[interactive_report.html]
+    X --> MG[multiqc_global] --> IR[sanibel_report.html]
 
     style SP fill:#fef,stroke:#333,color:#000
     style SK fill:#9f9,stroke:#333,stroke-width:2px,color:#000

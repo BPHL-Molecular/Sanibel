@@ -24,7 +24,7 @@ process multiqc_global {
         path nf_config
 
     output:
-        path("interactive_report.html"), emit: report
+        path("sanibel_report.html"), emit: report
 
     script:
     """
@@ -39,10 +39,14 @@ process multiqc_global {
     multiqc ${params.output} \\
         -c ${multiqc_config} \\
         -c sanibel_versions.yml \\
-        --filename interactive_report.html \\
+        --filename sanibel_report.html \\
         --interactive \\
         --ignore "*/multiqc/*" \\
-        --ignore "*interactive_report*" \\
+        --ignore "*/fastqc/*" \\
+        --ignore "*sanibel_report*" \\
         --ignore "*sum_report.txt"
+
+    # The custom-content tables are only inputs to the report, not deliverables
+    rm -f "${params.output}"/*_mqc.tsv
     """
 }

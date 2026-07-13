@@ -721,7 +721,9 @@ def _mqc_preamble(section_id, section_name, description, pconfig=None):
     if pconfig:
         lines.append("# pconfig:")
         for k, v in pconfig.items():
-            lines.append(f"#     {k}: '{v}'")
+            # booleans must be unquoted so MultiQC reads them as YAML bools
+            val = str(v).lower() if isinstance(v, bool) else f"'{v}'"
+            lines.append(f"#     {k}: {val}")
     return lines
 
 
@@ -745,7 +747,7 @@ def emit_sanibel_mqc_tables(rows_std):
             'skani ANI-confirmed consensus species with orthogonal Mash, '
             'Kraken2 and 16S calls plus QC verdicts.',
             pconfig={'id': 'sanibel_species_table', 'namespace': 'Sanibel',
-                     'col1_header': 'Sample'},
+                     'col1_header': 'Sample', 'no_violin': True},
         ),
         MQC_SPECIES_HEADER, MQC_SPECIES_COLS, rows_std,
     )
@@ -755,7 +757,7 @@ def emit_sanibel_mqc_tables(rows_std):
             'sanibel_typing', 'MLST and Serotyping',
             'MLST scheme and sequence type, and species-specific serotype.',
             pconfig={'id': 'sanibel_typing_table', 'namespace': 'Sanibel',
-                     'col1_header': 'Sample'},
+                     'col1_header': 'Sample', 'no_violin': True},
         ),
         MQC_TYPING_HEADER, MQC_TYPING_COLS, rows_std,
     )
