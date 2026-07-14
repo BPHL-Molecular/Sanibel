@@ -152,8 +152,8 @@ workflow {
             .join(ch_stats.map { meta, stats -> [ meta.id, stats ] })
             .map  { _id, meta, asm, stats -> [ meta, asm, stats ] }
     )
-    amrfinder(ch_assembly_enriched)
-    ch_mlst = mlst(ch_assembly_enriched)
+    ch_amrfinder = amrfinder(ch_assembly_enriched)
+    ch_mlst      = mlst(ch_assembly_enriched)
 
     // Kraken output with enriched meta
     ch_kraken_enriched = rebind(ch_kraken.out, ch_meta_by_id)
@@ -257,7 +257,8 @@ workflow {
         ch_hinfluenzae_txt,
         ch_aggregate.out.map        { _meta, f -> f }.collect().ifEmpty([]),
         ch_skani.result.map         { _meta, f -> f }.collect().ifEmpty([]),
-        ch_blast_16s.result.map     { _meta, f -> f }.collect().ifEmpty([])
+        ch_blast_16s.result.map     { _meta, f -> f }.collect().ifEmpty([]),
+        ch_amrfinder.out.map        { _meta, f -> f }.collect().ifEmpty([])
     )
 
     // Run-level interactive MultiQC across all samples
@@ -265,6 +266,7 @@ workflow {
         ch_summary.summary,
         channel.value(file("${projectDir}/assets/multiqc_config.yaml",         checkIfExists: true)),
         channel.value(file("${projectDir}/assets/sanibel_pipeline_logo_v2.png", checkIfExists: true)),
+        channel.value(file("${projectDir}/assets/sanibel_report.css",           checkIfExists: true)),
         channel.value(file("${projectDir}/nextflow.config",                     checkIfExists: true))
     )
 }

@@ -15,6 +15,7 @@ process summary_report {
         path aggregate_files
         path skani_files
         path blast16s_files
+        path amrfinder_files
 
     output:
         path "sum_report.txt",    emit: summary

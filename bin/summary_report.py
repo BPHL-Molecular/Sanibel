@@ -233,6 +233,37 @@ def parse_blast16s_result(filepath, anchor_genera=None):
     return {'pident': f"{pident:.3f}", 'tophit': f"{genus} spp." if genus else NO_DATA}
 
 
+def _amr_field(row, *names):
+    for n in names:
+        val = row.get(n)
+        if val is not None:
+            return val.strip()
+    return ''
+
+
+def parse_amrfinder(filepath):
+    """Acquired AMR genes only: Type AMR and core scope. Scope 'plus' AMR rows are
+    intrinsic (efflux pumps, chromosomal beta-lactamases) and would inflate the count.
+    Keyed by column name, not position: AMRFinderPlus renamed these fields between
+    3.x and 4.x."""
+    if not os.path.isfile(filepath):
+        return None
+    genes, classes = set(), set()
+    with open(filepath, newline='') as f:
+        for row in csv.DictReader(f, delimiter='\t'):
+            if _amr_field(row, 'Type', 'Element type').upper() != 'AMR':
+                continue
+            if _amr_field(row, 'Scope').lower() != 'core':
+                continue
+            symbol = _amr_field(row, 'Element symbol', 'Gene symbol')
+            cls    = _amr_field(row, 'Class')
+            if symbol:
+                genes.add(symbol)
+            if cls and cls != 'NA':
+                classes.add(cls)
+    return {'genes': sorted(genes), 'classes': sorted(classes)}
+
+
 # QC verdicts
 
 def compute_id_qc(sk, min_ani, min_af, review_ani):
@@ -665,12 +696,12 @@ def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
 
 HEADER_STANDARD = [
     'sampleID',
+    'species_id_qc', 'contamination_flag', 'assembly_qc',
     'mash_species', 'mash_reference', 'mash_distance',
     'kraken2_species', 'kraken2_percent',
     'blast_16s_tophit', 'blast_16s_pident',
-    'skani_species', 'skani_ani', 'skani_align_fraction', 'skani_reference', 'species_id_qc',
-    'contamination_flag', 'assembly_qc',
-    'mlst_scheme', 'mlst_st', 'serotype',
+    'skani_species', 'skani_ani', 'skani_align_fraction', 'skani_reference',
+    'serotype', 'mlst_scheme', 'mlst_st',
     'num_clean_reads', 'avg_read_length', 'avg_read_qual', 'est_coverage',
     'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
     'annotated_cds',
@@ -701,14 +732,14 @@ HEADER_HI = [
 
 # MultiQC custom-content emitters
 
-# Column selections are indices into HEADER_STANDARD.
-MQC_SPECIES_COLS   = [0, 8, 9, 10, 1, 4, 5, 6, 12, 13]
+MQC_SPECIES_COLS   = [0, 11, 12, 13, 1, 2]
 MQC_SPECIES_HEADER = ['Sample', 'skani_species', 'skani_ani', 'skani_align_fraction',
-                      'mash_species', 'kraken2_species', 'kraken2_percent',
-                      'blast_16s_tophit', 'species_id_qc', 'contamination_flag']
+                      'species_id_qc', 'contamination_flag']
 
-MQC_TYPING_COLS    = [0, 15, 16, 17]
+MQC_TYPING_COLS    = [0, 16, 17, 15]
 MQC_TYPING_HEADER  = ['Sample', 'mlst_scheme', 'mlst_st', 'serotype']
+
+MQC_AMR_HEADER     = ['Sample', 'amr_gene_count', 'amr_classes', 'amr_genes']
 
 
 def _mqc_preamble(section_id, section_name, description, pconfig=None):
@@ -744,8 +775,7 @@ def emit_sanibel_mqc_tables(rows_std):
         'sanibel_species_mqc.tsv',
         _mqc_preamble(
             'sanibel_species', 'Species ID and QC',
-            'skani ANI-confirmed consensus species with orthogonal Mash, '
-            'Kraken2 and 16S calls plus QC verdicts.',
+            'skani ANI-confirmed consensus species call with QC verdicts.',
             pconfig={'id': 'sanibel_species_table', 'namespace': 'Sanibel',
                      'col1_header': 'Sample', 'no_violin': True},
         ),
@@ -760,6 +790,32 @@ def emit_sanibel_mqc_tables(rows_std):
                      'col1_header': 'Sample', 'no_violin': True},
         ),
         MQC_TYPING_HEADER, MQC_TYPING_COLS, rows_std,
+    )
+
+
+def emit_sanibel_amr_mqc_table(amr_by_sample):
+    if not amr_by_sample:
+        return
+    rows = []
+    for sid, amr in amr_by_sample.items():
+        if amr is None:
+            rows.append([sid, NO_DATA, NO_DATA, NO_DATA])
+        elif not amr['genes']:
+            rows.append([sid, 0, 'None', 'None'])
+        else:
+            rows.append([sid, len(amr['genes']),
+                         ', '.join(amr['classes']) or 'None',
+                         ', '.join(amr['genes'])])
+    _write_mqc(
+        'sanibel_amr_mqc.tsv',
+        _mqc_preamble(
+            'sanibel_amr', 'Antimicrobial Resistance',
+            'Acquired AMR determinants from AMRFinderPlus. Stress and virulence '
+            'elements are excluded.',
+            pconfig={'id': 'sanibel_amr_table', 'namespace': 'Sanibel',
+                     'col1_header': 'Sample', 'no_violin': True},
+        ),
+        MQC_AMR_HEADER, [0, 1, 2, 3], rows,
     )
 
 
@@ -788,9 +844,12 @@ def main():
     rows_std = []
     rows_nm  = []
     rows_hi  = []
+    amr_by_sample = {}
 
     for sid in samples:
         sample_dir = os.path.join(outdir, sid)
+
+        amr_by_sample[sid] = parse_amrfinder(f'{sid}_amrfinderplus_report.tsv')
 
         asm  = parse_assembly_stats(f'{sid}_assembly_stats.txt')
         rm   = parse_read_metrics(f'{sid}_readMetrics.txt')
@@ -837,12 +896,6 @@ def main():
         scheme  = mlst['scheme']
         pmga_sp = pmga['species'] or NO_DATA
 
-        common = [
-            sid,
-            f"{asm['genus']}_{asm['species']}", asm['accession'], asm['mash_distance'],
-            kr['species'], kr['percent'],
-        ]
-
         if scheme in ('neisseria', 'hinfluenzae'):
             serotype = pmga['prediction'] or NO_DATA
         else:
@@ -872,11 +925,14 @@ def main():
             rm['coverage'], asm['num_contigs'], asm['n50'],
             QC_MIN_COVERAGE, QC_WARN_CONTIGS, QC_FAIL_CONTIGS, QC_MIN_N50, contaminated)
 
-        std_row = common + [
+        std_row = [
+            sid,
+            species_id_qc, contamination_flag, assembly_qc,
+            f"{asm['genus']}_{asm['species']}", asm['accession'], asm['mash_distance'],
+            kr['species'], kr['percent'],
             blast16s_result['tophit'], blast16s_result['pident'],
-            skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val, species_id_qc,
-            contamination_flag, assembly_qc,
-            scheme, mlst['st'], serotype,
+            skani_ID_val, skani_ANI_val, skani_align_val, skani_ID_ref_val,
+            serotype, scheme, mlst['st'],
             rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
             asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
             asm['total_length'], asm['gc_content'], cds,
@@ -934,8 +990,8 @@ def main():
     if rows_hi:
         write_report('hi_sum_report.txt', HEADER_HI,       rows_hi)
 
-    # Additive: MultiQC custom-content tables (does not change the .txt reports)
     emit_sanibel_mqc_tables(rows_std)
+    emit_sanibel_amr_mqc_table(amr_by_sample)
 
     if not (rows_std or rows_nm or rows_hi):
         print('summary_report.py: no rows generated.', file=sys.stderr)

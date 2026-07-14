@@ -21,6 +21,7 @@ process multiqc_global {
         path summary
         path multiqc_config
         path custom_logo
+        path custom_css
         path nf_config
 
     output:
@@ -28,17 +29,25 @@ process multiqc_global {
 
     script:
     """
-    # Tool versions from the pinned container tags in nextflow.config
     {
-      echo "software_versions:"
+      echo "# id: 'sanibel_versions'"
+      echo "# section_name: 'Software Versions'"
+      echo "# description: 'Tool versions from the container tags pinned in nextflow.config.'"
+      echo "# plot_type: 'table'"
+      echo "# pconfig:"
+      echo "#     id: 'sanibel_versions_table'"
+      echo "#     col1_header: 'Software'"
+      echo "#     no_violin: true"
+      echo "#     rows_are_samples: false"
+      echo "#     parse_numeric: false"
+      printf 'Software\\tVersion\\n'
       grep -hoE "docker://[^']+" ${nf_config} \\
-        | sed -E 's#docker://[^/]*/([^:]+):(.+)#  \\1: "\\2"#; s/^  kraken2:/  kraken:/; s/^  bbtools:/  bbmap:/' \\
+        | sed -E 's#docker://[^/]*/([^:]+):(.+)#\\1\\t\\2#' \\
         | sort -u
-    } > sanibel_versions.yml
+    } > "${params.output}/sanibel_versions_mqc.tsv"
 
     multiqc ${params.output} \\
         -c ${multiqc_config} \\
-        -c sanibel_versions.yml \\
         --filename sanibel_report.html \\
         --interactive \\
         --ignore "*/multiqc/*" \\
@@ -46,7 +55,6 @@ process multiqc_global {
         --ignore "*sanibel_report*" \\
         --ignore "*sum_report.txt"
 
-    # The custom-content tables are only inputs to the report, not deliverables
     rm -f "${params.output}"/*_mqc.tsv
     """
 }
