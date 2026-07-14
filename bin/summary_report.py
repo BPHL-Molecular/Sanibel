@@ -61,12 +61,12 @@ def parse_assembly_stats(filepath):
         'species':        fields[1],
         'mash_distance':  fields[2],
         'accession':      fields[3],
-        'num_contigs':    fields[5],
-        'longest_contig': fields[6],
-        'n50':            fields[7],
-        'l50':            fields[8],
-        'total_length':   fields[9],
-        'gc_content':     fields[10],
+        'num_contigs':    fields[4],
+        'longest_contig': fields[5],
+        'n50':            fields[6],
+        'l50':            fields[7],
+        'total_length':   fields[8],
+        'gc_content':     fields[9],
     }
 
 

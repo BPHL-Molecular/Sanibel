@@ -94,6 +94,7 @@ workflow {
 
     ch_neisseria_txt   = channel.value(file("${mlstTablesDir}/neisseria.txt",   checkIfExists: true))
     ch_hinfluenzae_txt = channel.value(file("${mlstTablesDir}/hinfluenzae.txt", checkIfExists: true))
+    ch_mlst_schemes    = channel.value(file("${projectDir}/assets/mlst_schemes.tsv", checkIfExists: true))
 
     // QC & read preprocessing
     ch_fastqc  = fastqc(ch_reads)
@@ -130,7 +131,7 @@ workflow {
         def enriched_meta = meta + [
             mash_genus:   fields[0],
             mash_species: fields[0] + '_' + fields[1],
-            genome_size:  fields[9].toLong()
+            genome_size:  fields[8].toLong()
         ]
         [ enriched_meta, stats ]
     }
@@ -145,15 +146,7 @@ workflow {
     // Read metrics
     ch_readssum = readssum(ch_clean_enriched)
 
-    // Annotation and typing
-    ch_prokka = prokka(
-        ch_assembly_enriched
-            .map  { meta, asm -> [ meta.id, meta, asm ] }
-            .join(ch_stats.map { meta, stats -> [ meta.id, stats ] })
-            .map  { _id, meta, asm, stats -> [ meta, asm, stats ] }
-    )
     ch_amrfinder = amrfinder(ch_assembly_enriched)
-    ch_mlst      = mlst(ch_assembly_enriched)
 
     // Kraken output with enriched meta
     ch_kraken_enriched = rebind(ch_kraken.out, ch_meta_by_id)
@@ -204,7 +197,12 @@ workflow {
     // Rebind the channels the typing modules use
     ch_assembly_typed = rebind(ch_assembly_enriched, ch_meta_typed)
     ch_clean_typed    = rebind(ch_clean_enriched,    ch_meta_typed)
-    ch_mlst_typed     = rebind(ch_mlst.out,          ch_meta_typed)
+
+    // Annotation and MLST: both need the skani call, prokka to annotate with it and
+    // mlst to reject an auto-detected scheme the species rules out
+    ch_prokka     = prokka(ch_assembly_typed)
+    ch_mlst       = mlst(ch_assembly_typed, ch_mlst_schemes)
+    ch_mlst_typed = ch_mlst.out
 
     // PMGA + BMGAP2
     ch_pmga = pmga(

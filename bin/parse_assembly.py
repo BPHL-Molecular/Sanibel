@@ -5,7 +5,7 @@ Parse mash distances and QUAST report into a single CSV line.
 Usage: parse_assembly.py <distances_file> <quast_report>
 
 Output (stdout):
-  GENUS,SPECIES,DIST,ACCESSION,ASM_NAME,CONTIGS,LARGEST,N50,L50,TOTAL,GC
+  GENUS,SPECIES,DIST,ACCESSION,CONTIGS,LARGEST,N50,L50,TOTAL,GC
 """
 
 import os
@@ -31,7 +31,6 @@ def parse_mash(distances_file):
         parts    = [p for p in org_seg.split('_') if p]
         genus    = parts[0] if parts else 'Unknown'
         species  = parts[1] if len(parts) > 1 else 'unknown'
-        asm_name = '_'.join(parts[2:]) if len(parts) > 2 else '.'
         accession = 'Unknown'
         for seg in segs[:-1]:
             acc = find_accession(seg)
@@ -39,15 +38,13 @@ def parse_mash(distances_file):
                 accession = acc
                 break
     else:
-
         org_seg   = re.sub(r'\.fna.*', '', ref_id)
         parts     = [p for p in org_seg.split('_') if p]
         genus     = parts[0] if parts else 'Unknown'
         species   = parts[1] if len(parts) > 1 else 'unknown'
         accession = find_accession(ref_id) or 'Unknown'
-        asm_name  = accession
 
-    return genus, species, dist, accession, asm_name
+    return genus, species, dist, accession
 
 
 def parse_quast(quast_file):
@@ -78,8 +75,8 @@ if __name__ == '__main__':
     if len(sys.argv) != 3:
         sys.exit(f"Usage: {sys.argv[0]} <distances_file> <quast_report>")
 
-    genus, species, dist, accession, asm_name = parse_mash(sys.argv[1])
-    contigs, largest, n50, l50, total, gc     = parse_quast(sys.argv[2])
+    genus, species, dist, accession        = parse_mash(sys.argv[1])
+    contigs, largest, n50, l50, total, gc  = parse_quast(sys.argv[2])
 
-    print(f"{genus},{species},{dist},{accession},{asm_name},"
+    print(f"{genus},{species},{dist},{accession},"
           f"{contigs},{largest},{n50},{l50},{total},{gc}")
