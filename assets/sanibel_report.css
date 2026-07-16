@@ -1,4 +1,4 @@
-/* MultiQC renders col1 as <th>, which browsers bold by default */
-#sanibel_versions_table tbody th {
+/* MultiQC appends _table to the anchor, so match the prefix rather than the exact id */
+table[id^="sanibel_versions_table"] tbody th.rowheader {
   font-weight: normal;
 }

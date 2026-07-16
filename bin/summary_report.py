@@ -334,20 +334,23 @@ def get_ecoli_serotype(sample_dir, sample_id):
 
 
 def get_klebsiella_serotype(sample_dir, sample_id):
-    matches = glob.glob(os.path.join(sample_dir, 'kleborate', 'kleborate_out',
-                                     '*_output.txt'))
-    if not matches:
-        return None
-    kleb_tsv = matches[0]
-    try:
-        with open(kleb_tsv) as f:
-            reader = csv.DictReader(f, delimiter='\t')
-            for row in reader:
-                st = row.get('ST', '').strip()
-                return st if st and st != '-' else 'Not detected'
-    except Exception as e:
-        print(f"Warning: Could not parse Kleborate output for {sample_id}: {e}", file=sys.stderr)
-        return 'Not detected'
+    matches = sorted(glob.glob(os.path.join(sample_dir, 'kleborate', 'kleborate_out',
+                                            '*_output.txt')))
+    for path in matches:
+        try:
+            with open(path) as f:
+                reader = csv.DictReader(f, delimiter='\t')
+                if 'K_locus' not in (reader.fieldnames or []):
+                    continue
+                for row in reader:
+                    k = (row.get('K_locus') or '').strip()
+                    o = (row.get('O_locus') or '').strip()
+                    if k in ('', '-') and o in ('', '-'):
+                        return 'Not detected'
+                    return f"{k or '-'}/{o or '-'}"
+        except Exception as e:
+            print(f"Warning: Could not parse Kleborate output for {sample_id}: {e}", file=sys.stderr)
+    return None
 
 
 def get_legionella_serotype(sample_dir, sample_id):
@@ -784,8 +787,8 @@ def emit_sanibel_mqc_tables(rows_std):
         _mqc_preamble(
             'sanibel_species', 'Species ID and QC',
             'skani ANI-confirmed consensus species call with QC verdicts.',
-            pconfig={'id': 'sanibel_species_table', 'namespace': 'Sanibel',
-                     'col1_header': 'Sample', 'no_violin': True},
+            pconfig={'id': 'sanibel_species_table', 'col1_header': 'Sample',
+                     'no_violin': True},
         ),
         MQC_SPECIES_HEADER, MQC_SPECIES_COLS, rows_std,
     )
@@ -794,8 +797,8 @@ def emit_sanibel_mqc_tables(rows_std):
         _mqc_preamble(
             'sanibel_typing', 'MLST and Serotyping',
             'MLST scheme and sequence type, and species-specific serotype.',
-            pconfig={'id': 'sanibel_typing_table', 'namespace': 'Sanibel',
-                     'col1_header': 'Sample', 'no_violin': True},
+            pconfig={'id': 'sanibel_typing_table', 'col1_header': 'Sample',
+                     'no_violin': True, 'only_defined_headers': False},
             headers={'mlst_st': {'scale': False, 'format': '{}'}},
         ),
         MQC_TYPING_HEADER, MQC_TYPING_COLS, rows_std,
@@ -821,8 +824,8 @@ def emit_sanibel_amr_mqc_table(amr_by_sample):
             'sanibel_amr', 'Antimicrobial Resistance',
             'Acquired AMR determinants from AMRFinderPlus. Stress and virulence '
             'elements are excluded.',
-            pconfig={'id': 'sanibel_amr_table', 'namespace': 'Sanibel',
-                     'col1_header': 'Sample', 'no_violin': True},
+            pconfig={'id': 'sanibel_amr_table', 'col1_header': 'Sample',
+                     'no_violin': True},
         ),
         MQC_AMR_HEADER, [0, 1, 2, 3], rows,
     )
