@@ -49,6 +49,13 @@ remove_sections:
   - "quast-contigs"
   - "prokka-section-1"
 
+section_comments:
+  general_stats: >
+    Rows are per **file**, not per sample. Each sequenced isolate contributes three rows:
+    `_R1` and `_R2` from FastQC on the clean reads, and one row under the bare sample name
+    for its assembly (QUAST and Prokka). The sample count below is therefore three times
+    the number of isolates in the run.
+
 report_section_order:
   sanibel_species:  { order: 4000 }
   sanibel_typing:   { order: 3000 }
@@ -97,3 +104,11 @@ table_cond_formatting_rules:
       - s_eq: "None"
     fail:
       - s_contains: "Possible contamination"
+
+  assembly_qc:
+    pass:
+      - s_eq: "PASS"
+    warn:
+      - s_contains: "Warning"
+    fail:
+      - s_contains: "FAIL"

@@ -39,7 +39,10 @@ process multiqc_global {
       echo "#     col1_header: 'Software'"
       echo "#     no_violin: true"
       echo "#     rows_are_samples: false"
-      echo "#     parse_numeric: false"
+      echo "# headers:"
+      echo "#     Version:"
+      echo "#         scale: false"
+      echo "#         format: '{}'"
       printf 'Software\\tVersion\\n'
       grep -hoE "docker://[^']+" ${nf_config} \\
         | sed -E 's#docker://[^/]*/([^:]+):(.+)#\\1\\t\\2#' \\

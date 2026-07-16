@@ -248,7 +248,7 @@ def parse_amrfinder(filepath):
     3.x and 4.x."""
     if not os.path.isfile(filepath):
         return None
-    genes, classes = set(), set()
+    genes, subclasses = set(), set()
     with open(filepath, newline='') as f:
         for row in csv.DictReader(f, delimiter='\t'):
             if _amr_field(row, 'Type', 'Element type').upper() != 'AMR':
@@ -256,12 +256,12 @@ def parse_amrfinder(filepath):
             if _amr_field(row, 'Scope').lower() != 'core':
                 continue
             symbol = _amr_field(row, 'Element symbol', 'Gene symbol')
-            cls    = _amr_field(row, 'Class')
+            sub    = _amr_field(row, 'Subclass')
             if symbol:
                 genes.add(symbol)
-            if cls and cls != 'NA':
-                classes.add(cls)
-    return {'genes': sorted(genes), 'classes': sorted(classes)}
+            if sub and sub != 'NA':
+                subclasses.add(sub)
+    return {'genes': sorted(genes), 'subclasses': sorted(subclasses)}
 
 
 # QC verdicts
@@ -303,7 +303,7 @@ def compute_assembly_qc(coverage, num_contigs, n50, min_cov, warn_contigs, fail_
     if fails:
         return 'FAIL: ' + '; '.join(fails + warns)
     if contaminated:
-        return 'REVIEW (Contamination)'
+        return 'FAIL (Contamination)'
     if warns:
         return 'Warning: ' + '; '.join(warns)
     return 'PASS'
@@ -334,10 +334,11 @@ def get_ecoli_serotype(sample_dir, sample_id):
 
 
 def get_klebsiella_serotype(sample_dir, sample_id):
-    kleb_tsv = os.path.join(sample_dir, 'kleborate', 'kleborate_out',
-                            'klebsiella_pneumo_complex_output.txt')
-    if not os.path.isfile(kleb_tsv):
+    matches = glob.glob(os.path.join(sample_dir, 'kleborate', 'kleborate_out',
+                                     '*_output.txt'))
+    if not matches:
         return None
+    kleb_tsv = matches[0]
     try:
         with open(kleb_tsv) as f:
             reader = csv.DictReader(f, delimiter='\t')
@@ -705,6 +706,7 @@ HEADER_STANDARD = [
     'num_clean_reads', 'avg_read_length', 'avg_read_qual', 'est_coverage',
     'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
     'annotated_cds',
+    'amr_element_symbol', 'amr_subclass',
 ]
 
 HEADER_NM = [
@@ -732,17 +734,17 @@ HEADER_HI = [
 
 # MultiQC custom-content emitters
 
-MQC_SPECIES_COLS   = [0, 11, 12, 13, 1, 2]
+MQC_SPECIES_COLS   = [0, 11, 12, 13, 1, 2, 3]
 MQC_SPECIES_HEADER = ['Sample', 'skani_species', 'skani_ani', 'skani_align_fraction',
-                      'species_id_qc', 'contamination_flag']
+                      'species_id_qc', 'contamination_flag', 'assembly_qc']
 
 MQC_TYPING_COLS    = [0, 16, 17, 15]
 MQC_TYPING_HEADER  = ['Sample', 'mlst_scheme', 'mlst_st', 'serotype']
 
-MQC_AMR_HEADER     = ['Sample', 'amr_gene_count', 'amr_classes', 'amr_genes']
+MQC_AMR_HEADER     = ['Sample', 'amr_gene_count', 'amr_element_symbol', 'amr_class']
 
 
-def _mqc_preamble(section_id, section_name, description, pconfig=None):
+def _mqc_preamble(section_id, section_name, description, pconfig=None, headers=None):
     lines = [
         f"# id: '{section_id}'",
         f"# section_name: '{section_name}'",
@@ -752,9 +754,15 @@ def _mqc_preamble(section_id, section_name, description, pconfig=None):
     if pconfig:
         lines.append("# pconfig:")
         for k, v in pconfig.items():
-            # booleans must be unquoted so MultiQC reads them as YAML bools
             val = str(v).lower() if isinstance(v, bool) else f"'{v}'"
             lines.append(f"#     {k}: {val}")
+    if headers:
+        lines.append("# headers:")
+        for col, opts in headers.items():
+            lines.append(f"#     {col}:")
+            for k, v in opts.items():
+                val = str(v).lower() if isinstance(v, bool) else f"'{v}'"
+                lines.append(f"#         {k}: {val}")
     return lines
 
 
@@ -788,6 +796,7 @@ def emit_sanibel_mqc_tables(rows_std):
             'MLST scheme and sequence type, and species-specific serotype.',
             pconfig={'id': 'sanibel_typing_table', 'namespace': 'Sanibel',
                      'col1_header': 'Sample', 'no_violin': True},
+            headers={'mlst_st': {'scale': False, 'format': '{}'}},
         ),
         MQC_TYPING_HEADER, MQC_TYPING_COLS, rows_std,
     )
@@ -804,8 +813,8 @@ def emit_sanibel_amr_mqc_table(amr_by_sample):
             rows.append([sid, 0, 'None', 'None'])
         else:
             rows.append([sid, len(amr['genes']),
-                         ', '.join(amr['classes']) or 'None',
-                         ', '.join(amr['genes'])])
+                         ', '.join(amr['genes']),
+                         ', '.join(amr['subclasses']) or 'None'])
     _write_mqc(
         'sanibel_amr_mqc.tsv',
         _mqc_preamble(
@@ -925,6 +934,13 @@ def main():
             rm['coverage'], asm['num_contigs'], asm['n50'],
             QC_MIN_COVERAGE, QC_WARN_CONTIGS, QC_FAIL_CONTIGS, QC_MIN_N50, contaminated)
 
+        amr = amr_by_sample[sid]
+        if amr is None:
+            amr_symbols = amr_subclasses = NO_DATA
+        else:
+            amr_symbols    = ', '.join(amr['genes'])      or 'None'
+            amr_subclasses = ', '.join(amr['subclasses']) or 'None'
+
         std_row = [
             sid,
             species_id_qc, contamination_flag, assembly_qc,
@@ -936,6 +952,7 @@ def main():
             rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
             asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
             asm['total_length'], asm['gc_content'], cds,
+            amr_symbols, amr_subclasses,
         ]
         rows_std.append(std_row)
 

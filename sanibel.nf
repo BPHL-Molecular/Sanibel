@@ -96,6 +96,12 @@ workflow {
     ch_hinfluenzae_txt = channel.value(file("${mlstTablesDir}/hinfluenzae.txt", checkIfExists: true))
     ch_mlst_schemes    = channel.value(file("${projectDir}/assets/mlst_schemes.tsv", checkIfExists: true))
 
+    // Read as a map, not a staged file
+    kleborate_presets = file("${projectDir}/assets/kleborate_presets.tsv", checkIfExists: true)
+        .readLines()
+        .findAll { line -> line.trim() && !line.startsWith('#') }
+        .collectEntries { line -> def (sp, p) = line.split('\t'); [(sp): p] }
+
     // QC & read preprocessing
     ch_fastqc  = fastqc(ch_reads)
     ch_trimmed = trimmomatic(ch_reads)
@@ -216,7 +222,11 @@ workflow {
 
     // Species-specific analyses
     legsta(ch_assembly_typed.filter      { meta, _a -> meta.species == 'Legionella_pneumophila' })
-    kleborate(ch_assembly_typed.filter   { meta, _a -> meta.genus   == 'Klebsiella' })
+    kleborate(
+        ch_assembly_typed
+            .map    { meta, a  -> [ meta + [kleborate_preset: kleborate_presets[meta.species?.tokenize('_')?.take(2)?.join('_')]], a ] }
+            .filter { meta, _a -> meta.kleborate_preset }
+    )
     shigatyper(ch_clean_typed.filter     { meta, _r -> meta.genus   == 'Shigella' })
     emm_typing(ch_clean_typed.filter     { meta, _r -> meta.species in ['Streptococcus_pyogenes', 'Streptococcus_dysgalactiae'] })
     seqsero2(ch_clean_typed.filter       { meta, _r -> meta.genus   == 'Salmonella' })

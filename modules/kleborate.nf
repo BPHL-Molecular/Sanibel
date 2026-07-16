@@ -5,11 +5,11 @@ process kleborate {
     input:
         tuple val(meta), path(assembly)
     output:
-        path("kleborate_out/klebsiella_pneumo_complex_output.txt")
+        path("kleborate_out/*_output.txt")
         val meta, emit: done
 
     script:
     """
-    kleborate -a ${assembly} -o kleborate_out -p kpsc --trim_headers
+    kleborate -a ${assembly} -o kleborate_out -p ${meta.kleborate_preset} --trim_headers
     """
 }
