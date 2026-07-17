@@ -161,11 +161,15 @@ workflow {
     ch_16s_db    = download_16s_db().db
     ch_blast_16s = blast_16s(ch_assembly_enriched, ch_16s_db)
 
+    // Kraken and 16S keyed by sample id (shared by the vote and the candidate pool)
+    ch_kraken_by_id = ch_kraken.out.map       { meta, r -> [ meta.id, r ] }
+    ch_blast_by_id  = ch_blast_16s.result.map { meta, r -> [ meta.id, r ] }
+
     // 2-of-3 species vote (Mash + Kraken2 + 16S BLAST)
     ch_aggregate = aggregate_species_id(
         ch_stats.map { meta, stats -> [ meta.id, meta, stats ] }
-            .join(ch_kraken.out.map    { meta, r -> [ meta.id, r ] })
-            .join(ch_blast_16s.result.map { meta, r -> [ meta.id, r ] })
+            .join(ch_kraken_by_id)
+            .join(ch_blast_by_id)
             .map { _id, emeta, stats, kreport, blast -> [ emeta, stats, kreport, blast ] }
     )
 
@@ -173,8 +177,8 @@ workflow {
     ch_pool = build_candidates(
         ch_mash.distances
             .map  { meta, d -> [ meta.id, d ] }
-            .join(ch_kraken.out.map    { meta, r -> [ meta.id, r ] })
-            .join(ch_blast_16s.result.map { meta, r -> [ meta.id, r ] })
+            .join(ch_kraken_by_id)
+            .join(ch_blast_by_id)
             .join(ch_meta_by_id)
             .map  { _id, distances, kreport, blast, emeta -> [ emeta, distances, kreport, blast ] }
     )
@@ -204,19 +208,17 @@ workflow {
     ch_assembly_typed = rebind(ch_assembly_enriched, ch_meta_typed)
     ch_clean_typed    = rebind(ch_clean_enriched,    ch_meta_typed)
 
-    // Annotation and MLST: both need the skani call, prokka to annotate with it and
-    // mlst to reject an auto-detected scheme the species rules out
+    // Annotation and MLST
     ch_prokka     = prokka(ch_assembly_typed)
     ch_mlst       = mlst(ch_assembly_typed, ch_mlst_schemes)
-    ch_mlst_typed = ch_mlst.out
 
     // PMGA + BMGAP2
     ch_pmga = pmga(
         ch_assembly_typed
             .filter { meta, _a -> meta.genus in ['Neisseria', 'Haemophilus'] }
-            .join(ch_mlst_typed, by: 0)
+            .join(ch_mlst.out, by: 0)
     )
-    ch_bmgap2_amr = bmgap2_amr(ch_mlst_typed.join(ch_pmga.out, by: 0))
+    ch_bmgap2_amr = bmgap2_amr(ch_mlst.out.join(ch_pmga.out, by: 0))
     ch_bmgap2_le  = bmgap2_locusextractor(ch_bmgap2_amr.out)
     ch_bmgap2_bmscan = bmgap2_bmscan(ch_bmgap2_le.out)
 
@@ -245,10 +247,6 @@ workflow {
                  seroba.out.done, pasty.out.done, kaptive_ab.out.done, kaptive_vp.out.done,
                  lissero.out.done,
                  ch_bmgap2_bmscan.map { meta, _f -> meta })
-            .mix( ch_stats.map { meta, _s -> meta } )
-            .mix( ch_skani.result.map { meta, _f -> meta } )
-            .mix( ch_pool.pool.map { meta, _f -> meta } )
-            .mix( ch_blast_16s.result.map { meta, _f -> meta } )
             .map { _id -> 1 }
             .collect()
             .map { _ids -> true }
