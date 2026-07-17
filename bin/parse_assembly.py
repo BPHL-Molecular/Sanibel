@@ -9,11 +9,10 @@ Output (stdout):
 """
 
 import os
-import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-from sanibel_taxonomy import find_accession
+from sanibel_taxonomy import find_accession, parse_mash_ref
 
 
 def parse_mash(distances_file):
@@ -24,27 +23,11 @@ def parse_mash(distances_file):
     ref_id = fields[0]
     dist   = fields[2] if len(fields) > 2 else 'NA'
 
-    if '-.-' in ref_id:
-        segs     = ref_id.split('-.-')
-        org_part = segs[-1]
-        org_seg  = re.sub(r'\.fna.*', '', org_part)
-        parts    = [p for p in org_seg.split('_') if p]
-        genus    = parts[0] if parts else 'Unknown'
-        species  = parts[1] if len(parts) > 1 else 'unknown'
-        accession = 'Unknown'
-        for seg in segs[:-1]:
-            acc = find_accession(seg)
-            if acc:
-                accession = acc
-                break
-    else:
-        org_seg   = re.sub(r'\.fna.*', '', ref_id)
-        parts     = [p for p in org_seg.split('_') if p]
-        genus     = parts[0] if parts else 'Unknown'
-        species   = parts[1] if len(parts) > 1 else 'unknown'
-        accession = find_accession(ref_id) or 'Unknown'
+    genus, species, accession = parse_mash_ref(ref_id)
+    if accession is None and '-.-' not in ref_id:
+        accession = find_accession(ref_id)
 
-    return genus, species, dist, accession
+    return genus or 'Unknown', species or 'unknown', dist, accession or 'Unknown'
 
 
 def parse_quast(quast_file):

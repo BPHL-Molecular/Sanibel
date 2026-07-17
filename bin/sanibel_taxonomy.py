@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-sanibel_taxonomy.py — shared taxonomy / contamination primitives.
-
-"""
+"""sanibel_taxonomy.py — shared taxonomy / contamination primitives."""
 
 import re
 from collections import namedtuple
@@ -27,6 +24,21 @@ def find_accession(text):
         return None
     m = ACCESSION_RE.search(text)
     return m.group(0) if m else None
+
+
+def parse_mash_ref(ref_name):
+    segs      = ref_name.split('-.-')
+    name_part = re.sub(r'\.fna.*', '', segs[-1])
+    tokens    = [t for t in name_part.split('_') if t]
+    genus     = tokens[0] if tokens else None
+    species   = tokens[1] if len(tokens) > 1 else None
+    accession = None
+    for seg in segs[:-1]:
+        acc = find_accession(seg)
+        if acc:
+            accession = acc
+            break
+    return genus, species, accession
 
 
 # Genera indistinguishable by 16S; never flag each other as contamination.
@@ -56,7 +68,6 @@ SYNONYMOUS_PAIRS = {
 
 
 def genus_of(label):
-    """First token of a 'Genus species' or 'Genus_species' string."""
     if not label:
         return None
     tokens = label.replace('_', ' ').split()
@@ -82,7 +93,6 @@ BlastHit = namedtuple(
 
 
 def iter_blast16s_rows(path):
-    """Yield BlastHit for each valid 16S BLAST row (header/blank/malformed skipped)."""
     try:
         fh = open(path)
     except OSError:

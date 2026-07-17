@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+"""aggregate_species_id.py - 2-of-3 species vote across Mash, Kraken2, and 16S BLAST.
 
 Usage: aggregate_species_id.py <assembly_stats_csv> <kraken_report> <blast_16s_tsv>
 
@@ -66,10 +66,9 @@ def parse_blast16s(blast_tsv):
 def _select_winner(rows, sp_pident=SP_PIDENT):
     if not rows:
         return None, None
-    sorted_rows = sorted(rows, key=lambda r: (-r[2], abs(r[3] - 1500), -r[8]))
-    best_g, best_s, best_pi, _ln, _stitle, _qid, _ss, _se, _bs = sorted_rows[0]
-    winner_genus   = best_g
-    winner_species = best_s if best_pi >= sp_pident else None
+    best = min(rows, key=lambda r: (-r[2], abs(r[3] - 1500), -r[8]))
+    winner_genus   = best[0]
+    winner_species = best[1] if best[2] >= sp_pident else None
     return winner_genus, winner_species
 
 

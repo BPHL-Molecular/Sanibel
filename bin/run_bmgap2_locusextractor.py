@@ -11,11 +11,10 @@ Exits cleanly (code 0) if the sample is not a meningitis species.
 
 import glob
 import os
-import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-from bmgap2_helpers import read_scheme_and_sample
+from bmgap2_helpers import read_scheme_and_sample, run_tool
 
 
 def main():
@@ -67,46 +66,25 @@ def main():
         assembly_dir,
     ]
 
-    try:
-        result = subprocess.run(
-            cmd,
-            cwd=output_dir,
-            capture_output=True,
-            text=True,
-            check=False,
+    run_tool(cmd, "BMGAP2-LocusExtractor", cwd=output_dir, on_fail='warn')
+
+    le_dirs = glob.glob(os.path.join(output_dir, f"LE_*_{sample_name}_*"))
+    if le_dirs:
+        expected = os.path.join(
+            le_dirs[0], "Results_text", f"molecular_data_{sample_name}.csv"
         )
-
-        if result.returncode != 0:
-            print(
-                f"BMGAP2-LocusExtractor: Warning - LocusExtractor returned error code "
-                f"{result.returncode}",
-                file=sys.stderr
-            )
-            print(f"STDERR: {result.stderr}", file=sys.stderr)
-
-        print(result.stdout)
-
-        le_dirs = glob.glob(os.path.join(output_dir, f"LE_*_{sample_name}_*"))
-        if le_dirs:
-            expected = os.path.join(
-                le_dirs[0], "Results_text", f"molecular_data_{sample_name}.csv"
-            )
-            if os.path.isfile(expected):
-                print(f"BMGAP2-LocusExtractor: Successfully generated {expected}")
-            else:
-                print(
-                    f"BMGAP2-LocusExtractor: Warning - Expected output not found: {expected}",
-                    file=sys.stderr
-                )
+        if os.path.isfile(expected):
+            print(f"BMGAP2-LocusExtractor: Successfully generated {expected}")
         else:
             print(
-                "BMGAP2-LocusExtractor: Warning - LocusExtractor output directory not found",
+                f"BMGAP2-LocusExtractor: Warning - Expected output not found: {expected}",
                 file=sys.stderr
             )
-
-    except Exception as e:
-        print(f"BMGAP2-LocusExtractor: Error running LocusExtractor - {e}", file=sys.stderr)
-        sys.exit(1)
+    else:
+        print(
+            "BMGAP2-LocusExtractor: Warning - LocusExtractor output directory not found",
+            file=sys.stderr
+        )
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from sanibel_taxonomy import (
-    iter_blast16s_rows, iter_kraken_species_rows, find_accession,
+    iter_blast16s_rows, iter_kraken_species_rows, find_accession, parse_mash_ref,
     BLAST16S_MIN_LENGTH, BLAST16S_MIN_PIDENT,
 )
 
@@ -39,26 +39,12 @@ HEADER = ['species', 'tools', 'accession', 'mash_distance', 'kraken_pct', 'blast
 
 def _parse_mash_ref(ref_name):
     try:
-        segs = ref_name.split('-.-')
-        name_part = segs[-1]
-        if name_part.endswith('.fna'):
-            name_part = name_part[:-4]
-        tokens = [t for t in name_part.split('_') if t]
-        genus   = tokens[0] if tokens else None
-        species = tokens[1] if len(tokens) > 1 else NA
+        genus, species, accession = parse_mash_ref(ref_name)
         if not genus:
             return None, None, None
-        accession = NA
-        for seg in segs[:-1]:
-            acc = find_accession(seg)
-            if acc:
-                accession = acc
-                break
-        if accession == NA:
-            acc = find_accession(ref_name)
-            if acc:
-                accession = acc
-        return genus, species, accession
+        if accession is None:
+            accession = find_accession(ref_name)
+        return genus, species or NA, accession or NA
     except Exception:
         return None, None, None
 
@@ -101,12 +87,8 @@ def parse_mash_distances(filepath):
 
 # Kraken parsing
 
-def parse_kraken_candidates(filepath):
-    species_rows = []
-    for genus, species, pct, reads in iter_kraken_species_rows(filepath):
-        if reads < KRAKEN_MIN_READS or species is None:
-            continue
-        species_rows.append((genus, species, pct))
+def parse_kraken_candidates(kraken_rows):
+    species_rows = [(genus, species, pct) for genus, species, pct, _reads in kraken_rows]
 
     if not species_rows:
         return []
@@ -129,14 +111,8 @@ def parse_kraken_candidates(filepath):
     return above + foreign_top
 
 
-def kraken_seed_rows(filepath, n):
-    """Top-n Kraken species by clade reads, ignoring the abundance floor (seeding only)."""
-    rows = [
-        (genus, species, pct, reads)
-        for genus, species, pct, reads in iter_kraken_species_rows(filepath)
-        if reads >= KRAKEN_MIN_READS and species is not None
-    ]
-    rows.sort(key=lambda x: x[3], reverse=True)
+def kraken_seed_rows(kraken_rows, n):
+    rows = sorted(kraken_rows, key=lambda x: x[3], reverse=True)
     return [(g, s, pct) for g, s, pct, _r in rows[:n]]
 
 
@@ -223,7 +199,6 @@ def merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands, kraken_
             -(e['blast16s_pident'] if e['blast16s_pident'] is not None else 0.0),
         )
 
-    # Seeds are guaranteed; remaining slots fill by consensus rank.
     seeds = sorted((e for e in pool.values() if e['key'] in seed_keys), key=_rank)
     fill  = sorted((e for e in pool.values() if e['key'] not in seed_keys), key=_rank)
 
@@ -264,8 +239,13 @@ def main():
     blast16s_tsv    = sys.argv[3]
 
     mash_cands, mash_all = parse_mash_distances(mash_tab)
-    kraken_cands         = parse_kraken_candidates(kraken_report)
-    kraken_seeds         = kraken_seed_rows(kraken_report, SEED_TOP)
+    kraken_rows = [
+        (genus, species, pct, reads)
+        for genus, species, pct, reads in iter_kraken_species_rows(kraken_report)
+        if reads >= KRAKEN_MIN_READS and species is not None
+    ]
+    kraken_cands         = parse_kraken_candidates(kraken_rows)
+    kraken_seeds         = kraken_seed_rows(kraken_rows, SEED_TOP)
     blast16s_cands       = parse_16s_candidates(blast16s_tsv)
 
     seed_keys = set()

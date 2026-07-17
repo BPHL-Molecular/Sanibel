@@ -10,11 +10,10 @@ Exits cleanly (code 0) if the sample is not a meningitis species.
 """
 
 import os
-import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-from bmgap2_helpers import read_scheme_and_sample
+from bmgap2_helpers import read_scheme_and_sample, run_tool
 
 
 def main():
@@ -60,23 +59,8 @@ def main():
         "-j",
     ]
 
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-
-        if result.returncode != 0:
-            print("BMGAP2-BMScan: Error running BMScan", file=sys.stderr)
-            print(f"STDOUT: {result.stdout}", file=sys.stderr)
-            print(f"STDERR: {result.stderr}", file=sys.stderr)
-            sys.exit(1)
-
-        print(
-            f"BMGAP2-BMScan: Successfully completed species identification for {sample_name}"
-        )
-        print(result.stdout)
-
-    except Exception as e:
-        print(f"BMGAP2-BMScan: Exception - {e}", file=sys.stderr)
-        sys.exit(1)
+    run_tool(cmd, "BMGAP2-BMScan", on_fail='fail')
+    print(f"BMGAP2-BMScan: Successfully completed species identification for {sample_name}")
 
 
 if __name__ == "__main__":

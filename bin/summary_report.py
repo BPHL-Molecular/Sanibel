@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-summary_report.py - Build Sanibel summary reports from individual tool outputs.
-
-"""
+"""summary_report.py - Build Sanibel summary reports from individual tool outputs."""
 
 import argparse
 import csv
@@ -13,7 +10,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from sanibel_taxonomy import (
-    SYNONYMOUS_PAIRS, genus_of, detect_contamination, extract_contam_candidates,
+    are_synonymous, genus_of, detect_contamination, extract_contam_candidates,
     iter_blast16s_rows, BLAST16S_MIN_LENGTH, BLAST16S_MIN_PIDENT,
 )
 
@@ -44,7 +41,7 @@ def normalize_le_value(val):
 
 
 def find_gene(gene_dict, gene_name):
-    for key, value in gene_dict.items():
+    for value in gene_dict.values():
         if value.get('Gene_name') == gene_name:
             return value
     for key, value in gene_dict.items():
@@ -92,6 +89,18 @@ def parse_prokka_txt(filepath):
     return NO_DATA
 
 
+def lookup_cc(table_path, st, missing_col='NA', default=''):
+    try:
+        with open(table_path) as tbl:
+            for row in tbl:
+                cols = row.strip().split('\t')
+                if cols[0] == st:
+                    return cols[8] if len(cols) >= 9 else missing_col
+    except Exception:
+        pass
+    return default
+
+
 def parse_mlst(filepath, neisseria_txt=None, hinfluenzae_txt=None):
     scheme = st = cc = ''
     with open(filepath) as f:
@@ -106,25 +115,9 @@ def parse_mlst(filepath, neisseria_txt=None, hinfluenzae_txt=None):
                 if st in ('-', ''):
                     st = 'Not detected'
                 if scheme == 'neisseria' and neisseria_txt and os.path.isfile(neisseria_txt):
-                    try:
-                        with open(neisseria_txt) as tbl:
-                            for row in tbl:
-                                cols = row.strip().split('\t')
-                                if cols[0] == st:
-                                    cc = cols[8] if len(cols) >= 9 else 'NA'
-                                    break
-                    except Exception:
-                        pass
+                    cc = lookup_cc(neisseria_txt, st)
                 elif scheme == 'hinfluenzae' and hinfluenzae_txt and os.path.isfile(hinfluenzae_txt):
-                    try:
-                        with open(hinfluenzae_txt) as tbl:
-                            for row in tbl:
-                                cols = row.strip().split('\t')
-                                if cols[0] == st:
-                                    cc = cols[8] if len(cols) >= 9 else 'NA'
-                                    break
-                    except Exception:
-                        pass
+                    cc = lookup_cc(hinfluenzae_txt, st)
             break
     return {'scheme': scheme, 'st': st, 'cc': cc}
 
@@ -242,10 +235,6 @@ def _amr_field(row, *names):
 
 
 def parse_amrfinder(filepath):
-    """Acquired AMR genes only: Type AMR and core scope. Scope 'plus' AMR rows are
-    intrinsic (efflux pumps, chromosomal beta-lactamases) and would inflate the count.
-    Keyed by column name, not position: AMRFinderPlus renamed these fields between
-    3.x and 4.x."""
     if not os.path.isfile(filepath):
         return None
     genes, subclasses = set(), set()
@@ -642,17 +631,8 @@ def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
                         d['bmgap2_mlst_cc'] = NO_DATA
                         if (hinfluenzae_txt and os.path.isfile(hinfluenzae_txt)
                                 and hi_st not in [NO_DATA, 'Not detected', 'New', 'NA', '']):
-                            try:
-                                with open(hinfluenzae_txt) as ht:
-                                    for hrow in ht:
-                                        hcols = hrow.strip().split('\t')
-                                        if hcols[0] == hi_st:
-                                            d['bmgap2_mlst_cc'] = (
-                                                hcols[8] if len(hcols) >= 9 else 'Not detected'
-                                            )
-                                            break
-                            except Exception:
-                                pass
+                            d['bmgap2_mlst_cc'] = lookup_cc(
+                                hinfluenzae_txt, hi_st, missing_col='Not detected', default=NO_DATA)
                     else:
                         d['bmgap2_mlst_st'] = row.get('Nm_MLST_ST', '') or NO_DATA
                         d['bmgap2_mlst_cc'] = row.get('Nm_MLST_cc', '') or NO_DATA
@@ -896,7 +876,7 @@ def main():
         consensus_genus = mash_genus if (mash_genus and kraken_genus and
                                          mash_genus.lower() == kraken_genus.lower()) else None
         if skani_genus and consensus_genus and skani_genus.lower() != consensus_genus.lower() \
-                and frozenset({skani_genus.lower(), consensus_genus.lower()}) in SYNONYMOUS_PAIRS:
+                and are_synonymous(skani_genus, consensus_genus):
             skani_ID_val = f"{asm['genus']}_{asm['species']}"
 
         if skani_genus and os.path.isfile(blast16s_path):

@@ -14,11 +14,10 @@ import gzip
 import json
 import os
 import shutil
-import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-from bmgap2_helpers import read_scheme_and_sample
+from bmgap2_helpers import read_scheme_and_sample, run_tool
 
 
 def main():
@@ -85,7 +84,6 @@ def main():
 
     if needs_transform:
         print("BMGAP2-AMR: Transforming to BMGAP2 format")
-        species_names = {'Nm': 'neisseria', 'Hi': 'hinfluenzae'}
 
         if 'species' in json_data and 'contigs' in json_data:
             transformed  = {sample_name: json_data}
@@ -94,7 +92,7 @@ def main():
             transformed  = {
                 sample_name: {
                     'contigs': json_data,
-                    'species': species_names.get(species_code, 'unknown')
+                    'species': scheme
                 }
             }
             contig_count = len(json_data)
@@ -123,24 +121,13 @@ def main():
         "-s", species_code,
     ]
 
-    try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print(result.stdout)
+    run_tool(cmd, "BMGAP2-AMR", on_fail='continue')
 
-        amr_json = os.path.join(amr_out_dir, f"{sample_name}_amr_data.json")
-        if os.path.isfile(amr_json):
-            print(f"BMGAP2-AMR: Successfully created {amr_json}")
-        else:
-            print(f"BMGAP2-AMR: Warning - Expected output file not found: {amr_json}")
-
-    except subprocess.CalledProcessError as e:
-        print("BMGAP2-AMR: Error running runAST.py:", file=sys.stderr)
-        print(e.stderr, file=sys.stderr)
-        print("BMGAP2-AMR: Continuing pipeline despite AMR analysis failure")
-        sys.exit(0)
-    except Exception as e:
-        print(f"BMGAP2-AMR: Unexpected error - {e}", file=sys.stderr)
-        sys.exit(1)
+    amr_json = os.path.join(amr_out_dir, f"{sample_name}_amr_data.json")
+    if os.path.isfile(amr_json):
+        print(f"BMGAP2-AMR: Successfully created {amr_json}")
+    else:
+        print(f"BMGAP2-AMR: Warning - Expected output file not found: {amr_json}")
 
 
 if __name__ == "__main__":
