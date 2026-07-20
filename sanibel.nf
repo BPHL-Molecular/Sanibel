@@ -166,7 +166,7 @@ workflow {
     ch_blast_by_id  = ch_blast_16s.result.map { meta, r -> [ meta.id, r ] }
 
     // 2-of-3 species vote (Mash + Kraken2 + 16S BLAST)
-    ch_aggregate = aggregate_species_id(
+    aggregate_species_id(
         ch_stats.map { meta, stats -> [ meta.id, meta, stats ] }
             .join(ch_kraken_by_id)
             .join(ch_blast_by_id)
@@ -250,6 +250,7 @@ workflow {
             .map { _id -> 1 }
             .collect()
             .map { _ids -> true }
+            .ifEmpty(true)
 
     ch_summary = summary_report(
         ch_optional_barrier,
@@ -261,7 +262,6 @@ workflow {
         ch_pmga.out.map             { _meta, pmga_file -> pmga_file }.collect().ifEmpty([]),
         ch_neisseria_txt,
         ch_hinfluenzae_txt,
-        ch_aggregate.out.map        { _meta, f -> f }.collect().ifEmpty([]),
         ch_skani.result.map         { _meta, f -> f }.collect().ifEmpty([]),
         ch_blast_16s.result.map     { _meta, f -> f }.collect().ifEmpty([]),
         ch_amrfinder.out.map        { _meta, f -> f }.collect().ifEmpty([])

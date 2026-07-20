@@ -1,12 +1,7 @@
-# Allowed mlst schemes per taxon, preferred first. Keyed on species, then genus.
-# Scheme names must match `mlst --list` for the pinned container: the
-# scheme_species_map.tab shipped with mlst is stale and names schemes that do
-# not exist in its own db. `none` means the db has no scheme for that taxon.
 Escherichia_coli	ecoli_achtman_4,ecoli
 Shigella	ecoli_achtman_4,ecoli
 Klebsiella_pneumoniae	klebsiella
 Klebsiella_oxytoca	koxytoca
-Klebsiella	klebsiella,koxytoca
 Enterobacter	ecloacae
 Citrobacter	cfreundii
 Cronobacter	cronobacter

@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from sanibel_taxonomy import (
-    are_synonymous, genus_of, detect_contamination, extract_contam_candidates,
+    genus_of, detect_contamination, extract_contam_candidates,
     iter_blast16s_rows, BLAST16S_MIN_LENGTH, BLAST16S_MIN_PIDENT,
 )
 
@@ -145,22 +145,6 @@ def parse_pmga(filepath):
     except Exception as e:
         print(f"Warning: Could not parse PMGA file {filepath}: {e}", file=sys.stderr)
     return result
-
-
-def parse_aggregate_species(filepath):
-    empty = {'genus': NO_DATA, 'contamination_flag': NO_DATA}
-    try:
-        with open(filepath) as f:
-            f.readline()  # skip header
-            line = f.readline().strip()
-        if not line:
-            return empty
-        parts = line.split('\t')
-        genus       = parts[0] if len(parts) > 0 else NO_DATA
-        contam_flag = parts[4] if len(parts) > 4 else NO_DATA
-        return {'genus': genus, 'contamination_flag': contam_flag}
-    except Exception:
-        return empty
 
 
 def parse_skani(filepath):
@@ -689,7 +673,7 @@ HEADER_STANDARD = [
     'num_clean_reads', 'avg_read_length', 'avg_read_qual', 'est_coverage',
     'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
     'annotated_cds',
-    'amr_element_symbol', 'amr_subclass',
+    'amr_gene_symbol', 'amr_subclass',
 ]
 
 HEADER_NM = [
@@ -724,7 +708,7 @@ MQC_SPECIES_HEADER = ['Sample', 'skani_species', 'skani_ani', 'skani_align_fract
 MQC_TYPING_COLS    = [0, 16, 17, 15]
 MQC_TYPING_HEADER  = ['Sample', 'mlst_scheme', 'mlst_st', 'serotype']
 
-MQC_AMR_HEADER     = ['Sample', 'amr_gene_count', 'amr_element_symbol', 'amr_class']
+MQC_AMR_HEADER     = ['Sample', 'amr_gene_count', 'amr_gene_symbol', 'amr_subclass']
 
 
 def _mqc_preamble(section_id, section_name, description, pconfig=None, headers=None):
@@ -850,10 +834,6 @@ def main():
         kr   = parse_kraken_report(f'{sid}.report')
         pmga = parse_pmga(f'{sid}sta.txt')
 
-        agg_path = f'{sid}_candidate_species.txt'
-        agg = parse_aggregate_species(agg_path) if os.path.isfile(agg_path) else \
-              {'genus': NO_DATA, 'contamination_flag': NO_DATA}
-
         _sk_empty = {'ani': NO_DATA, 'confirmed_species': NO_DATA, 'align_fraction': NO_DATA, 'reference': NO_DATA}
         skani_path = f'{sid}_skani.tsv'
         sk = parse_skani(skani_path) if os.path.isfile(skani_path) else _sk_empty
@@ -863,7 +843,7 @@ def main():
         skani_align_val  = sk['align_fraction']
         skani_ID_ref_val = sk['reference']
 
-        skani_genus  = genus_of(skani_ID_val) if skani_ID_val not in (NO_DATA, 'NO ID', '', None) else None
+        skani_genus  = genus_of(skani_ID_val) if skani_ID_val not in (NO_DATA, 'NO ID', 'Inconclusive', '', None) else None
         mash_genus   = asm['genus']
         kraken_genus = kr['species'].split()[0] if kr['species'] != NO_DATA else None
 
@@ -873,17 +853,11 @@ def main():
                           if os.path.isfile(blast16s_path) \
                           else {'pident': NO_DATA, 'tophit': NO_DATA}
 
-        consensus_genus = mash_genus if (mash_genus and kraken_genus and
-                                         mash_genus.lower() == kraken_genus.lower()) else None
-        if skani_genus and consensus_genus and skani_genus.lower() != consensus_genus.lower() \
-                and are_synonymous(skani_genus, consensus_genus):
-            skani_ID_val = f"{asm['genus']}_{asm['species']}"
-
         if skani_genus and os.path.isfile(blast16s_path):
             contamination_flag = detect_contamination(
                 extract_contam_candidates(blast16s_path), skani_genus)
         else:
-            contamination_flag = agg['contamination_flag']
+            contamination_flag = 'None'
 
         scheme  = mlst['scheme']
         pmga_sp = pmga['species'] or NO_DATA

@@ -4,7 +4,7 @@
 Usage: aggregate_species_id.py <assembly_stats_csv> <kraken_report> <blast_16s_tsv>
 
 Output (stdout, TSV):
-  genus  species  confidence  evidence  contamination_flag
+  genus  species  confidence  evidence
   where evidence = mash:G/S|kraken:G/S|blast16s:G/S
 
 Confidence values: high (all 3 agree on genus+species), medium (2 agree), low (otherwise)
@@ -162,8 +162,8 @@ def main():
 
     disp_genus, disp_species = ('Inconclusive', 'unknown') if confidence == 'low' else (genus, species)
 
-    print('genus\tspecies\tconfidence\tevidence\tcontamination_flag')
-    print(f"{disp_genus}\t{disp_species}\t{confidence}\t{evidence}\t{contam_flag}")
+    print('genus\tspecies\tconfidence\tevidence')
+    print(f"{disp_genus}\t{disp_species}\t{confidence}\t{evidence}")
 
 
 if __name__ == '__main__':

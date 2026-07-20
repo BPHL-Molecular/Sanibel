@@ -6,84 +6,52 @@ All notable changes to Sanibel are documented in this file.
 
 ## [Unreleased]
 
-### Nextflow 26 Native Support
-Sanibel now runs on **Nextflow 26.04+**, which makes the v2 (strict) script parser the default.
+### Nextflow 26 support
+- `modules/*.nf`: dynamic `publishDir` directives rewritten as closures for the v2 strict parser.
+- `sanibel.sh`: loads the default `nextflow` module instead of pinning `nextflow/25.10.4`.
+- Parameters are set via `-params-file`.
 
-- **`modules/*.nf`** — All dynamic `publishDir` directives rewritten as closures (`publishDir { "…/${meta.id}/…" }, mode: 'copy'`). Under the v2 parser a bare `publishDir "…${meta.id}…", mode: 'copy'` path is evaluated eagerly at process-definition time, before `meta` is in scope, raising `No such variable: meta` at module load (the v1 parser deferred it). The closure defers evaluation to task runtime and is valid on both parsers. Single-argument directives (`tag`, `containerOptions`, `storeDir`) auto-defer and were unaffected.
-- **`sanibel.sh`** — Loads the default `nextflow` module (Nextflow 26.x on HiPerGator) instead of pinning `nextflow/25.10.4`.
-- Parameters are set via `-params-file`; on Nextflow 26 bare `--flag` CLI values are always strings.
+### Species identification
+Candidate pool plus skani ANI replaces the Kraken2/Mash agreement heuristic.
 
-### Species ID QC, Candidate Pool, and Report Labels
-Quality-control gating and reporting for species identification and assembly quality.
+- `modules/blast_16s.nf`: NCBI `16S_ribosomal_RNA` megablast per assembly, `perc_identity` 97.
+- `bin/build_candidate_pool.py`: ranked pool, each tool's top 3 seeded, capped at 15; Kraken2 needs 10+ clade reads.
+- `modules/candidate_references.nf`: 5 RefSeq genomes per candidate plus the Mash sketch representative.
+- `modules/skani.nf`: species call requires ANI >= 95 and alignment fraction >= 50.
+- `sanibel.nf`: no confident skani call sets `meta.species` to `Unknown` and withholds species-specific typing.
+- `bin/summary_report.py`: `skani_species` is skani's best reference; `blast_16s_tophit` anchored on the skani genus.
+- `bin/sanibel_taxonomy.py` (new): shared synonymous-genus table and contig-overlap contamination logic.
+- Contamination reported once in `sum_report.txt`, against the skani genus; `SYNONYMOUS_PAIRS` suppresses 16S-indistinguishable pairs.
+- `candidate_species.txt`: 2-of-3 vote review record; does not feed the summary report.
+- `nextflow.config`: Mash pinned to `staphb/mash:2.3-RefSeqProkv235` (2026 RefSeq sketch).
+- `modules/mash.nf`: top 50 distances, artifact renamed `*_mash_distances.tab`.
 
-- **`modules/skani.nf`**: species routing requires the top hit to clear both ANI (default 95) and query alignment fraction (default 50); the AF gate rejects high-identity hits covering only part of the genome.
-- **`sanibel.nf`**: when skani returns no confident species, `meta.species` / `meta.genus` become `Unknown` instead of falling back to the Mash top hit, so species-specific typing (serotypers, PMGA, BMGAP2) is withheld. MLST, AMRFinder, and PlasmidFinder are unaffected.
-- **`bin/build_candidate_pool.py`**: each tool's top-3 (mash by distance, kraken by reads, 16S by pident) is seeded into the candidate pool regardless of corroboration, then the rest fill by consensus rank, so skani always evaluates the closest genome each tool points at (fixes the tight-complex case where an uncorroborated Mash top hit was evicted).
-- **`bin/aggregate_species_id.py`**: `candidate_species.txt` confidence requires genus+species agreement (genus-only agreement no longer scores medium); the 16S evidence token shows genus+species only (strain / synonymous-pair text dropped); low-confidence rows report `Inconclusive` / `unknown`.
-- **`bin/summary_report.py`**: two new `sum_report.txt` columns:
-  - `species_id_qc` (after `skani_reference`): `PASS` (ANI >= 95 and AF >= 50) / `REVIEW (borderline ANI)` (94 to <95) / `NO ID (ANI < 95%)`. `skani_species` still shows the raw top hit, or `Inconclusive` when skani finds nothing.
-  - `assembly_qc` (last column): `PASS` / `Warning: <reasons>` / `FAIL: <reasons>` / `REVIEW (Contamination)`, from coverage (< 40x), contigs (>= 200 warn, > 500 fail), N50 (< 15000), and the contamination flag; reasons name the threshold, not the sample value.
-- **`modules/kraken.nf`** and **`bin/summary_report.py`**: Kraken2 output moves to `<sample>/kraken2/` and its columns are renamed `kraken2_species` / `kraken2_percent`, to disambiguate Kraken v1 vs v2.
-- **`modules/candidate_references.nf`**: publishes `<sample>/reference_genomes/<id>_reference_genomes.txt`, a manifest of the reference accessions skani compared against (the genomes themselves stay unpublished).
-- **`modules/skani.nf`** and **`bin/summary_report.py`**: the species-ID and assembly-QC thresholds (95% ANI / 50% AF / 94% review; coverage 40x, contigs 200 warn / 500 fail, N50 15000; 5 refs per candidate) are hardcoded constants, not `nextflow.config` params, so they cannot be overridden at runtime.
+### Report columns
+- New: `blast_16s_tophit`, `blast_16s_pident`, `skani_species`, `skani_ani`, `skani_align_fraction`, `skani_reference`, `contamination_flag`.
+- `species_id_qc` (col 2): `PASS` / `REVIEW (borderline ANI)` / `NO ID (ANI < 95%)`.
+- `assembly_qc` (col 4): `PASS` / `Warning:` / `FAIL:` / `FAIL (Contamination)`, from coverage, contigs, N50 and contamination.
+- Kraken2 columns renamed `kraken2_species` / `kraken2_percent`; output moved to `<sample>/kraken2/`.
+- AMR columns renamed `amr_gene_symbol` / `amr_subclass`.
+- QC thresholds are hardcoded constants, not `nextflow.config` params.
 
-### Maintenance — Behavior-Preserving Refactor
-Internal cleanup to reduce duplication. No change to pipeline outputs.
+### Reliability
+- `sanibel.nf`: the optional-typing barrier defaults to `true`, so a run with no species-specific output still produces a report.
 
-- **`bin/sanibel_taxonomy.py`** — Now the single home for the shared 16S-BLAST and Kraken row parsers (`iter_blast16s_rows`, `iter_kraken_species_rows`), the 16S thresholds (`BLAST16S_MIN_LENGTH`, `BLAST16S_MIN_PIDENT`), the accession regex (`ACCESSION_RE` / `find_accession`), and `species_of`. `aggregate_species_id.py`, `build_candidate_pool.py`, `parse_assembly.py`, and `summary_report.py` import these instead of each carrying their own copy.
-- **`bin/build_candidate_pool.py`** — Dropped the unused `sample_id` argument; **`modules/build_candidates.nf`** no longer passes it.
-- **`bin/summary_report.py`** — Collapsed the three duplicated standard-row blocks (neisseria / hinfluenzae / other) into one.
-- **`bin/bmgap2_helpers.py`** (new) — Shared MLST-scheme / sample-name boilerplate for the three `run_bmgap2_*.py` host scripts. The per-script meningitis re-check is preserved.
-- **`modules/kaptive.nf`** (new) — Single parameterized Kaptive module (`variant` of `ab` / `vp`), invoked via include aliases; replaces `kaptive_ab.nf` and `kaptive_vp.nf`. Output filenames and publish dirs unchanged.
-- **`sanibel.nf`** — Added a `rebind()` helper for the repeated re-key / join / re-emit idiom.
-- **`nextflow.config`** — Added process-level `cpus` / `memory` defaults (per-process blocks override where they differ) and a `withName: 'bmgap2_.*'` selector for the shared BMGAP2 settings. Removed the redundant module-level `errorStrategy` from `candidate_references.nf`.
-
-### Output — Smaller per-sample output
-- **`modules/candidate_references.nf`** — No longer publishes the downloaded RefSeq reference genomes to `<sample>/candidate_references/`. They stay internal to the run (skani still reads them from `work/`), removing the largest per-run output artifact. Reference provenance remains in `_skani.tsv` and a published `reference_genomes/` accession manifest.
-- **`modules/skani.nf`** — Publishes only `_skani.tsv`; the internal `_skani_species.txt` routing file is no longer copied to `<sample>/skani/`. Its content still drives species routing.
-
-### Species Identification — Candidate Pool + skani ANI Confirmation
-Replaced the previous Kraken2/Mash agreement heuristic with a two-stage workflow:
-three tools (Mash and Kraken2 on the reads, 16S rRNA BLAST on the assembly) nominate
-a ranked pool of candidate species, multiple RefSeq reference genomes (N=5 by
-default) are downloaded per candidate, and `skani` confirms the species by ANI. New `sum_report.txt` columns:
-`blast_16s_tophit`, `blast_16s_pident`, `skani_species`, `skani_ani`,
-`skani_align_fraction`, `skani_reference`, `contamination_flag`.
-
-- **`modules/blast_16s.nf`** — Downloads the NCBI `16S_ribosomal_RNA` BLAST database once (cached via `storeDir`) and megablasts each assembly. `perc_identity` set to 97 to match downstream filters.
-- **`bin/build_candidate_pool.py`** / **`modules/build_candidates.nf`** — Builds the ranked candidate pool from all three tools. Includes every distinct Mash species and every qualifying 16S species; Kraken2 candidates now require a minimum clade-read count (`KRAKEN_MIN_READS = 10`) so low-abundance `0.00%` taxa no longer enter the pool. Pool capped at 15.
-- **`modules/candidate_references.nf`** — Downloads one RefSeq genome per candidate via `datasets` (accession first, taxon-name fallback). Downloads parallelized (`xargs -P 3`) with `maxForks 4` to bound concurrent NCBI sessions; `errorStrategy 'ignore'`.
-- **`modules/skani.nf`** — ANI confirmation against all downloaded references at once; the best ANI hit drives the species call.
-- **`bin/aggregate_species_id.py`** / **`modules/aggregate_species_id.nf`** — Retained to supply `contamination_flag` (a foreign 16S genus on overlapping contigs), with a synonymous-genus table to avoid false positives between 16S-indistinguishable genera. Output published to `candidate_species/`.
-- **`bin/summary_report.py`** — Reports 16S at genus level as `Genus spp.` (`blast_16s_tophit`), cross-checked against Mash and Kraken so a contaminant contig is not reported as the top hit. Removed the unused `skani_notes` helper.
-- **`modules/mash.nf`** — Widened the distance output to the top 50 hits (deduplicated by species downstream) and renamed the artifact to `*_mash_distances.tab`.
-
-### Mash Reference Sketch Refresh
-- **`nextflow.config`** — Mash container pinned to `staphb/mash:2.3-RefSeqProkv235`, baking in a current (2026) RefSeq prokaryote sketch from `update_mash_dist`, replacing the stale 2019 gembox sketch.
-- **`bin/parse_assembly.py`** / **`bin/build_candidate_pool.py`** — Parse the new `Genus_species_<ACCESSION>` sketch naming and recover the accession via the existing `_ACC_RE` regex (legacy `-.-` format still supported).
-
-### skani as Species-ID and Contamination Arbiter
-Made skani the source of truth for the reported organism, the 16S anchor, and the contamination flag. The report previously inherited these from Mash, which is unstable on mixed or divergent samples (e.g. a contaminated *Acinetobacter* flipping to *Staphylococcus* and inverting the contamination flag).
-
-- **`bin/sanibel_taxonomy.py`** (new): single home for the 16S-synonymous genus table and the contig-overlap contamination logic, imported by both `aggregate_species_id.py` and `summary_report.py` so the two cannot drift.
-- **`bin/aggregate_species_id.py`**: imports the shared module; contamination detection now also suppresses synonymous-genus pairs (e.g. *Escherichia*/*Shigella*), matching the table's stated intent.
-- **`bin/summary_report.py`**: `blast_16s_tophit` is anchored on the skani genus; `contamination_flag` is recomputed against the skani genus; the reported organism is relabeled to the Mash/Kraken consensus when skani's winner is a 16S-synonymous genus of it (*Escherichia*/*Shigella*). Each path falls back to the prior Mash/Kraken behavior when skani returns no result.
-
-### Multi-Reference skani ANI
-Recovers ANI above the 95% species boundary for clinical isolates whose representative RefSeq strain is divergent (*E. coli* vs K-12, *L. monocytogenes* vs EGD-e). Supersedes the single-genome download described above.
-
-- **`modules/candidate_references.nf`**: downloads up to N RefSeq genomes per candidate species instead of one. Lists accessions with `datasets summary genome taxon ... --limit N` (`--limit` is not valid on the taxon download), always includes the sketch representative, fetches them in a single `datasets download genome accession` call, and names each file `Genus_species__<accession>.fna`. skani picks the best ANI across all strains; keeping the representative makes the reference set a strict superset, so ANI cannot regress versus the single-genome behavior.
-- **`bin/summary_report.py`**: `parse_skani` reads the new per-accession filenames, reporting a clean `Genus_species` label and the winning strain's accession.
-- **`modules/candidate_references.nf`**: fetches 5 RefSeq genomes per candidate (hardcoded).
+### Output
+- `modules/candidate_references.nf`: reference genomes no longer published; accession manifest published instead.
+- `modules/skani.nf`: publishes only `_skani.tsv`.
 
 ### Added
-- **`modules/lissero.nf`** — New LisSero serogroup-typing module for *Listeria monocytogenes*. Runs on the assembly and is gated by `meta.species == 'Listeria_monocytogenes'`, mirroring the other species-specific modules. Container: `staphb/lissero:0.4.10`.
-- **`sanibel.nf`** — Included and invoked `lissero`; added `lissero.out.done` to the summary-report barrier.
-- **`nextflow.config`** — Added `withName: lissero` resource/container block (`errorStrategy = 'ignore'`).
-- **`summary_report.py`** — Added `get_listeria_serotype()` parser; the LisSero `SEROTYPE` value now populates the `serotype` column of `sum_report.txt`.
+- `modules/lissero.nf`: LisSero serogroup typing for *Listeria monocytogenes*, populating the `serotype` column.
 
-### Configuration
-- **`nextflow.config`** — `bmgap2_amr`, `bmgap2_locusextractor`, and `bmgap2_bmscan` set `cache = false` to force re-execution on every run.
+### Maintenance
+- `bin/sanibel_taxonomy.py`: single home for the shared 16S/Kraken parsers, thresholds, accession regex and `genus_of`.
+- `bin/bmgap2_helpers.py` (new): shared boilerplate for the three `run_bmgap2_*.py` scripts.
+- `modules/kaptive.nf` (new): parameterized module replacing `kaptive_ab.nf` / `kaptive_vp.nf`.
+- `bin/summary_report.py`: collapsed the three duplicated standard-row blocks into one.
+- `bin/build_candidate_pool.py`: dropped the unused `sample_id` argument.
+- `sanibel.nf`: added a `rebind()` helper for the repeated re-key / join idiom.
+- `nextflow.config`: process-level `cpus` / `memory` defaults; `withName: 'bmgap2_.*'` selector; `bmgap2_*` set `cache = false`.
 
 ---
 

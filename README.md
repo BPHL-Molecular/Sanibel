@@ -17,9 +17,9 @@
 
 Sanibel is Florida BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis pipeline. It performs quality control, *de novo* assembly, taxonomic classification, species identification, sequence typing and antimicrobial resistance (AMR) detection on paired-end Illumina short reads.
 
-Species identification uses a candidate-pool design: Mash, Kraken2, and 16S rRNA BLAST nominate a ranked pool of candidate species, multiple RefSeq genomes are downloaded per candidate, and skani confirms the species by whole-genome ANI. skani is the arbiter for the reported organism and the contamination flag. A confident call requires ANI ≥ 95% and alignment fraction ≥ 50% for a positive ID.
+Species identification uses a candidate-pool design: Mash, Kraken2 and 16S rRNA BLAST nominate a ranked pool of candidate species, multiple RefSeq genomes are downloaded per candidate and skani confirms the species by whole-genome ANI. skani is the arbiter for the reported organism and the contamination flag. A confident call requires ANI ≥ 95% and alignment fraction ≥ 50% for a positive ID.
 
-Species-specific typing modules run automatically based on species identification results: *Legionella pneumophila* (Legsta), *Klebsiella* (Kleborate), *Shigella* (ShigaTyper), *Streptococcus pyogenes/dysgalactiae* (EMM typing), *Salmonella* (SeqSero2), *E. coli* (SerotypeFinder), *Streptococcus pneumoniae* (SeroBA), *Pseudomonas aeruginosa* (pasty), *Acinetobacter baumannii* (Kaptive), *Vibrio parahaemolyticus* (Kaptive), *Listeria monocytogenes* (LisSero), and *Neisseria meningitidis*/*Haemophilus influenzae* (PMGA). BMGAP2 provides enhanced AMR and antigen analysis for *Neisseria meningitidis* and *Haemophilus influenzae*. PlasmidFinder runs on all samples.
+Species-specific typing modules run automatically based on species identification results: *Legionella pneumophila* (Legsta), *Klebsiella* (Kleborate), *Shigella* (ShigaTyper), *Streptococcus pyogenes/dysgalactiae* (EMM typing), *Salmonella* (SeqSero2), *E. coli* (SerotypeFinder), *Streptococcus pneumoniae* (SeroBA), *Pseudomonas aeruginosa* (pasty), *Acinetobacter baumannii* (Kaptive), *Vibrio parahaemolyticus* (Kaptive), *Listeria monocytogenes* (LisSero) and *Neisseria meningitidis*/*Haemophilus influenzae* (PMGA). BMGAP2 provides enhanced AMR and antigen analysis for *Neisseria meningitidis* and *Haemophilus influenzae*. PlasmidFinder runs on all samples.
 
 ### ⚙️ Dependencies
 
@@ -29,8 +29,6 @@ Species-specific typing modules run automatically based on species identificatio
 - **SLURM** workload manager (required for HiPerGator; otherwise not required)
 
 All bioinformatics tools run inside containers, no additional software installation is required.
-
-> ℹ️ Sanibel runs on both legacy Nextflow (23.04–25.x) and the new 26+ releases.
 
 ### 💻 Resource Requirements
 
@@ -149,11 +147,12 @@ flowchart TD
     CP --> RR[candidate_references<br/>N genomes per candidate]
     RR --> SK[skani ANI]
 
-    G --> AG[aggregate_species_id<br/>contamination]
+    O --> AG[aggregate_species_id<br/>2-of-3 vote]
     I --> AG
     W --> AG
+    AG --> AGO[candidate_species.txt<br/>review record]
 
-    O --> SP[Species-Specific Modules]
+    SK --> SP[Species-Specific Modules]
     L --> NM[PMGA]
     NM --> S[BMGAP2 AMR]
     S --> T[BMGAP2 LocusExtractor]
@@ -164,8 +163,10 @@ flowchart TD
     M --> X
     L --> X
     I --> X
+    K --> X
+    W --> X
     SK --> X
-    AG --> X
+    NM --> X
     SP --> X
     U --> X
 
@@ -181,6 +182,8 @@ flowchart TD
     style Y fill:#f96,stroke:#333,stroke-width:3px,color:#000
     style IR fill:#f96,stroke:#333,stroke-width:3px,color:#000
 ```
+
+For how the species ID vote, candidate pool and skani ANI confirmation fit together, see [docs/species-id.md](docs/species-id.md).
 
 ### 🧩 Modules
 
@@ -206,9 +209,9 @@ All results are written to `params.output/<sample_id>/`. Depending on which spec
 
 | File | Samples | Cols | Key fields |
 |------|---------|------|------------|
-| `sum_report.txt` | All | 29 | ID · species (skani ANI, Mash, Kraken) · 16S top hit · skani ANI/reference · species-ID QC · contamination flag · MLST scheme/ST · serotype · QC metrics (reads, coverage, assembly stats, GC, CDS) · assembly QC |
+| `sum_report.txt` | All | 31 | ID · species (skani ANI, Mash, Kraken) · 16S top hit · skani ANI/reference · species-ID QC · contamination flag · MLST scheme/ST · serotype · QC metrics (reads, coverage, assembly stats, GC, CDS) · assembly QC · AMR gene symbols/subclasses |
 | `nm_sum_report.txt` | *N. meningitidis* only | 26 | ID · PMGA serogroup · BMGAP2 AMR alleles/phenotypes · vaccine antigen coverage (4CMenB) |
-| `hi_sum_report.txt` | *H. influenzae* only | 23 | ID · PMGA capsule type · BMGAP2 AMR alleles/phenotypes |
+| `hi_sum_report.txt` | *H. influenzae* only | 22 | ID · PMGA capsule type · BMGAP2 AMR alleles/phenotypes |
 
 
 ### 🤝 Contributing

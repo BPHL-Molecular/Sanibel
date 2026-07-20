@@ -12,7 +12,6 @@ process summary_report {
         path pmga_files
         path neisseria_txt
         path hinfluenzae_txt
-        path aggregate_files
         path skani_files
         path blast16s_files
         path amrfinder_files
