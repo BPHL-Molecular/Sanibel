@@ -3,7 +3,7 @@
 /*
   Sanibel Pipeline (named after Sanibel Island in southwest Florida)
   Florida's BPHL Nextflow pipeline for Bacterial WGS Analysis
-  Authors: Sarah Schemedes, Yibo Dong, Arnold Rodriguez-Hilario, Molly Mitchell
+  Authors: Sarah Schemedes, Yibo Dong, Arnold Rodriguez, Molly Mitchell
   Email: bphl-sebioinformatics@flhealth.gov 
 */
 
@@ -55,6 +55,13 @@ def rebind(ch, metaCh) {
       .map  { _id, x, emeta -> [ emeta, x ] }
 }
 
+def withAssembly(ch, asmCh, prokkaCh) {
+    ch.map  { meta, x -> [ meta.id, meta, x ] }
+      .join(asmCh)
+      .join(prokkaCh)
+      .map  { _id, meta, x, asm, annot -> [ meta, x, asm, annot ] }
+}
+
 workflow {
     log.info """
     Sanibel — Bacterial WGS Analysis Pipeline
@@ -96,7 +103,6 @@ workflow {
     ch_hinfluenzae_txt = channel.value(file("${mlstTablesDir}/hinfluenzae.txt", checkIfExists: true))
     ch_mlst_schemes    = channel.value(file("${projectDir}/assets/mlst_schemes.tsv", checkIfExists: true))
 
-    // Read as a map, not a staged file
     kleborate_presets = file("${projectDir}/assets/kleborate_presets.tsv", checkIfExists: true)
         .readLines()
         .findAll { line -> line.trim() && !line.startsWith('#') }
@@ -161,7 +167,7 @@ workflow {
     ch_16s_db    = download_16s_db().db
     ch_blast_16s = blast_16s(ch_assembly_enriched, ch_16s_db)
 
-    // Kraken and 16S keyed by sample id (shared by the vote and the candidate pool)
+    // Kraken and 16S keyed by sample id
     ch_kraken_by_id = ch_kraken.out.map       { meta, r -> [ meta.id, r ] }
     ch_blast_by_id  = ch_blast_16s.result.map { meta, r -> [ meta.id, r ] }
 
@@ -218,9 +224,13 @@ workflow {
             .filter { meta, _a -> meta.genus in ['Neisseria', 'Haemophilus'] }
             .join(ch_mlst.out, by: 0)
     )
-    ch_bmgap2_amr = bmgap2_amr(ch_mlst.out.join(ch_pmga.out, by: 0))
-    ch_bmgap2_le  = bmgap2_locusextractor(ch_bmgap2_amr.out)
-    ch_bmgap2_bmscan = bmgap2_bmscan(ch_bmgap2_le.out)
+    ch_bmgap2_amr = bmgap2_amr(ch_mlst.out.join(ch_pmga.files, by: 0))
+
+    ch_asm_by_id    = ch_assembly_typed.map    { meta, a -> [ meta.id, a ] }
+    ch_prokka_by_id = ch_prokka.annotation.map { meta, d -> [ meta.id, d ] }
+
+    ch_bmgap2_le     = bmgap2_locusextractor(withAssembly(ch_bmgap2_amr.out, ch_asm_by_id, ch_prokka_by_id))
+    ch_bmgap2_bmscan = bmgap2_bmscan(withAssembly(ch_bmgap2_le.out, ch_asm_by_id, ch_prokka_by_id))
 
     // Species-specific analyses
     legsta(ch_assembly_typed.filter      { meta, _a -> meta.species == 'Legionella_pneumophila' })
@@ -245,8 +255,7 @@ workflow {
             .mix(kleborate.out.done, shigatyper.out.done, emm_typing.out.done,
                  seqsero2.out.done, serotypefinder.out.done, plasmidfinder.out.done,
                  seroba.out.done, pasty.out.done, kaptive_ab.out.done, kaptive_vp.out.done,
-                 lissero.out.done,
-                 ch_bmgap2_bmscan.map { meta, _f -> meta })
+                 lissero.out.done)
             .map { _id -> 1 }
             .collect()
             .map { _ids -> true }
@@ -264,7 +273,10 @@ workflow {
         ch_hinfluenzae_txt,
         ch_skani.result.map         { _meta, f -> f }.collect().ifEmpty([]),
         ch_blast_16s.result.map     { _meta, f -> f }.collect().ifEmpty([]),
-        ch_amrfinder.out.map        { _meta, f -> f }.collect().ifEmpty([])
+        ch_amrfinder.out.map        { _meta, f -> f }.collect().ifEmpty([]),
+        ch_bmgap2_amr.amr.map       { _meta, f -> f }.collect().ifEmpty([]),
+        ch_bmgap2_le.le.map         { _meta, d -> d }.collect().ifEmpty([]),
+        ch_bmgap2_bmscan.bmscan.map { _meta, f -> f }.collect().ifEmpty([])
     )
 
     // Run-level interactive MultiQC across all samples

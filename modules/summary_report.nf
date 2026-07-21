@@ -15,6 +15,9 @@ process summary_report {
         path skani_files
         path blast16s_files
         path amrfinder_files
+        path bmgap2_amr_files
+        path bmgap2_le_dirs
+        path bmgap2_bmscan_files
 
     output:
         path "sum_report.txt",    emit: summary

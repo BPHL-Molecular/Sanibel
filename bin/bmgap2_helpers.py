@@ -2,9 +2,9 @@
 """
 bmgap2_helpers.py - shared boilerplate for the run_bmgap2_*.py host scripts.
 
-The three BMGAP2 steps (AMR, LocusExtractor, BMScan) each derive the sample name
-from the output path and read the MLST scheme to decide whether to run, skipping
-(exit 0) any sample that is not Neisseria meningitidis or H. influenzae.
+The three BMGAP2 steps (AMR, LocusExtractor, BMScan) read the MLST scheme to decide
+whether to run, skipping (exit 0) any sample that is not Neisseria meningitidis or
+H. influenzae.
 """
 
 import subprocess
@@ -35,9 +35,7 @@ def run_tool(cmd, tool_tag, cwd=None, on_fail='fail'):
     return result
 
 
-def read_scheme_and_sample(mypath, mlst_file, tool_tag):
-    sample_name = mypath.strip().split('/')[-1]
-
+def read_scheme(mlst_file, sample_name, tool_tag):
     scheme = ''
     try:
         with open(mlst_file) as f:
@@ -53,4 +51,4 @@ def read_scheme_and_sample(mypath, mlst_file, tool_tag):
               f"- not a meningitis species (scheme={scheme})")
         sys.exit(0)
 
-    return scheme, sample_name
+    return scheme

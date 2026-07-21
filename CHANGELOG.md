@@ -37,6 +37,16 @@ Candidate pool plus skani ANI replaces the Kraken2/Mash agreement heuristic.
 ### Reliability
 - `sanibel.nf`: the optional-typing barrier defaults to `true`, so a run with no species-specific output still produces a report.
 
+### BMGAP2 resume
+- `modules/bmgap2_amr.nf`: takes the PMGA BLAST JSON as a staged `path` input instead of reading `${params.output}/<id>/pmga`.
+- `modules/bmgap2_locusextractor.nf`, `modules/bmgap2_bmscan.nf`: take the contigs and the prokka annotation as staged `path` inputs and build the scan directory in the work directory. Previously they read `${params.output}/<id>/assembly` with no DAG edge to prokka, so LocusExtractor could run before its preferred prokka FASTA existed.
+- All three declare their results as process outputs and publish them; `cache = false` dropped from the `withName: 'bmgap2_.*'` selector, so a resume republishes them from `work/`.
+- `modules/pmga.nf`: second output named `emit: files`.
+- `bin/run_bmgap2_*.py`: explicit `--sample` / `--mlst` / `--outdir` / `--db` arguments; no reference to `params.output`. `run_bmgap2_amr.py` no longer writes a `json/` subdirectory into PMGA's published output.
+- `bin/bmgap2_helpers.py`: `read_scheme_and_sample()` replaced by `read_scheme()`, which takes the sample ID rather than deriving it from the output path.
+- `bin/run_bmgap2_bmscan.py`: BMScan's JSON renamed to `<sample>_species_analysis.json` so many samples can be staged into one `summary_report` task.
+- `modules/summary_report.nf`, `bin/summary_report.py`: BMGAP2 results arrive as staged inputs; `parse_bmgap2()` reads the work directory instead of `${params.output}/<id>`.
+
 ### Output
 - `modules/candidate_references.nf`: reference genomes no longer published; accession manifest published instead.
 - `modules/skani.nf`: publishes only `_skani.tsv`.

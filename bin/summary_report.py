@@ -506,7 +506,7 @@ def get_listeria_serotype(sample_dir, sample_id):
 
 # BMGAP2 data parser
 
-def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
+def parse_bmgap2(sample_id, scheme, hinfluenzae_txt=None):
     d = {k: NO_DATA for k in [
         'penA_allele', 'penA_mutations', 'penA_phenotype',
         'gyrA_allele', 'gyrA_mutations', 'gyrA_phenotype',
@@ -522,7 +522,7 @@ def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
     ]}
 
     # AMR JSON
-    amr_jsons = glob.glob(os.path.join(sample_dir, 'bmgap2_amr', f'{sample_id}*amr_data.json'))
+    amr_jsons = glob.glob(f'{sample_id}*amr_data.json')
     if amr_jsons:
         try:
             with open(amr_jsons[0]) as f:
@@ -597,7 +597,7 @@ def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
             print(f"Warning: Could not parse BMGAP2 AMR JSON for {sample_id}: {e}", file=sys.stderr)
 
     # LocusExtractor CSV
-    le_dirs = glob.glob(os.path.join(sample_dir, 'bmgap2_locusextractor', f'LE_*_{sample_id}_*'))
+    le_dirs = glob.glob(f'LE_*_{sample_id}_*')
     if le_dirs:
         le_csv = os.path.join(le_dirs[0], 'Results_text', f'molecular_data_{sample_id}.csv')
         if os.path.isfile(le_csv):
@@ -643,19 +643,17 @@ def parse_bmgap2(sample_dir, sample_id, scheme, hinfluenzae_txt=None):
                 print(f"Warning: Could not parse LocusExtractor CSV for {sample_id}: {e}", file=sys.stderr)
 
     # BMScan JSON
-    bmscan_dir = os.path.join(sample_dir, 'bmgap2_bmscan')
-    if os.path.isdir(bmscan_dir):
-        bmscan_jsons = glob.glob(os.path.join(bmscan_dir, 'species_analysis_*.json'))
-        if bmscan_jsons:
-            try:
-                with open(bmscan_jsons[0]) as f:
-                    bmscan = json.load(f)
-                for sample_data in bmscan.values():
-                    if 'mash_results' in sample_data:
-                        d['bmgap2_species'] = sample_data['mash_results'].get('species', '-')
-                        break
-            except Exception as e:
-                print(f"Warning: Could not parse BMScan JSON for {sample_id}: {e}", file=sys.stderr)
+    bmscan_jsons = glob.glob(f'{sample_id}_species_analysis.json')
+    if bmscan_jsons:
+        try:
+            with open(bmscan_jsons[0]) as f:
+                bmscan = json.load(f)
+            for sample_data in bmscan.values():
+                if 'mash_results' in sample_data:
+                    d['bmgap2_species'] = sample_data['mash_results'].get('species', '-')
+                    break
+        except Exception as e:
+            print(f"Warning: Could not parse BMScan JSON for {sample_id}: {e}", file=sys.stderr)
 
     return d
 
@@ -914,7 +912,7 @@ def main():
         rows_std.append(std_row)
 
         if scheme == 'neisseria':
-            bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
+            bm = parse_bmgap2(sid, scheme, hinfluenzae_txt)
             nm_row = [
                 sid,
                 pmga_sp,
@@ -933,7 +931,7 @@ def main():
             rows_nm.append(nm_row)
 
         elif scheme == 'hinfluenzae':
-            bm = parse_bmgap2(sample_dir, sid, scheme, hinfluenzae_txt)
+            bm = parse_bmgap2(sid, scheme, hinfluenzae_txt)
             hi_row = [
                 sid,
                 pmga_sp,
