@@ -116,71 +116,28 @@ nextflow run sanibel.nf -profile apptainer -params-file params.yaml
 ### Workflow Diagram
 
 ```mermaid
-flowchart TD
-    A[Paired FASTQ Input] --> B[FastQC]
-    B --> C[Trimmomatic]
-    C --> D[BBTools]
-    D --> E[FastQC2]
-    B --> F[MultiQC]
-    E --> F
+flowchart LR
+    IN[Paired FASTQ] --> QC["Quality control<br/>FastQC · Trimmomatic · BBTools"]
+    QC --> ASM["Assembly<br/>Unicycler · Quast"]
+    ASM --> SID["Species ID<br/>Mash · Kraken2 · 16S rRNA BLAST<br/>confirmed by skani ANI"]
+    SID --> TYP["Annotation and Typing<br/>Prokka · MLST · Serotyping"]
 
-    D --> G[Mash]
-    D --> H[Unicycler]
-    D --> I[Kraken2]
+    ASM --> AMR["AMR and plasmids<br/>AMRFinder · PlasmidFinder"]
+    QC --> AMR
 
-    H --> J[Quast]
-    H --> K[AMRFinder]
-    H --> L[MLST]
-    H --> M[Prokka]
-    H --> W[16S rRNA BLAST]
+    QC --> REP[summary_report]
+    ASM --> REP
+    SID --> REP
+    TYP --> REP
+    AMR --> REP
 
-    G --> O[parse_assembly]
-    J --> O
-    O --> M
-    O --> P[readssum]
-    D --> P
+    REP --> OUT["sum_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt"]
+    REP --> MQ["multiqc_global<br/>sanibel_report.html"]
 
-    %% Species ID: candidate pool to multi-reference skani ANI
-    G --> CP[build_candidates]
-    I --> CP
-    W --> CP
-    CP --> RR[candidate_references<br/>N genomes per candidate]
-    RR --> SK[skani ANI]
-
-    O --> AG[aggregate_species_id<br/>2-of-3 vote]
-    I --> AG
-    W --> AG
-    AG --> AGO[candidate_species.txt<br/>review record]
-
-    SK --> SP[Species-Specific Modules]
-    L --> NM[PMGA]
-    NM --> S[BMGAP2 AMR]
-    S --> T[BMGAP2 LocusExtractor]
-    T --> U[BMGAP2 BMScan]
-
-    O --> X[summary_report]
-    P --> X
-    M --> X
-    L --> X
-    I --> X
-    K --> X
-    W --> X
-    SK --> X
-    NM --> X
-    SP --> X
-    U --> X
-
-    X --> Y[sum_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt]
-    X --> MG[multiqc_global] --> IR[sanibel_report.html]
-
-    style SP fill:#fef,stroke:#333,color:#000
-    style SK fill:#9f9,stroke:#333,stroke-width:2px,color:#000
-    style S fill:#9cf,stroke:#333,color:#000
-    style T fill:#9cf,stroke:#333,color:#000
-    style U fill:#9cf,stroke:#333,color:#000
-    style X fill:#f96,stroke:#333,stroke-width:2px,color:#000
-    style Y fill:#f96,stroke:#333,stroke-width:3px,color:#000
-    style IR fill:#f96,stroke:#333,stroke-width:3px,color:#000
+    style SID fill:#9f9,stroke:#333,color:#000
+    style REP fill:#f96,stroke:#333,stroke-width:2px,color:#000
+    style OUT fill:#f96,stroke:#333,color:#000
+    style MQ fill:#f96,stroke:#333,color:#000
 ```
 
 For how the species ID vote, candidate pool and skani ANI confirmation fit together, see [docs/species-id.md](docs/species-id.md).
@@ -191,15 +148,15 @@ Sanibel is made possible thanks to the following tools:
 
 <small>
 
-**Quality Control** — [FastQC](https://github.com/s-andrews/FastQC) · [Trimmomatic](https://github.com/usadellab/Trimmomatic) · [BBTools](https://github.com/bbushnell/BBTools) · [MultiQC](https://github.com/MultiQC/MultiQC) · [Lyveset](https://github.com/lskatz/lyve-SET)
+**Quality Control** - [FastQC](https://github.com/s-andrews/FastQC) · [Trimmomatic](https://github.com/usadellab/Trimmomatic) · [BBTools](https://github.com/bbushnell/BBTools) · [MultiQC](https://github.com/MultiQC/MultiQC) · [Lyveset](https://github.com/lskatz/lyve-SET)
 
-**Assembly & Annotation** — [Mash](https://github.com/marbl/Mash) · [Unicycler](https://github.com/rrwick/Unicycler) · [QUAST](https://github.com/ablab/quast) · [Prokka](https://github.com/tseemann/prokka)
+**Assembly & Annotation** - [Unicycler](https://github.com/rrwick/Unicycler) · [QUAST](https://github.com/ablab/quast) · [Prokka](https://github.com/tseemann/prokka)
 
-**Typing & Classification** — [Kraken2](https://github.com/DerrickWood/kraken2) · [MLST](https://github.com/tseemann/mlst) · [skani](https://github.com/bluenote-1577/skani) · [BLAST](https://blast.ncbi.nlm.nih.gov) · [NCBI Datasets](https://github.com/ncbi/datasets)
+**Typing & Classification** - [Mash](https://github.com/marbl/Mash) · [Kraken2](https://github.com/DerrickWood/kraken2) · [BLAST](https://blast.ncbi.nlm.nih.gov) · [NCBI Datasets](https://github.com/ncbi/datasets) · [skani](https://github.com/bluenote-1577/skani) · [MLST](https://github.com/tseemann/mlst)
 
-**AMR & Mobile Genetic Elements** — [AMRFinderPlus](https://github.com/ncbi/amr) · [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder)
+**Species-Specific Serotyping** - [Legsta](https://github.com/MDU-PHL/legsta) · [Kleborate](https://github.com/klebgenomics/Kleborate) · [ShigaTyper](https://github.com/CFSAN-Biostatistics/shigatyper) · [emm-typing-tool](https://github.com/ukhsa-collaboration/emm-typing-tool) · [SeqSero2](https://github.com/denglab/SeqSero2) · [SerotypeFinder](https://bitbucket.org/genomicepidemiology/serotypefinder) · [PMGA](https://github.com/CDCgov/PMGA) · [BMGAP2](https://github.com/CDCgov/BMGAP2) · [SeroBA](https://github.com/sanger-pathogens/seroba) · [pasty](https://github.com/rpetit3/pasty) · [Kaptive](https://github.com/klebgenomics/Kaptive) · [LisSero](https://github.com/MDU-PHL/LisSero)
 
-**Species-Specific** — [Legsta](https://github.com/MDU-PHL/legsta) · [Kleborate](https://github.com/klebgenomics/Kleborate) · [ShigaTyper](https://github.com/CFSAN-Biostatistics/shigatyper) · [emm-typing-tool](https://github.com/ukhsa-collaboration/emm-typing-tool) · [SeqSero2](https://github.com/denglab/SeqSero2) · [SerotypeFinder](https://bitbucket.org/genomicepidemiology/serotypefinder) · [PMGA](https://github.com/CDCgov/PMGA) · [BMGAP2](https://github.com/CDCgov/BMGAP2) · [SeroBA](https://github.com/sanger-pathogens/seroba) · [pasty](https://github.com/rpetit3/pasty) · [Kaptive](https://github.com/klebgenomics/Kaptive) · [LisSero](https://github.com/MDU-PHL/LisSero)
+**AMR & Mobile Genetic Elements** - [AMRFinderPlus](https://github.com/ncbi/amr) · [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder)
 
 </small>
 
