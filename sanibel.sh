@@ -17,7 +17,7 @@ conda activate SANIBEL
 # Path to container image cache directory
 export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
 
-# Plain text Nextflow log (no ANSI colors/hyperlinks) so logs can read cleanly
+# Plain text Nextflow log
 export NXF_ANSI_LOG=false
 
 # Run pipeline
@@ -34,6 +34,3 @@ elif [ $nxf_exit -ne 0 ]; then
 else
     echo "Pipeline exited 0 but output directory not found: $output_dir" >&2
 fi
-
-# Cleanup (disabled for troubleshooting runs)
-#rm -rf ./work
