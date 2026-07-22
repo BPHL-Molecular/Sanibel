@@ -31,6 +31,7 @@ process multiqc_global {
     script:
     """
     mkdir -p mqc_in
+    cp mqc_in/*_mqc.tsv ${params.output}/ 2>/dev/null || true
 
     {
       echo "# id: 'sanibel_versions'"
@@ -50,9 +51,9 @@ process multiqc_global {
       grep -hoE "docker://[^']+" ${nf_config} \\
         | sed -E 's#docker://[^/]*/([^:]+):(.+)#\\1\\t\\2#' \\
         | sort -u
-    } > mqc_in/sanibel_versions_mqc.tsv
+    } > "${params.output}/sanibel_versions_mqc.tsv"
 
-    multiqc ${params.output} mqc_in \\
+    multiqc ${params.output} \\
         -c ${multiqc_config} \\
         --filename sanibel_report.html \\
         --interactive \\
@@ -60,5 +61,7 @@ process multiqc_global {
         --ignore "*/fastqc/*" \\
         --ignore "*sanibel_report*" \\
         --ignore "*sum_report.txt"
+
+    rm -f "${params.output}"/*_mqc.tsv
     """
 }
