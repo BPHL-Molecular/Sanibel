@@ -16,15 +16,16 @@ process mlst {
     mlst ${assembly} --nopath > auto.tsv
     scheme=\$(cut -f2 auto.tsv | head -n1)
 
-    allowed=\$(awk -F'\\t' -v k='${species}' '\$1 == k { print \$2; exit }' ${scheme_map})
+    tr -d '\\r' < ${scheme_map} > schemes.tsv
+    allowed=\$(awk -F'\\t' -v k='${species}' '\$1 == k { print \$2; exit }' schemes.tsv)
     if [[ -z "\$allowed" ]]; then
-        allowed=\$(awk -F'\\t' -v k='${genus}' '\$1 == k { print \$2; exit }' ${scheme_map})
+        allowed=\$(awk -F'\\t' -v k='${genus}' '\$1 == k { print \$2; exit }' schemes.tsv)
     fi
 
-    if [[ '${genus}' == "Unknown" || -z "\$allowed" ]]; then
-        mv auto.tsv ${prefix}.mlst
-    elif [[ "\$allowed" == "none" ]]; then
+    if [[ '${genus}' == "Unknown" || "\$allowed" == "none" ]]; then
         awk -F'\\t' -v OFS='\\t' '{ print \$1, "-", "-" }' auto.tsv > ${prefix}.mlst
+    elif [[ -z "\$allowed" ]]; then
+        mv auto.tsv ${prefix}.mlst
     elif [[ ",\$allowed," == *",\$scheme,"* ]]; then
         mv auto.tsv ${prefix}.mlst
     else
