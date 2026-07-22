@@ -23,12 +23,15 @@ process multiqc_global {
         path custom_logo
         path custom_css
         path nf_config
+        path mqc_tables, stageAs: 'mqc_in/*'
 
     output:
         path("sanibel_report.html"), emit: report
 
     script:
     """
+    mkdir -p mqc_in
+
     {
       echo "# id: 'sanibel_versions'"
       echo "# section_name: 'Software Versions'"
@@ -47,9 +50,9 @@ process multiqc_global {
       grep -hoE "docker://[^']+" ${nf_config} \\
         | sed -E 's#docker://[^/]*/([^:]+):(.+)#\\1\\t\\2#' \\
         | sort -u
-    } > "${params.output}/sanibel_versions_mqc.tsv"
+    } > mqc_in/sanibel_versions_mqc.tsv
 
-    multiqc ${params.output} \\
+    multiqc ${params.output} mqc_in \\
         -c ${multiqc_config} \\
         --filename sanibel_report.html \\
         --interactive \\
@@ -57,7 +60,5 @@ process multiqc_global {
         --ignore "*/fastqc/*" \\
         --ignore "*sanibel_report*" \\
         --ignore "*sum_report.txt"
-
-    rm -f "${params.output}"/*_mqc.tsv
     """
 }

@@ -285,6 +285,7 @@ workflow {
         channel.value(file("${projectDir}/assets/multiqc_config.yaml",         checkIfExists: true)),
         channel.value(file("${projectDir}/assets/sanibel_pipeline_logo_v2.png", checkIfExists: true)),
         channel.value(file("${projectDir}/assets/sanibel_report.css",           checkIfExists: true)),
-        channel.value(file("${projectDir}/nextflow.config",                     checkIfExists: true))
+        channel.value(file("${projectDir}/nextflow.config",                     checkIfExists: true)),
+        ch_summary.mqc_tables.ifEmpty([])
     )
 }
