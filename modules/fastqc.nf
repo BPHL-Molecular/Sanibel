@@ -1,6 +1,6 @@
 process fastqc {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/fastqc", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/fastqc" }, mode: 'copy'
 
     input:
         tuple val(meta), path(reads)

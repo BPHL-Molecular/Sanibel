@@ -1,12 +1,12 @@
 process pmga {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/pmga", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/pmga" }, mode: 'copy'
 
     input:
         tuple val(meta), path(assembly), path(mlst_out)
     output:
         tuple val(meta), path("${meta.id}sta.txt"), emit: out
-        path("${meta.id}sta*")
+        tuple val(meta), path("${meta.id}sta*"),    emit: files
 
     script:
     def prefix = meta.id

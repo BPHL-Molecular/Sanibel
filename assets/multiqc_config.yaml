@@ -1,0 +1,107 @@
+# Sanibel MultiQC dashboard configuration
+
+title: "Sanibel: Bacterial WGS Analysis Report"
+intro_text: >
+  Interactive summary report (species ID, QC, serotyping, predicted antimicrobial resistance).
+
+report_header_info:
+  - Pipeline: "Sanibel (https://github.com/BPHL-Molecular/Sanibel)"
+  - Version: "v2.1"
+  - Contact: "bphl-sebioinformatics@flhealth.gov"
+  - Laboratory: "Florida Bureau of Public Health Laboratories"
+
+custom_logo: "sanibel_pipeline_logo_v2.png"
+custom_logo_dark: "sanibel_pipeline_logo_v2.png"
+custom_logo_url: "https://github.com/BPHL-Molecular/Sanibel"
+custom_logo_title: "Florida BPHL Sanibel Pipeline"
+custom_logo_width: 220
+
+custom_css_files:
+  - "sanibel_report.css"
+
+extra_fn_clean_exts:
+  - "_original"
+  - "_clean"
+
+max_table_rows: 1
+
+skip_versions_section: true
+
+exclude_modules:
+  - "bbmap"
+  - "kraken"
+
+module_order:
+  - fastqc:
+      name: "FastQC (clean reads)"
+      anchor: "fastqc_clean"
+      path_filters:
+        - "*/fastqc2/*"
+
+remove_sections:
+  - "fastqc_clean_fastqc_clean_per_base_sequence_content"
+  - "fastqc_clean_fastqc_per_sequence_gc_content"
+  - "fastqc_clean_fastqc_per_base_n_content"
+  - "fastqc_clean_fastqc_sequence_length_distribution"
+  - "fastqc_clean_fastqc_overrepresented_sequences"
+  - "fastqc_clean_fastqc_top_overrepresented_sequences"
+  - "quast-stats"
+  - "quast-contigs"
+  - "prokka-section-1"
+
+report_section_order:
+  sanibel_species:  { order: 4000 }
+  sanibel_typing:   { order: 3000 }
+  sanibel_amr:      { order: 2500 }
+  fastqc_clean:     { order: 2000 }
+  sanibel_versions: { order: 1000 }
+
+custom_content:
+  order:
+    - sanibel_species
+    - sanibel_typing
+    - sanibel_amr
+    - sanibel_versions
+
+table_columns_placement:
+  "FastQC (clean reads)":
+    total_sequences: 100
+    percent_gc: 110
+    median_sequence_length: 120
+  QUAST:
+    Total_length: 200
+    N50: 210
+  Prokka:
+    contigs: 300
+    CDS: 310
+
+table_columns_visible:
+  prokka:
+    organism: false
+  "FastQC (clean reads)":
+    percent_duplicates: false
+    percent_fails: false
+    avg_sequence_length: false
+
+table_cond_formatting_rules:
+  species_id_qc:
+    pass:
+      - s_eq: "PASS"
+    warn:
+      - s_contains: "REVIEW"
+    fail:
+      - s_contains: "NO ID"
+
+  contamination_flag:
+    pass:
+      - s_eq: "None"
+    warn:
+      - s_contains: "Possible contamination"
+
+  assembly_qc:
+    pass:
+      - s_eq: "PASS"
+    warn:
+      - s_contains: "Warning"
+    fail:
+      - s_contains: "FAIL"

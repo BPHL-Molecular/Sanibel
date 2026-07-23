@@ -1,6 +1,6 @@
 process pasty {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/pasty", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/pasty" }, mode: 'copy'
 
     input:
         tuple val(meta), path(assembly)

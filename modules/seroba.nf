@@ -1,6 +1,6 @@
 process seroba {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/seroba", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/seroba" }, mode: 'copy'
 
     input:
         tuple val(meta), path(reads)

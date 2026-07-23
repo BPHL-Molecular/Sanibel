@@ -5,11 +5,14 @@ Parse mash distances and QUAST report into a single CSV line.
 Usage: parse_assembly.py <distances_file> <quast_report>
 
 Output (stdout):
-  GENUS,SPECIES,DIST,ACCESSION,ASM_NAME,CONTIGS,LARGEST,N50,L50,TOTAL,GC
+  GENUS,SPECIES,DIST,ACCESSION,CONTIGS,LARGEST,N50,L50,TOTAL,GC
 """
 
-import re
+import os
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from sanibel_taxonomy import find_accession, parse_mash_ref
 
 
 def parse_mash(distances_file):
@@ -20,33 +23,11 @@ def parse_mash(distances_file):
     ref_id = fields[0]
     dist   = fields[2] if len(fields) > 2 else 'NA'
 
-    _ACC_RE = re.compile(r'GC[FA]_[A-Za-z0-9]+(?:\.[0-9]+)?|N[CZ]_[A-Za-z0-9]+(?:\.[0-9]+)?')
-    if '-.-' in ref_id:
-        segs     = ref_id.split('-.-')
-        org_part = segs[-1]
-        org_seg  = re.sub(r'\.fna.*', '', org_part)
-        parts    = [p for p in org_seg.split('_') if p]
-        genus    = parts[0] if parts else 'Unknown'
-        species  = parts[1] if len(parts) > 1 else 'unknown'
-        asm_name = '_'.join(parts[2:]) if len(parts) > 2 else '.'
-        accession = 'Unknown'
-        for seg in segs[:-1]:
-            m = _ACC_RE.search(seg)
-            if m:
-                accession = m.group(0)
-                break
-    else:
-        # update_mash_dist sketch names: Genus_species_<ACCESSION>
-        # (e.g. Enterobacter_hormaechei_GCF_019048245.1)
-        org_seg   = re.sub(r'\.fna.*', '', ref_id)
-        parts     = [p for p in org_seg.split('_') if p]
-        genus     = parts[0] if parts else 'Unknown'
-        species   = parts[1] if len(parts) > 1 else 'unknown'
-        m         = _ACC_RE.search(ref_id)
-        accession = m.group(0) if m else 'Unknown'
-        asm_name  = accession
+    genus, species, accession = parse_mash_ref(ref_id)
+    if accession is None and '-.-' not in ref_id:
+        accession = find_accession(ref_id)
 
-    return genus, species, dist, accession, asm_name
+    return genus or 'Unknown', species or 'unknown', dist, accession or 'Unknown'
 
 
 def parse_quast(quast_file):
@@ -77,8 +58,8 @@ if __name__ == '__main__':
     if len(sys.argv) != 3:
         sys.exit(f"Usage: {sys.argv[0]} <distances_file> <quast_report>")
 
-    genus, species, dist, accession, asm_name = parse_mash(sys.argv[1])
-    contigs, largest, n50, l50, total, gc     = parse_quast(sys.argv[2])
+    genus, species, dist, accession        = parse_mash(sys.argv[1])
+    contigs, largest, n50, l50, total, gc  = parse_quast(sys.argv[2])
 
-    print(f"{genus},{species},{dist},{accession},{asm_name},"
+    print(f"{genus},{species},{dist},{accession},"
           f"{contigs},{largest},{n50},{l50},{total},{gc}")

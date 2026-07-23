@@ -1,16 +1,44 @@
 #!/usr/bin/env python3
-"""
-sanibel_taxonomy.py — shared taxonomy / contamination primitives.
+"""sanibel_taxonomy.py — shared taxonomy / contamination primitives."""
 
-Single source of truth for the 16S-synonymous genus table and the contig-overlap
-contamination logic, imported by aggregate_species_id.py (the candidate-pool vote)
-and summary_report.py (the skani-anchored report). Keeping these in one place stops
-the synonym table and the contamination thresholds from drifting between the two.
-"""
+import re
+from collections import namedtuple
 
 # Minimum identity/length for a 16S hit to count as a contamination candidate.
 CONTAM_PIDENT = 99.0
 CONTAM_LENGTH = 1400
+
+# Minimum identity/length for a 16S hit to count as a species-ID candidate
+BLAST16S_MIN_LENGTH = 400
+BLAST16S_MIN_PIDENT = 97.0
+
+# RefSeq/GenBank accession pattern (GCF_*, GCA_*, NC_*, NZ_*)
+ACCESSION_RE = re.compile(
+    r'GC[FA]_[A-Za-z0-9]+(?:\.[0-9]+)?|N[CZ]_[A-Za-z0-9]+(?:\.[0-9]+)?'
+)
+
+
+def find_accession(text):
+    """First RefSeq/GenBank accession in `text`, or None."""
+    if not text:
+        return None
+    m = ACCESSION_RE.search(text)
+    return m.group(0) if m else None
+
+
+def parse_mash_ref(ref_name):
+    segs      = ref_name.split('-.-')
+    name_part = re.sub(r'\.fna.*', '', segs[-1])
+    tokens    = [t for t in name_part.split('_') if t]
+    genus     = tokens[0] if tokens else None
+    species   = tokens[1] if len(tokens) > 1 else None
+    accession = None
+    for seg in segs[:-1]:
+        acc = find_accession(seg)
+        if acc:
+            accession = acc
+            break
+    return genus, species, accession
 
 
 # Genera indistinguishable by 16S; never flag each other as contamination.
@@ -40,7 +68,6 @@ SYNONYMOUS_PAIRS = {
 
 
 def genus_of(label):
-    """First token of a 'Genus species' or 'Genus_species' string."""
     if not label:
         return None
     tokens = label.replace('_', ' ').split()
@@ -59,34 +86,71 @@ def ranges_overlap(s1, e1, s2, e2):
     return lo1 <= hi2 and lo2 <= hi1
 
 
+# Parsed 16S BLAST hit
+BlastHit = namedtuple(
+    'BlastHit', 'qseqid pident length sstart send bitscore stitle genus species'
+)
+
+
+def iter_blast16s_rows(path):
+    try:
+        fh = open(path)
+    except OSError:
+        return
+    with fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split('\t')
+            if len(parts) < 13 or parts[0] == 'qseqid':
+                continue
+            try:
+                pident   = float(parts[2])
+                length   = int(parts[3])
+                sstart   = int(parts[8])
+                send     = int(parts[9])
+                bitscore = float(parts[11])
+            except (ValueError, IndexError):
+                continue
+            stitle  = parts[12].strip()
+            words   = stitle.split()
+            genus   = words[0] if words else None
+            species = words[1] if len(words) > 1 else None
+            yield BlastHit(parts[0], pident, length, sstart, send, bitscore,
+                           stitle, genus, species)
+
+
+def iter_kraken_species_rows(path):
+    try:
+        fh = open(path)
+    except OSError:
+        return
+    with fh:
+        for line in fh:
+            parts = line.rstrip('\n').split('\t')
+            if len(parts) < 6 or parts[3].strip() != 'S':
+                continue
+            try:
+                pct   = float(parts[0].strip())
+                reads = int(parts[1].strip())
+            except ValueError:
+                continue
+            words   = parts[5].strip().split()
+            genus   = words[0] if words else None
+            species = words[1] if len(words) > 1 else None
+            yield genus, species, pct, reads
+
+
 def extract_contam_candidates(blast16s_tsv_path):
     rows = []
-    try:
-        with open(blast16s_tsv_path) as fh:
-            for line in fh:
-                line = line.strip()
-                if not line:
-                    continue
-                parts = line.split('\t')
-                if len(parts) < 13 or parts[0] == 'qseqid':
-                    continue
-                try:
-                    pident   = float(parts[2])
-                    length   = int(parts[3])
-                    sstart   = int(parts[8])
-                    send     = int(parts[9])
-                    bitscore = float(parts[11])
-                except (ValueError, IndexError):
-                    continue
-                if pident < CONTAM_PIDENT or length < CONTAM_LENGTH:
-                    continue
-                stitle = parts[12].strip()
-                genus  = stitle.split()[0] if stitle else None
-                if not genus:
-                    continue
-                rows.append((pident, length, bitscore, genus, parts[0], sstart, send))
-    except OSError:
-        return {}
+    for hit in iter_blast16s_rows(blast16s_tsv_path):
+        if hit.pident < CONTAM_PIDENT or hit.length < CONTAM_LENGTH:
+            continue
+        if not hit.genus:
+            continue
+        rows.append((hit.pident, hit.length, hit.bitscore, hit.genus,
+                     hit.qseqid, hit.sstart, hit.send))
 
     rows.sort(key=lambda r: (-r[0], abs(r[1] - 1500), -r[2]))
     candidates = {}

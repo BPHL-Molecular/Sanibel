@@ -7,34 +7,28 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Pipeline-Sanibel%202.0-blue?style=plastic" />
-  <img src="https://img.shields.io/badge/Nextflow-≥22.10-brightgreen?style=plastic&logo=nextflow" />
+  <img src="https://img.shields.io/badge/Pipeline-Sanibel%202.1-blue?style=plastic" />
+  <img src="https://img.shields.io/badge/Nextflow-≥23.04-brightgreen?style=plastic&logo=nextflow" />
   <img src="https://img.shields.io/badge/Python-3.10+-yellow?style=plastic&logo=python" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-red?style=plastic" />
 </p>
 
 ## 🦠🧬 Overview
 
-Sanibel is Florida BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis pipeline. It performs quality control, *de novo* assembly, taxonomic classification, species identification, sequence typing and antimicrobial resistance (AMR) detection on paired-end Illumina short reads. 
+Sanibel is Florida BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis pipeline. It performs quality control, *de novo* assembly, taxonomic classification, species identification, sequence typing and antimicrobial resistance (AMR) detection on paired-end Illumina short reads.
 
+Species identification uses a candidate-pool design: Mash, Kraken2 and 16S rRNA BLAST nominate a ranked pool of candidate species, multiple RefSeq genomes are downloaded per candidate and skani confirms the species by whole-genome ANI. skani is the arbiter for the reported organism and the contamination flag. A confident call requires ANI ≥ 95% and alignment fraction ≥ 50% for a positive ID.
 
-Species identification uses a candidate-pool design: Mash, Kraken2, and 16S rRNA BLAST nominate a ranked pool of candidate species, multiple RefSeq genomes are downloaded per candidate, and skani confirms the species by whole-genome ANI against the ≥ 95% boundary. skani is the arbiter for the reported organism and the contamination flag.
-
-
-Species-specific typing modules run automatically based on species identification results: *Legionella pneumophila* (Legsta), *Klebsiella* (Kleborate), *Shigella* (ShigaTyper), *Streptococcus pyogenes/dysgalactiae* (EMM typing), *Salmonella* (SeqSero2), *E. coli* (SerotypeFinder), *Streptococcus pneumoniae* (SeroBA), *Pseudomonas aeruginosa* (pasty), *Acinetobacter baumannii* (Kaptive), *Vibrio parahaemolyticus* (Kaptive), *Listeria monocytogenes* (LisSero), and *Neisseria meningitidis*/*Haemophilus influenzae* (PMGA). BMGAP2 provides enhanced AMR and antigen analysis for *Neisseria meningitidis* and *Haemophilus influenzae*. PlasmidFinder runs on all samples.
-
+Species-specific typing modules run automatically based on species identification results: *Legionella pneumophila* (Legsta), *Klebsiella* (Kleborate), *Shigella* (ShigaTyper), *Streptococcus pyogenes/dysgalactiae* (EMM typing), *Salmonella* (SeqSero2), *E. coli* (SerotypeFinder), *Streptococcus pneumoniae* (SeroBA), *Pseudomonas aeruginosa* (pasty), *Acinetobacter baumannii* (Kaptive), *Vibrio parahaemolyticus* (Kaptive), *Listeria monocytogenes* (LisSero) and *Neisseria meningitidis*/*Haemophilus influenzae* (PMGA). BMGAP2 provides enhanced AMR and antigen analysis for *Neisseria meningitidis* and *Haemophilus influenzae*. PlasmidFinder runs on all samples.
 
 ### ⚙️ Dependencies
 
-- **Nextflow** 23.04–25.x - [installation guide](https://github.com/nextflow-io/nextflow)
+- **Nextflow** 23.04–26.x - [installation guide](https://github.com/nextflow-io/nextflow)
 - **Apptainer/Singularity** - [installation guide](https://apptainer.org/docs/user/latest/)
 - **Conda** - [installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
 - **SLURM** workload manager (required for HiPerGator; otherwise not required)
 
 All bioinformatics tools run inside containers, no additional software installation is required.
-
-> ⚠️ **Nextflow ≥ 26.0 is not supported.** That release introduced breaking changes to DSL2 module parsing. Use Nextflow 23.04–25.x.
-
 
 ### 💻 Resource Requirements
 
@@ -46,8 +40,7 @@ Sanibel can run on any system with Nextflow and Apptainer installed, but is **st
 
 > **Running locally with fewer CPUs:** Nextflow will still run but your machine will be oversubscribed during assembly. Each Unicycler job requests 10 CPUs by default, on a machine with fewer cores the OS will time-share threads and assembly will complete more slowly but will not fail. You can lower the `cpus` value for `unicycler` in `nextflow.config` to match your hardware.
 
-**Estimated runtime** (12 samples, 20 CPUs, HPC): ~3–4 hours total, dominated by Unicycler (~25 min/sample, 2 running in parallel).
-
+**Estimated runtime** (12 samples, 20 CPUs, HPC): ~2 hours total.
 
 ### 🛠️ Setup
 
@@ -65,8 +58,6 @@ $ conda env create -f environment.yaml
 $ conda activate SANIBEL
 ```
 
-`pandas`, `openpyxl`, `biopython`, `mash`, and `blast` are required by the BMGAP2 modules (used for Nm/Hi samples).
-
 #### 3. Configure params.yaml
 
 Edit `params.yaml` and set paths for your environment:
@@ -77,25 +68,25 @@ input:  "/full/path/to/fastqs"
 output: "/full/path/to/output"
 
 # non-Florida-BPHL users: uncomment and set your BMGAP2 analysis_scripts directory
-# bmgap2_db:  "/full/path/to/bmgap2/analysis_scripts"
+#bmgap2_db:  "/full/path/to/bmgap2/analysis_scripts"
 
 # non-Florida-BPHL users: uncomment and set your Kraken2 database directory
-# kraken_db:  "/full/path/to/kraken2/database"
+#kraken_db:  "/full/path/to/kraken2/database"
 ```
 
 > **Florida BPHL users:** only `input` and `output` need to be set. All other paths are pre-configured.
-
 > **Non-Florida BPHL users:** uncomment `bmgap2_db` and `kraken_db` by removing the leading `#` and set their paths.
 
 #### 4. Configure sanibel.sh
 
-> At Florida BPHL we use **Apptainer** on HiPerGator for containerization. `sanibel.sh` is pre-configured for SLURM + Apptainer and is the recommended submission method for FL-BPHL users.
+> At Florida BPHL we use **Apptainer** on HiPerGator for containerization. `sanibel.sh` is pre-configured for SLURM + Apptainer and is the recommended submission method for HiPerGator users.
 
-Set `NXF_APPTAINER_CACHEDIR` to your image cache directory and add your email address for job notifications:
+Add your email address for job notifications and set `NXF_APPTAINER_CACHEDIR` to your image cache directory:
 
 ```bash
-export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
 #SBATCH --mail-user=your@email.gov
+export NXF_APPTAINER_CACHEDIR=/path/to/apptainer/cache
+
 ```
 
 #### 5. Kraken2 and BMGAP2 Setup for Non-Florida-BPHL Users
@@ -108,11 +99,9 @@ For non-Florida BPHL users, a Kraken2 database must be downloaded before running
 
 For non-Florida BPHL users, BMGAP2 must be installed before running the pipeline. Its scripts run directly on the host (not inside a container) and are invoked by the three `bmgap2_*` Nextflow modules. Follow the [BMGAP2 installation instructions](https://github.com/CDCgov/BMGAP2) to clone the repository and build all required databases, then set `bmgap2_db` in `params.yaml` to the `analysis_scripts` directory.
 
-
 ### How to Run
 
 Place input FASTQ files in the directory specified by `params.input`. Both Illumina native (`SAMPLE_S1_L001_R1_001.fastq.gz`) and simplified (`SAMPLE_1.fastq.gz`) naming conventions are supported.
-
 
 ### 🐊 HiPerGator Usage
 ```bash
@@ -127,67 +116,31 @@ nextflow run sanibel.nf -profile apptainer -params-file params.yaml
 ### Workflow Diagram
 
 ```mermaid
-flowchart TD
-    A[Paired FASTQ Input] --> B[FastQC]
-    B --> C[Trimmomatic]
-    C --> D[BBTools]
-    D --> E[FastQC2]
-    B --> F[MultiQC]
-    E --> F
+flowchart LR
+    IN[Paired FASTQ] --> QC["Quality control<br/>FastQC · Trimmomatic · BBTools"]
+    QC --> ASM["Assembly<br/>Unicycler · Quast"]
+    ASM --> SID["Species ID<br/>Mash · Kraken2 · 16S rRNA BLAST<br/>confirmed by skani ANI"]
+    SID --> TYP["Annotation and Typing<br/>Prokka · MLST · Serotyping"]
 
-    D --> G[Mash]
-    D --> H[Unicycler]
-    D --> I[Kraken2]
+    ASM --> AMR["AMR and plasmids<br/>AMRFinder · PlasmidFinder"]
+    QC --> AMR
 
-    H --> J[Quast]
-    H --> K[AMRFinder]
-    H --> L[MLST]
-    H --> M[Prokka]
-    H --> W[16S rRNA BLAST]
+    QC --> REP[summary_report]
+    ASM --> REP
+    SID --> REP
+    TYP --> REP
+    AMR --> REP
 
-    G --> O[parse_assembly]
-    J --> O
-    O --> M
-    O --> P[readssum]
-    D --> P
+    REP --> OUT["sum_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt"]
+    REP --> MQ["multiqc_global<br/>sanibel_report.html"]
 
-    %% Species ID: candidate pool to multi-reference skani ANI
-    G --> CP[build_candidates]
-    I --> CP
-    W --> CP
-    CP --> RR[refseq_references<br/>N genomes per candidate]
-    RR --> SK[skani ANI]
-
-    G --> AG[aggregate_species_id<br/>contamination]
-    I --> AG
-    W --> AG
-
-    O --> SP[Species-Specific Modules]
-    L --> NM[PMGA]
-    NM --> S[BMGAP2 AMR]
-    S --> T[BMGAP2 LocusExtractor]
-    T --> U[BMGAP2 BMScan]
-
-    O --> X[summary_report]
-    P --> X
-    M --> X
-    L --> X
-    I --> X
-    SK --> X
-    AG --> X
-    SP --> X
-    U --> X
-
-    X --> Y[sum_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt]
-
-    style SP fill:#fef,stroke:#333,color:#000
-    style SK fill:#9f9,stroke:#333,stroke-width:2px,color:#000
-    style S fill:#9cf,stroke:#333,color:#000
-    style T fill:#9cf,stroke:#333,color:#000
-    style U fill:#9cf,stroke:#333,color:#000
-    style X fill:#f96,stroke:#333,stroke-width:2px,color:#000
-    style Y fill:#f96,stroke:#333,stroke-width:3px,color:#000
+    style SID fill:#9f9,stroke:#333,color:#000
+    style REP fill:#f96,stroke:#333,stroke-width:2px,color:#000
+    style OUT fill:#f96,stroke:#333,color:#000
+    style MQ fill:#f96,stroke:#333,color:#000
 ```
+
+For how the species ID vote, candidate pool and skani ANI confirmation fit together, see [docs/species-id.md](docs/species-id.md).
 
 ### 🧩 Modules
 
@@ -195,15 +148,15 @@ Sanibel is made possible thanks to the following tools:
 
 <small>
 
-**Quality Control** — [FastQC](https://github.com/s-andrews/FastQC) · [Trimmomatic](https://github.com/usadellab/Trimmomatic) · [BBTools](https://github.com/bbushnell/BBTools) · [MultiQC](https://github.com/MultiQC/MultiQC) · [Lyveset](https://github.com/lskatz/lyve-SET)
+**Quality Control** - [FastQC](https://github.com/s-andrews/FastQC) · [Trimmomatic](https://github.com/usadellab/Trimmomatic) · [BBTools](https://github.com/bbushnell/BBTools) · [MultiQC](https://github.com/MultiQC/MultiQC) · [Lyveset](https://github.com/lskatz/lyve-SET)
 
-**Assembly & Annotation** — [Mash](https://github.com/marbl/Mash) · [Unicycler](https://github.com/rrwick/Unicycler) · [QUAST](https://github.com/ablab/quast) · [Prokka](https://github.com/tseemann/prokka)
+**Assembly & Annotation** - [Unicycler](https://github.com/rrwick/Unicycler) · [QUAST](https://github.com/ablab/quast) · [Prokka](https://github.com/tseemann/prokka)
 
-**Typing & Classification** — [Kraken2](https://github.com/DerrickWood/kraken2) · [MLST](https://github.com/tseemann/mlst) · [skani](https://github.com/bluenote-1577/skani) · [BLAST](https://blast.ncbi.nlm.nih.gov) · [NCBI Datasets](https://github.com/ncbi/datasets)
+**Typing & Classification** - [Mash](https://github.com/marbl/Mash) · [Kraken2](https://github.com/DerrickWood/kraken2) · [BLAST](https://blast.ncbi.nlm.nih.gov) · [NCBI Datasets](https://github.com/ncbi/datasets) · [skani](https://github.com/bluenote-1577/skani) · [MLST](https://github.com/tseemann/mlst)
 
-**AMR & Mobile Genetic Elements** — [AMRFinderPlus](https://github.com/ncbi/amr) · [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder)
+**Species-Specific Serotyping** - [Legsta](https://github.com/MDU-PHL/legsta) · [Kleborate](https://github.com/klebgenomics/Kleborate) · [ShigaTyper](https://github.com/CFSAN-Biostatistics/shigatyper) · [emm-typing-tool](https://github.com/ukhsa-collaboration/emm-typing-tool) · [SeqSero2](https://github.com/denglab/SeqSero2) · [SerotypeFinder](https://bitbucket.org/genomicepidemiology/serotypefinder) · [PMGA](https://github.com/CDCgov/PMGA) · [BMGAP2](https://github.com/CDCgov/BMGAP2) · [SeroBA](https://github.com/sanger-pathogens/seroba) · [pasty](https://github.com/rpetit3/pasty) · [Kaptive](https://github.com/klebgenomics/Kaptive) · [LisSero](https://github.com/MDU-PHL/LisSero)
 
-**Species-Specific** — [Legsta](https://github.com/MDU-PHL/legsta) · [Kleborate](https://github.com/klebgenomics/Kleborate) · [ShigaTyper](https://github.com/CFSAN-Biostatistics/shigatyper) · [emm-typing-tool](https://github.com/ukhsa-collaboration/emm-typing-tool) · [SeqSero2](https://github.com/denglab/SeqSero2) · [SerotypeFinder](https://bitbucket.org/genomicepidemiology/serotypefinder) · [PMGA](https://github.com/CDCgov/PMGA) · [BMGAP2](https://github.com/CDCgov/BMGAP2) · [SeroBA](https://github.com/sanger-pathogens/seroba) · [pasty](https://github.com/rpetit3/pasty) · [Kaptive](https://github.com/klebgenomics/Kaptive) · [LisSero](https://github.com/MDU-PHL/LisSero)
+**AMR & Mobile Genetic Elements** - [AMRFinderPlus](https://github.com/ncbi/amr) · [PlasmidFinder](https://bitbucket.org/genomicepidemiology/plasmidfinder)
 
 </small>
 
@@ -213,9 +166,9 @@ All results are written to `params.output/<sample_id>/`. Depending on which spec
 
 | File | Samples | Cols | Key fields |
 |------|---------|------|------------|
-| `sum_report.txt` | All | 27 | ID · species (skani ANI, Mash, Kraken) · 16S top hit · skani ANI/reference · contamination flag · MLST scheme/ST · serotype · QC metrics (reads, coverage, assembly stats, GC, CDS) |
+| `sum_report.txt` | All | 31 | ID · species (skani ANI, Mash, Kraken) · 16S top hit · skani ANI/reference · species-ID QC · contamination flag · MLST scheme/ST · serotype · QC metrics (reads, coverage, assembly stats, GC, CDS) · assembly QC · AMR gene symbols/subclasses |
 | `nm_sum_report.txt` | *N. meningitidis* only | 26 | ID · PMGA serogroup · BMGAP2 AMR alleles/phenotypes · vaccine antigen coverage (4CMenB) |
-| `hi_sum_report.txt` | *H. influenzae* only | 23 | ID · PMGA capsule type · BMGAP2 AMR alleles/phenotypes |
+| `hi_sum_report.txt` | *H. influenzae* only | 22 | ID · PMGA capsule type · BMGAP2 AMR alleles/phenotypes |
 
 
 ### 🤝 Contributing

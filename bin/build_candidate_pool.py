@@ -3,62 +3,48 @@
 Build a ranked candidate species pool for Stage 2 multi-reference ANI.
 
 Usage:
-    build_candidate_pool.py <sample_id> <mash_distances_tab> <kraken_report> <blast16s_tsv>
+    build_candidate_pool.py <mash_distances_tab> <kraken_report> <blast16s_tsv>
 
 Output (stdout, TSV):
     species  tools  accession  mash_distance  kraken_pct  blast16s_pident
 
-Each row is one candidate species. Rows are ordered by number of supporting
-tools (desc), then mash_distance (asc), then blast16s_pident (desc).
+Each row is one candidate species. Each tool's top-3 (mash by distance, kraken by
+reads, 16S by pident) is seeded into the pool regardless of corroboration; the
+remaining slots fill by number of supporting tools (desc), then mash_distance (asc),
+then blast16s_pident (desc), capped at POOL_CAP.
 """
 
-import re
+import os
 import sys
 
-KRAKEN_ADAPT_FACTOR = 0.15   # threshold = max(top_pct * factor, MIN_PCT)
-KRAKEN_MIN_PCT      = 5.0    # absolute floor for Kraken threshold
-KRAKEN_MIN_READS    = 10     # minimum clade read count for any Kraken candidate
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from sanibel_taxonomy import (
+    iter_blast16s_rows, iter_kraken_species_rows, find_accession, parse_mash_ref,
+    BLAST16S_MIN_LENGTH, BLAST16S_MIN_PIDENT,
+)
 
-BLAST16S_MIN_LENGTH = 400    # minimum alignment length for 16S hit
-BLAST16S_MIN_PIDENT = 97.0   # minimum percent identity for 16S hit
+KRAKEN_ADAPT_FACTOR = 0.15
+KRAKEN_MIN_PCT      = 5.0
+KRAKEN_MIN_READS    = 10
 
-POOL_CAP            = 15     # hard cap on total candidates returned
+SEED_TOP            = 3
+POOL_CAP            = 15
 
 NA = 'NA'
 
 HEADER = ['species', 'tools', 'accession', 'mash_distance', 'kraken_pct', 'blast16s_pident']
 
 
-# Accession pattern: GCF_*, GCA_*, NC_*, NZ_*
-_ACC_RE = re.compile(r'GC[FA]_[A-Za-z0-9]+(?:\.[0-9]+)?|N[CZ]_[A-Za-z0-9]+(?:\.[0-9]+)?')
-
-
 # Mash parsing
 
 def _parse_mash_ref(ref_name):
     try:
-        segs = ref_name.split('-.-')
-        name_part = segs[-1]
-        if name_part.endswith('.fna'):
-            name_part = name_part[:-4]
-        tokens = [t for t in name_part.split('_') if t]
-        genus   = tokens[0] if tokens else None
-        species = tokens[1] if len(tokens) > 1 else NA
+        genus, species, accession = parse_mash_ref(ref_name)
         if not genus:
             return None, None, None
-        accession = NA
-        for seg in segs[:-1]:
-            m = _ACC_RE.search(seg)
-            if m:
-                accession = m.group(0)
-                break
-        if accession == NA:
-            # New update_mash_dist names (Genus_species_<ACC>) have no '-.-';
-            # recover the accession from the whole reference name.
-            m = _ACC_RE.search(ref_name)
-            if m:
-                accession = m.group(0)
-        return genus, species, accession
+        if accession is None:
+            accession = find_accession(ref_name)
+        return genus, species or NA, accession or NA
     except Exception:
         return None, None, None
 
@@ -101,33 +87,8 @@ def parse_mash_distances(filepath):
 
 # Kraken parsing
 
-def parse_kraken_candidates(filepath):
-    species_rows = []
-    try:
-        with open(filepath) as fh:
-            for line in fh:
-                parts = line.rstrip('\n').split('\t')
-                if len(parts) < 6:
-                    continue
-                rank = parts[3].strip()
-                if rank != 'S':
-                    continue
-                try:
-                    pct   = float(parts[0].strip())
-                    reads = int(parts[1].strip())
-                except ValueError:
-                    continue
-                if reads < KRAKEN_MIN_READS:
-                    continue
-                name = parts[5].strip()
-                name_tokens = name.split()
-                if len(name_tokens) < 2:
-                    continue
-                genus   = name_tokens[0]
-                species = name_tokens[1]
-                species_rows.append((genus, species, pct))
-    except OSError:
-        return []
+def parse_kraken_candidates(kraken_rows):
+    species_rows = [(genus, species, pct) for genus, species, pct, _reads in kraken_rows]
 
     if not species_rows:
         return []
@@ -150,32 +111,21 @@ def parse_kraken_candidates(filepath):
     return above + foreign_top
 
 
+def kraken_seed_rows(kraken_rows, n):
+    rows = sorted(kraken_rows, key=lambda x: x[3], reverse=True)
+    return [(g, s, pct) for g, s, pct, _r in rows[:n]]
+
+
 # 16S BLAST parsing
 
 def parse_16s_candidates(filepath):
     qualifying = []
-    try:
-        with open(filepath) as fh:
-            for line in fh:
-                parts = line.rstrip('\n').split('\t')
-                if len(parts) < 13:
-                    continue
-                try:
-                    pident = float(parts[2])
-                    length = int(parts[3])
-                except ValueError:
-                    continue
-                if length < BLAST16S_MIN_LENGTH or pident < BLAST16S_MIN_PIDENT:
-                    continue
-                stitle = parts[12].strip()
-                title_tokens = stitle.split()
-                if len(title_tokens) < 2:
-                    continue
-                genus   = title_tokens[0]
-                species = title_tokens[1]
-                qualifying.append((genus, species, pident))
-    except OSError:
-        return []
+    for hit in iter_blast16s_rows(filepath):
+        if hit.length < BLAST16S_MIN_LENGTH or hit.pident < BLAST16S_MIN_PIDENT:
+            continue
+        if hit.species is None:
+            continue
+        qualifying.append((hit.genus, hit.species, hit.pident))
 
     if not qualifying:
         return []
@@ -192,7 +142,7 @@ def parse_16s_candidates(filepath):
 
 # Merge / rank
 
-def merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands):
+def merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands, kraken_seeds, seed_keys):
     pool = {}  # species_key -> dict
 
     def _upsert(genus, species, tool, accession=NA,
@@ -200,6 +150,7 @@ def merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands):
         key = f"{genus.lower()} {species.lower()}"
         if key not in pool:
             pool[key] = {
+                'key':              key,
                 'display_species':  f"{genus} {species}",
                 'tools':            [],
                 'accession':        accession,
@@ -235,16 +186,23 @@ def merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands):
         acc = mash_all[key]['accession'] if key in mash_all else NA
         _upsert(genus, species, '16S', accession=acc, blast16s_pident=pident)
 
-    ranked = sorted(
-        pool.values(),
-        key=lambda e: (
+    for genus, species, pct in kraken_seeds:
+        key = f"{genus.lower()} {species.lower()}"
+        if key not in pool:
+            acc = mash_all[key]['accession'] if key in mash_all else NA
+            _upsert(genus, species, 'kraken2', accession=acc, kraken_pct=pct)
+
+    def _rank(e):
+        return (
             -len(e['tools']),
             e['mash_distance'] if e['mash_distance'] is not None else 1.0,
             -(e['blast16s_pident'] if e['blast16s_pident'] is not None else 0.0),
         )
-    )
 
-    return ranked[:POOL_CAP]
+    seeds = sorted((e for e in pool.values() if e['key'] in seed_keys), key=_rank)
+    fill  = sorted((e for e in pool.values() if e['key'] not in seed_keys), key=_rank)
+
+    return (seeds + fill)[:POOL_CAP]
 
 
 # Formatting helpers
@@ -270,22 +228,33 @@ def _row(entry):
 # Main
 
 def main():
-    if len(sys.argv) != 5:
+    if len(sys.argv) != 4:
         sys.exit(
-            f"Usage: {sys.argv[0]} <sample_id> <mash_distances_tab> "
+            f"Usage: {sys.argv[0]} <mash_distances_tab> "
             "<kraken_report> <blast16s_tsv>"
         )
 
-    _sample_id      = sys.argv[1]
-    mash_tab        = sys.argv[2]
-    kraken_report   = sys.argv[3]
-    blast16s_tsv    = sys.argv[4]
+    mash_tab        = sys.argv[1]
+    kraken_report   = sys.argv[2]
+    blast16s_tsv    = sys.argv[3]
 
     mash_cands, mash_all = parse_mash_distances(mash_tab)
-    kraken_cands         = parse_kraken_candidates(kraken_report)
+    kraken_rows = [
+        (genus, species, pct, reads)
+        for genus, species, pct, reads in iter_kraken_species_rows(kraken_report)
+        if reads >= KRAKEN_MIN_READS and species is not None
+    ]
+    kraken_cands         = parse_kraken_candidates(kraken_rows)
+    kraken_seeds         = kraken_seed_rows(kraken_rows, SEED_TOP)
     blast16s_cands       = parse_16s_candidates(blast16s_tsv)
 
-    ranked = merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands)
+    seed_keys = set()
+    seed_keys.update(c['species_key'] for c in mash_cands[:SEED_TOP])
+    seed_keys.update(f"{g.lower()} {s.lower()}" for g, s, _p in kraken_seeds)
+    seed_keys.update(f"{g.lower()} {s.lower()}" for g, s, _pi in blast16s_cands[:SEED_TOP])
+
+    ranked = merge_candidates(mash_cands, mash_all, kraken_cands, blast16s_cands,
+                              kraken_seeds, seed_keys)
 
     print('\t'.join(HEADER))
     for entry in ranked:

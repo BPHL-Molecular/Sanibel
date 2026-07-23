@@ -1,6 +1,6 @@
 process trimmomatic {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/trimmomatic", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/trimmomatic" }, mode: 'copy'
 
     input:
         tuple val(meta), path(reads)

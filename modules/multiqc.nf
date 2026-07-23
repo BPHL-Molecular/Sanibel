@@ -1,6 +1,6 @@
 process multiqc {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/multiqc", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/multiqc" }, mode: 'copy'
 
     input:
         tuple val(meta), path(reports)
@@ -10,5 +10,58 @@ process multiqc {
     script:
     """
     multiqc .
+    """
+}
+
+process multiqc_global {
+    tag "multiqc_global"
+    publishDir { "${params.output}" }, mode: 'copy'
+
+    input:
+        path summary
+        path multiqc_config
+        path custom_logo
+        path custom_css
+        path nf_config
+        path mqc_tables, stageAs: 'mqc_in/*'
+
+    output:
+        path("sanibel_report.html"), emit: report
+
+    script:
+    """
+    mkdir -p mqc_in
+    cp mqc_in/*_mqc.tsv ${params.output}/ 2>/dev/null || true
+
+    {
+      echo "# id: 'sanibel_versions'"
+      echo "# section_name: 'Software Versions'"
+      echo "# description: 'Tool versions from the container tags pinned in nextflow.config.'"
+      echo "# plot_type: 'table'"
+      echo "# pconfig:"
+      echo "#     id: 'sanibel_versions_table'"
+      echo "#     col1_header: 'Software'"
+      echo "#     no_violin: true"
+      echo "#     rows_are_samples: false"
+      echo "# headers:"
+      echo "#     Version:"
+      echo "#         scale: false"
+      echo "#         format: '{}'"
+      printf 'Software\\tVersion\\n'
+      grep -hoE "docker://[^']+" ${nf_config} \\
+        | sed -E 's#docker://[^/]*/([^:]+):(.+)#\\1\\t\\2#' \\
+        | sort -u
+    } > "${params.output}/sanibel_versions_mqc.tsv"
+
+    multiqc ${params.output} \\
+        -c ${multiqc_config} \\
+        --filename sanibel_report.html \\
+        --interactive \\
+        --ignore "*/multiqc/*" \\
+        --ignore "*/fastqc/*" \\
+        --ignore "*sanibel_report*" \\
+        --ignore "*sum_report.txt"
+
+    rm -f "${params.output}"/*_mqc.tsv
     """
 }

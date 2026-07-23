@@ -1,6 +1,6 @@
 process legsta {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/legsta", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/legsta" }, mode: 'copy'
 
     input:
         tuple val(meta), path(assembly)

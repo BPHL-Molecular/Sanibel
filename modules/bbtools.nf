@@ -1,6 +1,6 @@
 process bbtools_adapters {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/bbtools", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/bbtools" }, mode: 'copy'
 
     input:
         tuple val(meta), path(trimmed_reads)
@@ -24,7 +24,7 @@ process bbtools_adapters {
 
 process bbtools_phix {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/bbtools", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/bbtools" }, mode: 'copy'
 
     input:
         tuple val(meta), path(adaptertrim_reads)

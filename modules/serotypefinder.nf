@@ -1,6 +1,6 @@
 process serotypefinder {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/serotypefinder", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/serotypefinder" }, mode: 'copy'
 
     input:
         tuple val(meta), path(reads)

@@ -1,6 +1,6 @@
 process mash {
     tag "${meta.id}"
-    publishDir "${params.output}/${meta.id}/mash_output", mode: 'copy'
+    publishDir { "${params.output}/${meta.id}/mash" }, mode: 'copy'
 
     input:
         tuple val(meta), path(reads)
