@@ -191,6 +191,45 @@ def parse_skani(filepath):
         return EMPTY
 
 
+def apply_resolved_species(sk, skani_path, resolved_path):
+    """Re-point the skani fields at the highest-ANI row for the ShigaTyper-resolved species."""
+    try:
+        with open(resolved_path) as f:
+            species = f.read().strip()
+    except OSError:
+        return sk
+    if not species:
+        return sk
+
+    best = None
+    try:
+        with open(skani_path) as f:
+            f.readline()
+            for line in f:
+                parts = line.rstrip('\n').split('\t')
+                if len(parts) < 5:
+                    continue
+                name = os.path.basename(parts[0])
+                if name.endswith('.fna'):
+                    name = name[:-4]
+                if name.split('__', 1)[0] != species:
+                    continue
+                try:
+                    ani = float(parts[2])
+                except ValueError:
+                    continue
+                if best is None or ani > best[0]:
+                    best = (ani, parts[4], name.split('__', 1)[1] if '__' in name else NO_DATA)
+    except OSError:
+        return sk
+    if best is None:
+        return sk
+
+    ani, align_fraction, reference = best
+    return {'ani': f'{ani:.3f}', 'confirmed_species': species,
+            'align_fraction': align_fraction, 'reference': reference}
+
+
 def parse_blast16s_result(filepath, anchor_genera=None):
     qualifying = []
     for hit in iter_blast16s_rows(filepath):
@@ -835,6 +874,7 @@ def main():
         _sk_empty = {'ani': NO_DATA, 'confirmed_species': NO_DATA, 'align_fraction': NO_DATA, 'reference': NO_DATA}
         skani_path = f'{sid}_skani.tsv'
         sk = parse_skani(skani_path) if os.path.isfile(skani_path) else _sk_empty
+        sk = apply_resolved_species(sk, skani_path, f'{sid}_species_resolved.txt')
 
         skani_ID_val     = sk['confirmed_species']
         skani_ANI_val    = sk['ani']
@@ -865,13 +905,18 @@ def main():
         else:
             # Species-specific serotype from published output dirs
             serotype = NO_DATA
-            for getter in [
+            # Both serotypers run for the E. coli/Shigella complex, so the genus picks the winner
+            complex_getters = [
                 lambda: get_ecoli_serotype(sample_dir, sid),
+                lambda: get_shigella_serotype(sample_dir, sid),
+            ]
+            if skani_genus == 'Shigella':
+                complex_getters.reverse()
+            for getter in complex_getters + [
                 lambda: get_klebsiella_serotype(sample_dir, sid),
                 lambda: get_legionella_serotype(sample_dir, sid),
                 lambda: get_salmonella_serotype(sample_dir, sid),
                 lambda: get_gas_serotype(sample_dir, sid),
-                lambda: get_shigella_serotype(sample_dir, sid),
                 lambda: get_pneumococcal_serotype(sample_dir, sid),
                 lambda: get_acinetobacter_serotype(sample_dir, sid),
                 lambda: get_vibrio_serotype(sample_dir, sid),

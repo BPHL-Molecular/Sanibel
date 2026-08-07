@@ -13,6 +13,7 @@ process summary_report {
         path neisseria_txt
         path hinfluenzae_txt
         path skani_files
+        path resolved_species_files
         path blast16s_files
         path amrfinder_files
         path bmgap2_amr_files

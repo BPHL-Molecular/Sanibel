@@ -26,6 +26,14 @@ Candidate pool plus skani ANI replaces the Kraken2/Mash agreement heuristic.
 - `nextflow.config`: Mash pinned to `staphb/mash:2.3-RefSeqProkv235` (2026 RefSeq sketch).
 - `modules/mash.nf`: top 50 distances, artifact renamed `*_mash_distances.tab`.
 
+### Escherichia and Shigella
+ANI cannot separate the complex, so ShigaTyper picks the genus and skani names the species.
+
+- `sanibel.nf`: `inComplex` selects `Escherichia_coli` or genus `Shigella`; both `shigatyper` and `serotypefinder` run on every selected sample.
+- `bin/resolve_ec_shigella.py` (new): ShigaTyper's prediction sets the genus, then the highest-ANI skani row matching the named species, or failing that the resolved genus, sets the species.
+- `bin/summary_report.py`: `skani_species`, `skani_ani`, `skani_align_fraction` and `skani_reference` all describe the resolved row; the resolved genus orders the two serotype parsers.
+- Unrecognized or missing ShigaTyper predictions leave the skani call untouched.
+
 ### Report columns
 - New: `blast_16s_tophit`, `blast_16s_pident`, `skani_species`, `skani_ani`, `skani_align_fraction`, `skani_reference`, `contamination_flag`.
 - `species_id_qc` (col 2): `PASS` / `REVIEW (borderline ANI)` / `NO ID (ANI < 95%)`.
@@ -36,6 +44,9 @@ Candidate pool plus skani ANI replaces the Kraken2/Mash agreement heuristic.
 
 ### Reliability
 - `sanibel.nf`: the optional-typing barrier defaults to `true`, so a run with no species-specific output still produces a report.
+- `nextflow.config`: `unicycler` uses `errorStrategy = 'ignore'`, so a sample that cannot be assembled drops out instead of ending the run.
+- `modules/unicycler.nf`: an assembly with no contigs fails the task rather than passing an empty FASTA to QUAST.
+- `sanibel.nf`: a sample whose QUAST report carries no usable assembly length is dropped with a warning, keeping `readssum` from dividing by a zero genome size.
 
 ### BMGAP2 resume
 - `modules/bmgap2_amr.nf`: takes the PMGA BLAST JSON as a staged `path` input instead of reading `${params.output}/<id>/pmga`.

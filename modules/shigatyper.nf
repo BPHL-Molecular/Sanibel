@@ -5,7 +5,7 @@ process shigatyper {
     input:
         tuple val(meta), path(reads)
     output:
-        path("shigatyper_output.txt")
+        tuple val(meta), path("shigatyper_output.txt"), emit: result
         val meta, emit: done
 
     script:

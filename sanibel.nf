@@ -32,6 +32,7 @@ include { aggregate_species_id }  from './modules/aggregate_species_id.nf'
 include { build_candidates }      from './modules/build_candidates.nf'
 include { candidate_references }  from './modules/candidate_references.nf'
 include { skani }                 from './modules/skani.nf'
+include { resolve_ec_shigella }   from './modules/resolve_ec_shigella.nf'
 include { bmgap2_amr }            from './modules/bmgap2_amr.nf'
 include { bmgap2_locusextractor } from './modules/bmgap2_locusextractor.nf'
 include { bmgap2_bmscan }         from './modules/bmgap2_bmscan.nf'
@@ -53,6 +54,10 @@ def rebind(ch, metaCh) {
     ch.map  { meta, x -> [ meta.id, x ] }
       .join(metaCh)
       .map  { _id, x, emeta -> [ emeta, x ] }
+}
+
+def inComplex(meta) {
+    meta.species == 'Escherichia_coli' || meta.genus == 'Shigella'
 }
 
 def withAssembly(ch, asmCh, prokkaCh) {
@@ -138,15 +143,19 @@ workflow {
     )
 
     // Meta + assembly stats channel
-    ch_stats = ch_parse_assembly.map { meta, stats ->
-        def fields        = stats.text.trim().split(',')
-        def enriched_meta = meta + [
-            mash_genus:   fields[0],
-            mash_species: fields[0] + '_' + fields[1],
-            genome_size:  fields[8].toLong()
-        ]
-        [ enriched_meta, stats ]
-    }
+    ch_stats = ch_parse_assembly
+        .map { meta, stats ->
+            def fields = stats.text.trim().split(',')
+            def size   = fields[8].isLong() ? fields[8].toLong() : 0
+            if (!size) log.warn "${meta.id}: QUAST reported no assembly length, dropping the sample"
+            def enriched_meta = meta + [
+                mash_genus:   fields[0],
+                mash_species: fields[0] + '_' + fields[1],
+                genome_size:  size
+            ]
+            [ enriched_meta, stats ]
+        }
+        .filter { meta, _stats -> meta.genome_size > 0 }
 
     // Meta channel keyed by sample ID
     ch_meta_by_id = ch_stats.map { meta, _stats -> [ meta.id, meta ] }
@@ -202,13 +211,36 @@ workflow {
     )
 
     // skani-confirmed species drives the species-specific analyses
-    ch_meta_typed = ch_meta_by_id
+    ch_meta_prov = ch_meta_by_id
         .join(ch_skani.species.map { meta, f -> [ meta.id, f.text.trim() ] }, remainder: true)
         .map { id, meta, sp ->
             def species = sp ?: 'Unknown'
             def genus   = sp ? sp.tokenize('_')[0] : 'Unknown'
             [ id, meta + [ species: species, genus: genus ] ]
         }
+
+    // ANI cannot separate E. coli from Shigella, so ShigaTyper picks the genus for that complex
+    ch_complex     = ch_meta_prov.filter { _id, meta ->  inComplex(meta) }
+    ch_non_complex = ch_meta_prov.filter { _id, meta -> !inComplex(meta) }
+
+    ch_clean_complex = rebind(ch_clean_enriched, ch_complex)
+    ch_shigatyper    = shigatyper(ch_clean_complex)
+    serotypefinder(ch_clean_complex)
+
+    ch_resolved = resolve_ec_shigella(
+        ch_skani.result.map { meta, f -> [ meta.id, f ] }
+            .join(ch_shigatyper.result.map { meta, f -> [ meta.id, f ] })
+            .join(ch_complex)
+            .map { _id, skani_tsv, shigatyper_txt, emeta -> [ emeta, skani_tsv, shigatyper_txt ] }
+    )
+
+    ch_meta_typed = ch_non_complex.mix(
+        ch_complex
+            .join(ch_resolved.resolved.map { meta, f -> [ meta.id, f.text.trim() ] }, remainder: true)
+            .map { id, meta, sp ->
+                sp ? [ id, meta + [ species: sp, genus: sp.tokenize('_')[0] ] ] : [ id, meta ]
+            }
+    )
 
     // Rebind the channels the typing modules use
     ch_assembly_typed = rebind(ch_assembly_enriched, ch_meta_typed)
@@ -239,10 +271,8 @@ workflow {
             .map    { meta, a  -> [ meta + [kleborate_preset: kleborate_presets[meta.species?.tokenize('_')?.take(2)?.join('_')]], a ] }
             .filter { meta, _a -> meta.kleborate_preset }
     )
-    shigatyper(ch_clean_typed.filter     { meta, _r -> meta.genus   == 'Shigella' })
     emm_typing(ch_clean_typed.filter     { meta, _r -> meta.species in ['Streptococcus_pyogenes', 'Streptococcus_dysgalactiae'] })
     seqsero2(ch_clean_typed.filter       { meta, _r -> meta.genus   == 'Salmonella' })
-    serotypefinder(ch_clean_typed.filter { meta, _r -> meta.species == 'Escherichia_coli' })
     plasmidfinder(ch_clean_enriched)
     seroba(ch_clean_typed.filter         { meta, _r -> meta.species == 'Streptococcus_pneumoniae' })
     pasty(ch_assembly_typed.filter       { meta, _a -> meta.species == 'Pseudomonas_aeruginosa' })
@@ -263,15 +293,16 @@ workflow {
 
     ch_summary = summary_report(
         ch_optional_barrier,
-        ch_stats.map { _meta, stats -> stats }.collect(),
-        ch_readssum.out.map         { _meta, rm   -> rm   }.collect(),
-        ch_prokka.cds_txt.map       { _meta, ptxt -> ptxt }.collect(),
-        ch_mlst.out.map             { _meta, mlst_file -> mlst_file }.collect(),
-        ch_kraken_enriched.map      { _meta, kr   -> kr   }.collect(),
+        ch_stats.map { _meta, stats -> stats }.collect().ifEmpty([]),
+        ch_readssum.out.map         { _meta, rm   -> rm   }.collect().ifEmpty([]),
+        ch_prokka.cds_txt.map       { _meta, ptxt -> ptxt }.collect().ifEmpty([]),
+        ch_mlst.out.map             { _meta, mlst_file -> mlst_file }.collect().ifEmpty([]),
+        ch_kraken_enriched.map      { _meta, kr   -> kr   }.collect().ifEmpty([]),
         ch_pmga.out.map             { _meta, pmga_file -> pmga_file }.collect().ifEmpty([]),
         ch_neisseria_txt,
         ch_hinfluenzae_txt,
         ch_skani.result.map         { _meta, f -> f }.collect().ifEmpty([]),
+        ch_resolved.resolved.map    { _meta, f -> f }.collect().ifEmpty([]),
         ch_blast_16s.result.map     { _meta, f -> f }.collect().ifEmpty([]),
         ch_amrfinder.out.map        { _meta, f -> f }.collect().ifEmpty([]),
         ch_bmgap2_amr.amr.map       { _meta, f -> f }.collect().ifEmpty([]),
