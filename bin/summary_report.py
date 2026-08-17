@@ -6,6 +6,7 @@ import csv
 import glob
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
@@ -247,6 +248,21 @@ def parse_blast16s_result(filepath, anchor_genera=None):
 
     pident, _len, genus, _bs = chosen
     return {'pident': f"{pident:.3f}", 'tophit': f"{genus} spp." if genus else NO_DATA}
+
+
+AMR_TARGETS = [
+    ('VIM',    r'blaVIM(-\d+\w*)?'),
+    ('KPC',    r'blaKPC(-\d+\w*)?'),
+    ('IMP',    r'blaIMP(-\d+\w*)?'),
+    ('OXA-48', r'blaOXA-48'),
+    ('NDM',    r'blaNDM(-\d+\w*)?'),
+]
+
+
+def amr_targets(genes):
+    hits = [label for label, pattern in AMR_TARGETS
+            if any(re.fullmatch(pattern, g, re.IGNORECASE) for g in genes)]
+    return ', '.join(hits) or 'None'
 
 
 def _amr_field(row, *names):
@@ -710,8 +726,9 @@ HEADER_STANDARD = [
     'num_clean_reads', 'avg_read_length', 'avg_read_qual', 'est_coverage',
     'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
     'annotated_cds',
-    'amr_gene_symbol', 'amr_subclass',
 ]
+
+HEADER_AMR = ['sampleID', 'amr_target', 'amr_gene_symbol', 'amr_subclass']
 
 HEADER_NM = [
     'sampleID',
@@ -745,7 +762,8 @@ MQC_SPECIES_HEADER = ['Sample', 'skani_species', 'skani_ani', 'skani_align_fract
 MQC_TYPING_COLS    = [0, 16, 17, 15]
 MQC_TYPING_HEADER  = ['Sample', 'mlst_scheme', 'mlst_st', 'serotype']
 
-MQC_AMR_HEADER     = ['Sample', 'amr_gene_count', 'amr_gene_symbol', 'amr_subclass']
+MQC_AMR_HEADER     = ['Sample', 'amr_target', 'amr_gene_count',
+                      'amr_gene_symbol', 'amr_subclass']
 
 
 def _mqc_preamble(section_id, section_name, description, pconfig=None, headers=None):
@@ -812,11 +830,11 @@ def emit_sanibel_amr_mqc_table(amr_by_sample):
     rows = []
     for sid, amr in amr_by_sample.items():
         if amr is None:
-            rows.append([sid, NO_DATA, NO_DATA, NO_DATA])
+            rows.append([sid, NO_DATA, NO_DATA, NO_DATA, NO_DATA])
         elif not amr['genes']:
-            rows.append([sid, 0, 'None', 'None'])
+            rows.append([sid, 'None', 0, 'None', 'None'])
         else:
-            rows.append([sid, len(amr['genes']),
+            rows.append([sid, amr_targets(amr['genes']), len(amr['genes']),
                          ', '.join(amr['genes']),
                          ', '.join(amr['subclasses']) or 'None'])
     _write_mqc(
@@ -828,7 +846,7 @@ def emit_sanibel_amr_mqc_table(amr_by_sample):
             pconfig={'id': 'sanibel_amr_table', 'col1_header': 'Sample',
                      'no_violin': True},
         ),
-        MQC_AMR_HEADER, [0, 1, 2, 3], rows,
+        MQC_AMR_HEADER, [0, 1, 2, 3, 4], rows,
     )
 
 
@@ -934,13 +952,6 @@ def main():
             rm['coverage'], asm['num_contigs'], asm['n50'],
             QC_MIN_COVERAGE, QC_WARN_CONTIGS, QC_FAIL_CONTIGS, QC_MIN_N50, contaminated)
 
-        amr = amr_by_sample[sid]
-        if amr is None:
-            amr_symbols = amr_subclasses = NO_DATA
-        else:
-            amr_symbols    = ', '.join(amr['genes'])      or 'None'
-            amr_subclasses = ', '.join(amr['subclasses']) or 'None'
-
         std_row = [
             sid,
             species_id_qc, contamination_flag, assembly_qc,
@@ -952,7 +963,6 @@ def main():
             rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
             asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
             asm['total_length'], asm['gc_content'], cds,
-            amr_symbols, amr_subclasses,
         ]
         rows_std.append(std_row)
 
@@ -1000,12 +1010,22 @@ def main():
                 fh.write('\t'.join(str(v) for v in row) + '\n')
         print(f"summary_report.py: wrote {path} ({len(rows)} sample(s))")
 
+    rows_amr = [
+        [sid, amr_targets(amr['genes']),
+         ', '.join(amr['genes']),
+         ', '.join(amr['subclasses']) or 'None']
+        for sid, amr in amr_by_sample.items()
+        if amr and amr['genes']
+    ]
+
     if rows_std:
         write_report('sum_report.txt',    HEADER_STANDARD, rows_std)
     if rows_nm:
         write_report('nm_sum_report.txt', HEADER_NM,       rows_nm)
     if rows_hi:
         write_report('hi_sum_report.txt', HEADER_HI,       rows_hi)
+    if rows_amr:
+        write_report('amr_report.txt',    HEADER_AMR,      rows_amr)
 
     emit_sanibel_mqc_tables(rows_std)
     emit_sanibel_amr_mqc_table(amr_by_sample)

@@ -42,6 +42,24 @@ ANI cannot separate the complex, so ShigaTyper picks the genus and skani names t
 - AMR columns renamed `amr_gene_symbol` / `amr_subclass`.
 - QC thresholds are hardcoded constants, not `nextflow.config` params.
 
+### AMR report
+AMR results live in their own file rather than as trailing columns of the standard report.
+
+- `amr_report.txt` (new): `sampleID`, `amr_target`, `amr_gene_symbol`, `amr_subclass`. Samples with no detected genes are omitted.
+- `amr_target` names which of VIM, KPC, IMP, OXA-48 and NDM are present, or `None`. OXA-48 matches `blaOXA-48` alone, not other OXA family genes.
+- `sum_report.txt` drops `amr_gene_symbol` and `amr_subclass`, leaving 29 columns.
+- The interactive report's AMR table keeps both columns and gains `amr_target`, with conditional formatting on a detected target.
+- `modules/summary_report.nf`: publish pattern widened to `*report.txt`.
+
+### Interactive report
+General Statistics reports raw and clean read metrics side by side.
+
+- `assets/multiqc_config.yaml`: second `fastqc` module instance anchored `fastqc_raw`, filtered to `*/fastqc/*`. All twelve of its sections are removed, so it contributes general-statistics columns only.
+- Sequence count, GC and median read length are forced visible for both instances. `median_sequence_length` hides itself when every sample falls within 10 bp, which is why it never appeared before.
+- `modules/fastqc.nf`: raw reads are linked to `<id>_R{1,2}.fastq.gz` before FastQC runs. MultiQC names samples from the `Filename` recorded inside `fastqc_data.txt`, so raw and clean have to share a stem to land on one row.
+- `modules/multiqc.nf`: `--ignore "*/fastqc/*"` dropped so the raw directory is scanned; `--ignore "*sum_report.txt"` widened to `*report.txt`.
+- Raw FastQC artifacts renamed `<id>_R{1,2}_original_fastqc.*`, previously `<id>_{1,2}_original_fastqc.*`.
+
 ### Reliability
 - `sanibel.nf`: the optional-typing barrier defaults to `true`, so a run with no species-specific output still produces a report.
 - `nextflow.config`: `unicycler` uses `errorStrategy = 'ignore'`, so a sample that cannot be assembled drops out instead of ending the run.

@@ -131,7 +131,7 @@ flowchart LR
     TYP --> REP
     AMR --> REP
 
-    REP --> OUT["sum_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt"]
+    REP --> OUT["sum_report.txt<br/>amr_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt"]
     REP --> MQ["multiqc_global<br/>sanibel_report.html"]
 
     style SID fill:#9f9,stroke:#333,color:#000
@@ -162,14 +162,14 @@ Sanibel is made possible thanks to the following tools:
 
 ### 📁 Output
 
-All results are written to `params.output/<sample_id>/`. Depending on which species are in the run, up to three summary files are written to `params.output/`:
+All results are written to `params.output/<sample_id>/`. Depending on which species are in the run, up to four summary files are written to `params.output/`:
 
 | File | Samples | Cols | Key fields |
 |------|---------|------|------------|
-| `sum_report.txt` | All | 31 | ID · species (skani ANI, Mash, Kraken) · 16S top hit · skani ANI/reference · species-ID QC · contamination flag · MLST scheme/ST · serotype · QC metrics (reads, coverage, assembly stats, GC, CDS) · assembly QC · AMR gene symbols/subclasses |
+| `sum_report.txt` | All | 29 | ID · species (skani ANI, Mash, Kraken) · 16S top hit · skani ANI/reference · species-ID QC · contamination flag · MLST scheme/ST · serotype · QC metrics (reads, coverage, assembly stats, GC, CDS) · assembly QC |
+| `amr_report.txt` | Samples with detected AMR genes | 4 | ID · AMR target · AMR gene symbols · AMR subclasses |
 | `nm_sum_report.txt` | *N. meningitidis* only | 26 | ID · PMGA serogroup · BMGAP2 AMR alleles/phenotypes · vaccine antigen coverage (4CMenB) |
 | `hi_sum_report.txt` | *H. influenzae* only | 22 | ID · PMGA capsule type · BMGAP2 AMR alleles/phenotypes |
-
 
 ### 🤝 Contributing
 We welcome contributions to make Sanibel better! Feel free to open issues or submit pull requests to suggest any additional features or enhancements!
