@@ -10,14 +10,15 @@ process fastqc {
     script:
     def prefix = meta.id
     """
-    fastqc --threads ${task.cpus} ${reads[0]} ${reads[1]}
+    mkdir -p raw
+    ln -s ../${reads[0]} raw/${prefix}_R1.fastq.gz
+    ln -s ../${reads[1]} raw/${prefix}_R2.fastq.gz
 
-    r1base=\$(basename ${reads[0]} .fastq.gz)
-    r2base=\$(basename ${reads[1]} .fastq.gz)
+    fastqc --threads ${task.cpus} --outdir . raw/${prefix}_R1.fastq.gz raw/${prefix}_R2.fastq.gz
 
-    mv \${r1base}_fastqc.html ${prefix}_1_original_fastqc.html
-    mv \${r1base}_fastqc.zip  ${prefix}_1_original_fastqc.zip
-    mv \${r2base}_fastqc.html ${prefix}_2_original_fastqc.html
-    mv \${r2base}_fastqc.zip  ${prefix}_2_original_fastqc.zip
+    mv ${prefix}_R1_fastqc.html ${prefix}_R1_original_fastqc.html
+    mv ${prefix}_R1_fastqc.zip  ${prefix}_R1_original_fastqc.zip
+    mv ${prefix}_R2_fastqc.html ${prefix}_R2_original_fastqc.html
+    mv ${prefix}_R2_fastqc.zip  ${prefix}_R2_original_fastqc.zip
     """
 }

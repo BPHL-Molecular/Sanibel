@@ -17,9 +17,9 @@
 
 Sanibel is Florida BPHL's Nextflow bacterial whole-genome sequencing (WGS) analysis pipeline. It performs quality control, *de novo* assembly, taxonomic classification, species identification, sequence typing and antimicrobial resistance (AMR) detection on paired-end Illumina short reads.
 
-Species identification uses a candidate-pool design: Mash, Kraken2 and 16S rRNA BLAST nominate a ranked pool of candidate species, multiple RefSeq genomes are downloaded per candidate and skani confirms the species by whole-genome ANI. skani is the arbiter for the reported organism and the contamination flag. A confident call requires ANI ≥ 95% and alignment fraction ≥ 50% for a positive ID.
+Species identification uses a candidate-pool design: Mash, Kraken2 and 16S rRNA BLAST nominate a ranked pool of candidate species, multiple RefSeq genomes are downloaded per candidate and skani confirms the species by whole-genome ANI. skani is the arbiter for the reported organism and the contamination flag. A confident call requires ANI ≥ 95% and alignment fraction ≥ 50% for a positive ID. *E. coli* and *Shigella* are the one exception: ANI cannot separate them, so ShigaTyper picks the genus and skani then names the species within it.
 
-Species-specific typing modules run automatically based on species identification results: *Legionella pneumophila* (Legsta), *Klebsiella* (Kleborate), *Shigella* (ShigaTyper), *Streptococcus pyogenes/dysgalactiae* (EMM typing), *Salmonella* (SeqSero2), *E. coli* (SerotypeFinder), *Streptococcus pneumoniae* (SeroBA), *Pseudomonas aeruginosa* (pasty), *Acinetobacter baumannii* (Kaptive), *Vibrio parahaemolyticus* (Kaptive), *Listeria monocytogenes* (LisSero) and *Neisseria meningitidis*/*Haemophilus influenzae* (PMGA). BMGAP2 provides enhanced AMR and antigen analysis for *Neisseria meningitidis* and *Haemophilus influenzae*. PlasmidFinder runs on all samples.
+Species-specific typing modules run automatically based on species identification results: *Legionella pneumophila* (Legsta), *Klebsiella* (Kleborate), *E. coli*/*Shigella* (SerotypeFinder and ShigaTyper, both), *Streptococcus pyogenes/dysgalactiae* (EMM typing), *Salmonella* (SeqSero2), *Streptococcus pneumoniae* (SeroBA), *Pseudomonas aeruginosa* (pasty), *Acinetobacter baumannii* (Kaptive), *Vibrio parahaemolyticus* (Kaptive), *Listeria monocytogenes* (LisSero) and *Neisseria meningitidis*/*Haemophilus influenzae* (PMGA). BMGAP2 provides enhanced AMR and antigen analysis for *Neisseria meningitidis* and *Haemophilus influenzae*. PlasmidFinder runs on all samples.
 
 ### ⚙️ Dependencies
 
@@ -131,7 +131,7 @@ flowchart LR
     TYP --> REP
     AMR --> REP
 
-    REP --> OUT["sum_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt"]
+    REP --> OUT["sum_report.txt<br/>amr_report.txt<br/>nm_sum_report.txt<br/>hi_sum_report.txt"]
     REP --> MQ["multiqc_global<br/>sanibel_report.html"]
 
     style SID fill:#9f9,stroke:#333,color:#000
@@ -162,14 +162,16 @@ Sanibel is made possible thanks to the following tools:
 
 ### 📁 Output
 
-All results are written to `params.output/<sample_id>/`. Depending on which species are in the run, up to three summary files are written to `params.output/`:
+All results are written to `params.output/<sample_id>/`. Depending on which species are in the run, up to four summary files are written to `params.output/`:
 
 | File | Samples | Cols | Key fields |
 |------|---------|------|------------|
-| `sum_report.txt` | All | 31 | ID · species (skani ANI, Mash, Kraken) · 16S top hit · skani ANI/reference · species-ID QC · contamination flag · MLST scheme/ST · serotype · QC metrics (reads, coverage, assembly stats, GC, CDS) · assembly QC · AMR gene symbols/subclasses |
+| `sum_report.txt` | All | 29 | ID · species (skani ANI, Mash, Kraken) · 16S top hit · skani ANI/reference · species-ID QC · contamination flag · MLST scheme/ST · serotype · QC metrics (reads, coverage, assembly stats, GC, CDS) · assembly QC |
+| `amr_report.txt` | Samples with detected AMR genes | 5 | ID · carbapenemase family · matched target genes · AMR genes · AMR subclasses |
 | `nm_sum_report.txt` | *N. meningitidis* only | 26 | ID · PMGA serogroup · BMGAP2 AMR alleles/phenotypes · vaccine antigen coverage (4CMenB) |
 | `hi_sum_report.txt` | *H. influenzae* only | 22 | ID · PMGA capsule type · BMGAP2 AMR alleles/phenotypes |
 
+Cells holding more than one value use `;` as the separator, and no cell contains a comma. Excel parses these files as comma-delimited when they are dragged into a window, which splits a row at every comma it finds.
 
 ### 🤝 Contributing
 We welcome contributions to make Sanibel better! Feel free to open issues or submit pull requests to suggest any additional features or enhancements!

@@ -69,19 +69,56 @@ downloaded reference, sorts by ANI and takes the top hit. That one hit must then
 is emitted, even when a lower-ranked reference would have qualified. The species half of the
 surviving reference filename becomes `{id}_skani_species.txt`.
 
-This is the identification. Everything downstream keys on it.
+This is the identification for every genus except *Escherichia* and *Shigella*, which get
+one more step below. Everything downstream keys on it.
 
-Back in [`sanibel.nf`](../sanibel.nf#L199-L205), the confirmed species is joined onto each
-sample's metadata (`ch_meta_typed`), defaulting to `Unknown` when skani returned nothing:
+Back in [`sanibel.nf`](../sanibel.nf#L210-L216), the confirmed species is joined onto each
+sample's metadata (`ch_meta_prov`), defaulting to `Unknown` when skani returned nothing:
 
 ```groovy
-ch_meta_typed = ch_meta_by_id
+ch_meta_prov = ch_meta_by_id
     .join(ch_skani.species.map { meta, f -> [ meta.id, f.text.trim() ] }, remainder: true)
     .map { id, meta, sp -> [ id, meta + [ species: sp ?: 'Unknown', genus: ... ] ] }
 ```
 
 Every species-specific module filters on `meta.species` or `meta.genus` from that call:
 `seqsero2` on *Salmonella*, `lissero` on *L. monocytogenes* and the rest.
+
+## Escherichia and Shigella
+
+*E. coli* and *Shigella* spp. are one genomospecies. References across that complex sit
+around 97% ANI of each other, so skani's ranking there reflects which reference reached the
+pool rather than which organism the sample is. A sample can top out on *S. sonnei* by three
+hundredths of a point over *E. coli* and still be *E. coli*.
+
+So skani's call is provisional for this complex only. `inComplex` in
+[`sanibel.nf`](../sanibel.nf#L59-L61) selects it, `species == Escherichia_coli` or
+`genus == Shigella`. *E. fergusonii*, *E. albertii* and *E. marmotae* sit near 91-92% ANI
+and stay out. Both `shigatyper` and `serotypefinder` then run on every selected sample,
+and [`resolve_ec_shigella`](../modules/resolve_ec_shigella.nf) reads the ShigaTyper
+prediction:
+
+| Prediction contains | Resolved genus |
+| ------------------- | -------------- |
+| `Not Shigella or EIEC` | Escherichia |
+| `Shigella` | Shigella |
+| `EIEC` | Escherichia |
+| anything else | no change |
+
+SerotypeFinder does not vote. It detects `wzx`/`wzy`/`fliC`, and Shigella carry O antigens
+shared with *E. coli*, so it returns an O:H call either way. Its result fills the
+`serotype` column on the *Escherichia* branch; ShigaTyper's prediction fills it on the
+*Shigella* branch.
+
+With the genus fixed, [`resolve_ec_shigella.py`](../bin/resolve_ec_shigella.py) re-reads
+the skani TSV under the same 95 ANI / 50 aligned fraction gate and takes the highest-ANI
+row whose species matches ShigaTyper's named species, or failing that the highest-ANI row
+in the resolved genus. Nothing changes when neither exists, or when the row it picks is
+already skani's top hit. That species name is what reaches `meta.species`, and
+[`apply_resolved_species`](../bin/summary_report.py) re-points `skani_species`, `skani_ani`,
+`skani_align_fraction` and `skani_reference` at the same row, so all four describe one
+reference. The `blast_16s_tophit` anchor and the contamination anchor follow the resolved
+genus.
 
 ## When skani cannot confirm
 
@@ -141,6 +178,8 @@ flowchart TD
     B --> CP
     CP --> RR[candidate_references<br/>up to 5 RefSeq genomes each]
     RR --> SK[skani ANI<br/>95% ANI, 50% AF]
+    SK -->|E. coli / Shigella| EC[shigatyper + serotypefinder<br/>resolve_ec_shigella]
+    EC --> TY
     SK -->|confirmed| TY[species/genus in meta]
     TY --> SP[Species-Specific Modules]
     SK -->|nothing clears| UN[species = Unknown<br/>typing skipped]
@@ -152,6 +191,7 @@ flowchart TD
     UN -. review .-> REC
 
     style SK fill:#9f9,stroke:#333,stroke-width:2px,color:#000
+    style EC fill:#cdf,stroke:#333,color:#000
     style UN fill:#fda,stroke:#333,color:#000
     style AG fill:#ddd,stroke:#333,color:#000
     style REC fill:#ddd,stroke:#333,color:#000

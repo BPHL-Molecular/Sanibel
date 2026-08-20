@@ -26,6 +26,14 @@ Candidate pool plus skani ANI replaces the Kraken2/Mash agreement heuristic.
 - `nextflow.config`: Mash pinned to `staphb/mash:2.3-RefSeqProkv235` (2026 RefSeq sketch).
 - `modules/mash.nf`: top 50 distances, artifact renamed `*_mash_distances.tab`.
 
+### Escherichia and Shigella
+ANI cannot separate the complex, so ShigaTyper picks the genus and skani names the species.
+
+- `sanibel.nf`: `inComplex` selects `Escherichia_coli` or genus `Shigella`; both `shigatyper` and `serotypefinder` run on every selected sample.
+- `bin/resolve_ec_shigella.py` (new): ShigaTyper's prediction sets the genus, then the highest-ANI skani row matching the named species, or failing that the resolved genus, sets the species.
+- `bin/summary_report.py`: `skani_species`, `skani_ani`, `skani_align_fraction` and `skani_reference` all describe the resolved row; the resolved genus orders the two serotype parsers.
+- Unrecognized or missing ShigaTyper predictions leave the skani call untouched.
+
 ### Report columns
 - New: `blast_16s_tophit`, `blast_16s_pident`, `skani_species`, `skani_ani`, `skani_align_fraction`, `skani_reference`, `contamination_flag`.
 - `species_id_qc` (col 2): `PASS` / `REVIEW (borderline ANI)` / `NO ID (ANI < 95%)`.
@@ -33,9 +41,32 @@ Candidate pool plus skani ANI replaces the Kraken2/Mash agreement heuristic.
 - Kraken2 columns renamed `kraken2_species` / `kraken2_percent`; output moved to `<sample>/kraken2/`.
 - AMR columns renamed `amr_gene_symbol` / `amr_subclass`.
 - QC thresholds are hardcoded constants, not `nextflow.config` params.
+- Multi-value cells use `;` as the separator in all four text reports; no cell contains a comma. Affects `serotype` for Salmonella, Legionella and Listeria, and the AMR gene and subclass lists. The interactive report keeps comma-separated lists.
+
+### AMR report
+AMR results live in their own file rather than as trailing columns of the standard report.
+
+- `amr_report.txt` (new): `sampleID`, `carbapenemase_family`, `amr_target`, `amr_genes`, `amr_subclass`. Samples with no detected genes are omitted.
+- `amr_target` lists the matched gene symbols, such as `blaKPC-3, blaNDM-1`, or `None`. Targets are VIM, KPC, IMP, OXA-48 and NDM; OXA-48 matches `blaOXA-48` alone, not other OXA family genes.
+- `carbapenemase_family` holds the broad labels for the same hits, such as `KPC, NDM`, and carries the conditional formatting in the interactive report.
+- `sum_report.txt` drops the AMR columns, leaving 29 columns.
+- The interactive report's AMR table uses the same column order with `amr_gene_count` between `amr_target` and `amr_genes`.
+- `modules/summary_report.nf`: publish pattern widened to `*report.txt`.
+
+### Interactive report
+General Statistics reports raw and clean read metrics side by side.
+
+- `assets/multiqc_config.yaml`: second `fastqc` module instance anchored `fastqc_raw`, filtered to `*/fastqc/*`. All twelve of its sections are removed, so it contributes general-statistics columns only.
+- Sequence count, GC and median read length are forced visible for both instances. `median_sequence_length` hides itself when every sample falls within 10 bp, which is why it never appeared before.
+- `modules/fastqc.nf`: raw reads are linked to `<id>_R{1,2}.fastq.gz` before FastQC runs. MultiQC names samples from the `Filename` recorded inside `fastqc_data.txt`, so raw and clean have to share a stem to land on one row.
+- `modules/multiqc.nf`: `--ignore "*/fastqc/*"` dropped so the raw directory is scanned; `--ignore "*sum_report.txt"` widened to `*report.txt`.
+- Raw FastQC artifacts renamed `<id>_R{1,2}_original_fastqc.*`, previously `<id>_{1,2}_original_fastqc.*`.
 
 ### Reliability
 - `sanibel.nf`: the optional-typing barrier defaults to `true`, so a run with no species-specific output still produces a report.
+- `nextflow.config`: `unicycler` uses `errorStrategy = 'ignore'`, so a sample that cannot be assembled drops out instead of ending the run.
+- `modules/unicycler.nf`: an assembly with no contigs fails the task rather than passing an empty FASTA to QUAST.
+- `sanibel.nf`: a sample whose QUAST report carries no usable assembly length is dropped with a warning, keeping `readssum` from dividing by a zero genome size.
 
 ### BMGAP2 resume
 - `modules/bmgap2_amr.nf`: takes the PMGA BLAST JSON as a staged `path` input instead of reading `${params.output}/<id>/pmga`.

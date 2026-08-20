@@ -6,6 +6,7 @@ import csv
 import glob
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
@@ -191,6 +192,45 @@ def parse_skani(filepath):
         return EMPTY
 
 
+def apply_resolved_species(sk, skani_path, resolved_path):
+    """Re-point the skani fields at the highest-ANI row for the ShigaTyper-resolved species."""
+    try:
+        with open(resolved_path) as f:
+            species = f.read().strip()
+    except OSError:
+        return sk
+    if not species:
+        return sk
+
+    best = None
+    try:
+        with open(skani_path) as f:
+            f.readline()
+            for line in f:
+                parts = line.rstrip('\n').split('\t')
+                if len(parts) < 5:
+                    continue
+                name = os.path.basename(parts[0])
+                if name.endswith('.fna'):
+                    name = name[:-4]
+                if name.split('__', 1)[0] != species:
+                    continue
+                try:
+                    ani = float(parts[2])
+                except ValueError:
+                    continue
+                if best is None or ani > best[0]:
+                    best = (ani, parts[4], name.split('__', 1)[1] if '__' in name else NO_DATA)
+    except OSError:
+        return sk
+    if best is None:
+        return sk
+
+    ani, align_fraction, reference = best
+    return {'ani': f'{ani:.3f}', 'confirmed_species': species,
+            'align_fraction': align_fraction, 'reference': reference}
+
+
 def parse_blast16s_result(filepath, anchor_genera=None):
     qualifying = []
     for hit in iter_blast16s_rows(filepath):
@@ -208,6 +248,27 @@ def parse_blast16s_result(filepath, anchor_genera=None):
 
     pident, _len, genus, _bs = chosen
     return {'pident': f"{pident:.3f}", 'tophit': f"{genus} spp." if genus else NO_DATA}
+
+
+AMR_TARGETS = [
+    ('VIM',    r'blaVIM(-\d+\w*)?'),
+    ('KPC',    r'blaKPC(-\d+\w*)?'),
+    ('IMP',    r'blaIMP(-\d+\w*)?'),
+    ('OXA-48', r'blaOXA-48'),
+    ('NDM',    r'blaNDM(-\d+\w*)?'),
+]
+
+
+def amr_target_genes(genes):
+    hits = [g for _, pattern in AMR_TARGETS
+            for g in genes if re.fullmatch(pattern, g, re.IGNORECASE)]
+    return ', '.join(hits) or 'None'
+
+
+def carbapenemase_family(genes):
+    hits = [label for label, pattern in AMR_TARGETS
+            if any(re.fullmatch(pattern, g, re.IGNORECASE) for g in genes)]
+    return ', '.join(hits) or 'None'
 
 
 def _amr_field(row, *names):
@@ -671,8 +732,10 @@ HEADER_STANDARD = [
     'num_clean_reads', 'avg_read_length', 'avg_read_qual', 'est_coverage',
     'num_contigs', 'longest_contig', 'N50', 'L50', 'total_length', 'gc_content',
     'annotated_cds',
-    'amr_gene_symbol', 'amr_subclass',
 ]
+
+HEADER_AMR = ['sampleID', 'carbapenemase_family', 'amr_target',
+              'amr_genes', 'amr_subclass']
 
 HEADER_NM = [
     'sampleID',
@@ -706,7 +769,8 @@ MQC_SPECIES_HEADER = ['Sample', 'skani_species', 'skani_ani', 'skani_align_fract
 MQC_TYPING_COLS    = [0, 16, 17, 15]
 MQC_TYPING_HEADER  = ['Sample', 'mlst_scheme', 'mlst_st', 'serotype']
 
-MQC_AMR_HEADER     = ['Sample', 'amr_gene_count', 'amr_gene_symbol', 'amr_subclass']
+MQC_AMR_HEADER     = ['Sample', 'carbapenemase_family', 'amr_target',
+                      'amr_gene_count', 'amr_genes', 'amr_subclass']
 
 
 def _mqc_preamble(section_id, section_name, description, pconfig=None, headers=None):
@@ -773,11 +837,12 @@ def emit_sanibel_amr_mqc_table(amr_by_sample):
     rows = []
     for sid, amr in amr_by_sample.items():
         if amr is None:
-            rows.append([sid, NO_DATA, NO_DATA, NO_DATA])
+            rows.append([sid, NO_DATA, NO_DATA, NO_DATA, NO_DATA, NO_DATA])
         elif not amr['genes']:
-            rows.append([sid, 0, 'None', 'None'])
+            rows.append([sid, 'None', 'None', 0, 'None', 'None'])
         else:
-            rows.append([sid, len(amr['genes']),
+            rows.append([sid, carbapenemase_family(amr['genes']),
+                         amr_target_genes(amr['genes']), len(amr['genes']),
                          ', '.join(amr['genes']),
                          ', '.join(amr['subclasses']) or 'None'])
     _write_mqc(
@@ -789,7 +854,7 @@ def emit_sanibel_amr_mqc_table(amr_by_sample):
             pconfig={'id': 'sanibel_amr_table', 'col1_header': 'Sample',
                      'no_violin': True},
         ),
-        MQC_AMR_HEADER, [0, 1, 2, 3], rows,
+        MQC_AMR_HEADER, [0, 1, 2, 3, 4, 5], rows,
     )
 
 
@@ -835,6 +900,7 @@ def main():
         _sk_empty = {'ani': NO_DATA, 'confirmed_species': NO_DATA, 'align_fraction': NO_DATA, 'reference': NO_DATA}
         skani_path = f'{sid}_skani.tsv'
         sk = parse_skani(skani_path) if os.path.isfile(skani_path) else _sk_empty
+        sk = apply_resolved_species(sk, skani_path, f'{sid}_species_resolved.txt')
 
         skani_ID_val     = sk['confirmed_species']
         skani_ANI_val    = sk['ani']
@@ -865,13 +931,18 @@ def main():
         else:
             # Species-specific serotype from published output dirs
             serotype = NO_DATA
-            for getter in [
+            # Both serotypers run for the E. coli/Shigella complex, so the genus picks the winner
+            complex_getters = [
                 lambda: get_ecoli_serotype(sample_dir, sid),
+                lambda: get_shigella_serotype(sample_dir, sid),
+            ]
+            if skani_genus == 'Shigella':
+                complex_getters.reverse()
+            for getter in complex_getters + [
                 lambda: get_klebsiella_serotype(sample_dir, sid),
                 lambda: get_legionella_serotype(sample_dir, sid),
                 lambda: get_salmonella_serotype(sample_dir, sid),
                 lambda: get_gas_serotype(sample_dir, sid),
-                lambda: get_shigella_serotype(sample_dir, sid),
                 lambda: get_pneumococcal_serotype(sample_dir, sid),
                 lambda: get_acinetobacter_serotype(sample_dir, sid),
                 lambda: get_vibrio_serotype(sample_dir, sid),
@@ -889,13 +960,6 @@ def main():
             rm['coverage'], asm['num_contigs'], asm['n50'],
             QC_MIN_COVERAGE, QC_WARN_CONTIGS, QC_FAIL_CONTIGS, QC_MIN_N50, contaminated)
 
-        amr = amr_by_sample[sid]
-        if amr is None:
-            amr_symbols = amr_subclasses = NO_DATA
-        else:
-            amr_symbols    = ', '.join(amr['genes'])      or 'None'
-            amr_subclasses = ', '.join(amr['subclasses']) or 'None'
-
         std_row = [
             sid,
             species_id_qc, contamination_flag, assembly_qc,
@@ -907,7 +971,6 @@ def main():
             rm['num_reads'], rm['avg_read_len'], rm['avg_qual'], rm['coverage'],
             asm['num_contigs'], asm['longest_contig'], asm['n50'], asm['l50'],
             asm['total_length'], asm['gc_content'], cds,
-            amr_symbols, amr_subclasses,
         ]
         rows_std.append(std_row)
 
@@ -952,8 +1015,17 @@ def main():
         with open(path, 'w', encoding='utf-8-sig') as fh:
             fh.write('\t'.join(header) + '\n')
             for row in sorted(rows, key=lambda r: r[0]):
-                fh.write('\t'.join(str(v) for v in row) + '\n')
+                fh.write('\t'.join(str(v).replace(',', ';') for v in row) + '\n')
         print(f"summary_report.py: wrote {path} ({len(rows)} sample(s))")
+
+    rows_amr = [
+        [sid, carbapenemase_family(amr['genes']),
+         amr_target_genes(amr['genes']),
+         ', '.join(amr['genes']),
+         ', '.join(amr['subclasses']) or 'None']
+        for sid, amr in amr_by_sample.items()
+        if amr and amr['genes']
+    ]
 
     if rows_std:
         write_report('sum_report.txt',    HEADER_STANDARD, rows_std)
@@ -961,6 +1033,8 @@ def main():
         write_report('nm_sum_report.txt', HEADER_NM,       rows_nm)
     if rows_hi:
         write_report('hi_sum_report.txt', HEADER_HI,       rows_hi)
+    if rows_amr:
+        write_report('amr_report.txt',    HEADER_AMR,      rows_amr)
 
     emit_sanibel_mqc_tables(rows_std)
     emit_sanibel_amr_mqc_table(amr_by_sample)

@@ -6,7 +6,7 @@ intro_text: >
 
 report_header_info:
   - Pipeline: "Sanibel (https://github.com/BPHL-Molecular/Sanibel)"
-  - Version: "v2.1"
+  - Version: "v2.1.0"
   - Contact: "bphl-sebioinformatics@flhealth.gov"
   - Laboratory: "Florida Bureau of Public Health Laboratories"
 
@@ -33,12 +33,29 @@ exclude_modules:
 
 module_order:
   - fastqc:
+      name: "FastQC (raw reads)"
+      anchor: "fastqc_raw"
+      path_filters:
+        - "*/fastqc/*"
+  - fastqc:
       name: "FastQC (clean reads)"
       anchor: "fastqc_clean"
       path_filters:
         - "*/fastqc2/*"
 
 remove_sections:
+  - "fastqc_raw_fastqc_sequence_counts"
+  - "fastqc_raw_fastqc_per_base_sequence_quality"
+  - "fastqc_raw_fastqc_per_sequence_quality_scores"
+  - "fastqc_raw_fastqc_raw_per_base_sequence_content"
+  - "fastqc_raw_fastqc_per_sequence_gc_content"
+  - "fastqc_raw_fastqc_per_base_n_content"
+  - "fastqc_raw_fastqc_sequence_length_distribution"
+  - "fastqc_raw_fastqc_sequence_duplication_levels"
+  - "fastqc_raw_fastqc_overrepresented_sequences"
+  - "fastqc_raw_fastqc_top_overrepresented_sequences"
+  - "fastqc_raw_fastqc_adapter_content"
+  - "fastqc_raw_fastqc_status_checks"
   - "fastqc_clean_fastqc_clean_per_base_sequence_content"
   - "fastqc_clean_fastqc_per_sequence_gc_content"
   - "fastqc_clean_fastqc_per_base_n_content"
@@ -54,6 +71,7 @@ report_section_order:
   sanibel_typing:   { order: 3000 }
   sanibel_amr:      { order: 2500 }
   fastqc_clean:     { order: 2000 }
+  fastqc_raw:       { order: 1500 }
   sanibel_versions: { order: 1000 }
 
 custom_content:
@@ -64,10 +82,14 @@ custom_content:
     - sanibel_versions
 
 table_columns_placement:
-  "FastQC (clean reads)":
+  "FastQC (raw reads)":
     total_sequences: 100
     percent_gc: 110
     median_sequence_length: 120
+  "FastQC (clean reads)":
+    total_sequences: 130
+    percent_gc: 140
+    median_sequence_length: 150
   QUAST:
     Total_length: 200
     N50: 210
@@ -78,7 +100,17 @@ table_columns_placement:
 table_columns_visible:
   prokka:
     organism: false
+  "FastQC (raw reads)":
+    total_sequences: true
+    percent_gc: true
+    median_sequence_length: true
+    percent_duplicates: false
+    percent_fails: false
+    avg_sequence_length: false
   "FastQC (clean reads)":
+    total_sequences: true
+    percent_gc: true
+    median_sequence_length: true
     percent_duplicates: false
     percent_fails: false
     avg_sequence_length: false
@@ -105,3 +137,13 @@ table_cond_formatting_rules:
       - s_contains: "Warning"
     fail:
       - s_contains: "FAIL"
+
+  carbapenemase_family:
+    pass:
+      - s_eq: "None"
+    fail:
+      - s_contains: "VIM"
+      - s_contains: "KPC"
+      - s_contains: "IMP"
+      - s_contains: "OXA-48"
+      - s_contains: "NDM"

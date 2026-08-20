@@ -1,6 +1,6 @@
 process summary_report {
     tag "summary"
-    publishDir { "${params.output}" }, mode: 'copy', pattern: '*sum_report.txt'
+    publishDir { "${params.output}" }, mode: 'copy', pattern: '*report.txt'
 
     input:
         val  barrier
@@ -13,6 +13,7 @@ process summary_report {
         path neisseria_txt
         path hinfluenzae_txt
         path skani_files
+        path resolved_species_files
         path blast16s_files
         path amrfinder_files
         path bmgap2_amr_files
@@ -23,6 +24,7 @@ process summary_report {
         path "sum_report.txt",    emit: summary
         path "nm_sum_report.txt", emit: nm_summary, optional: true
         path "hi_sum_report.txt", emit: hi_summary, optional: true
+        path "amr_report.txt",    emit: amr,        optional: true
         path "*_mqc.tsv",         emit: mqc_tables, optional: true
 
     script:

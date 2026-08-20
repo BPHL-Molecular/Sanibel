@@ -58,9 +58,8 @@ process multiqc_global {
         --filename sanibel_report.html \\
         --interactive \\
         --ignore "*/multiqc/*" \\
-        --ignore "*/fastqc/*" \\
         --ignore "*sanibel_report*" \\
-        --ignore "*sum_report.txt"
+        --ignore "*report.txt"
 
     rm -f "${params.output}"/*_mqc.tsv
     """
