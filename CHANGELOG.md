@@ -41,14 +41,15 @@ ANI cannot separate the complex, so ShigaTyper picks the genus and skani names t
 - Kraken2 columns renamed `kraken2_species` / `kraken2_percent`; output moved to `<sample>/kraken2/`.
 - AMR columns renamed `amr_gene_symbol` / `amr_subclass`.
 - QC thresholds are hardcoded constants, not `nextflow.config` params.
+- Multi-value cells use `;` as the separator in all four text reports; no cell contains a comma. Affects `serotype` for Salmonella, Legionella and Listeria, and the AMR gene and subclass lists. The interactive report keeps comma-separated lists.
 
 ### AMR report
 AMR results live in their own file rather than as trailing columns of the standard report.
 
 - `amr_report.txt` (new): `sampleID`, `amr_target`, `amr_gene_symbol`, `amr_subclass`. Samples with no detected genes are omitted.
-- `amr_target` names which of VIM, KPC, IMP, OXA-48 and NDM are present, or `None`. OXA-48 matches `blaOXA-48` alone, not other OXA family genes.
+- `amr_target` lists the matched gene symbols, such as `blaKPC-3, blaNDM-1`, or `None`. Targets are VIM, KPC, IMP, OXA-48 and NDM; OXA-48 matches `blaOXA-48` alone, not other OXA family genes.
 - `sum_report.txt` drops `amr_gene_symbol` and `amr_subclass`, leaving 29 columns.
-- The interactive report's AMR table keeps both columns and gains `amr_target`, with conditional formatting on a detected target.
+- The interactive report's AMR table keeps both columns and gains `amr_target` and `carbapenemase_family`. The family column holds the broad labels and carries the conditional formatting.
 - `modules/summary_report.nf`: publish pattern widened to `*report.txt`.
 
 ### Interactive report

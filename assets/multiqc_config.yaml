@@ -138,7 +138,7 @@ table_cond_formatting_rules:
     fail:
       - s_contains: "FAIL"
 
-  amr_target:
+  carbapenemase_family:
     pass:
       - s_eq: "None"
     fail:

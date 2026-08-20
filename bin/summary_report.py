@@ -259,7 +259,13 @@ AMR_TARGETS = [
 ]
 
 
-def amr_targets(genes):
+def amr_target_genes(genes):
+    hits = [g for _, pattern in AMR_TARGETS
+            for g in genes if re.fullmatch(pattern, g, re.IGNORECASE)]
+    return ', '.join(hits) or 'None'
+
+
+def carbapenemase_family(genes):
     hits = [label for label, pattern in AMR_TARGETS
             if any(re.fullmatch(pattern, g, re.IGNORECASE) for g in genes)]
     return ', '.join(hits) or 'None'
@@ -762,8 +768,8 @@ MQC_SPECIES_HEADER = ['Sample', 'skani_species', 'skani_ani', 'skani_align_fract
 MQC_TYPING_COLS    = [0, 16, 17, 15]
 MQC_TYPING_HEADER  = ['Sample', 'mlst_scheme', 'mlst_st', 'serotype']
 
-MQC_AMR_HEADER     = ['Sample', 'amr_target', 'amr_gene_count',
-                      'amr_gene_symbol', 'amr_subclass']
+MQC_AMR_HEADER     = ['Sample', 'amr_target', 'carbapenemase_family',
+                      'amr_gene_count', 'amr_gene_symbol', 'amr_subclass']
 
 
 def _mqc_preamble(section_id, section_name, description, pconfig=None, headers=None):
@@ -830,11 +836,12 @@ def emit_sanibel_amr_mqc_table(amr_by_sample):
     rows = []
     for sid, amr in amr_by_sample.items():
         if amr is None:
-            rows.append([sid, NO_DATA, NO_DATA, NO_DATA, NO_DATA])
+            rows.append([sid, NO_DATA, NO_DATA, NO_DATA, NO_DATA, NO_DATA])
         elif not amr['genes']:
-            rows.append([sid, 'None', 0, 'None', 'None'])
+            rows.append([sid, 'None', 'None', 0, 'None', 'None'])
         else:
-            rows.append([sid, amr_targets(amr['genes']), len(amr['genes']),
+            rows.append([sid, amr_target_genes(amr['genes']),
+                         carbapenemase_family(amr['genes']), len(amr['genes']),
                          ', '.join(amr['genes']),
                          ', '.join(amr['subclasses']) or 'None'])
     _write_mqc(
@@ -846,7 +853,7 @@ def emit_sanibel_amr_mqc_table(amr_by_sample):
             pconfig={'id': 'sanibel_amr_table', 'col1_header': 'Sample',
                      'no_violin': True},
         ),
-        MQC_AMR_HEADER, [0, 1, 2, 3, 4], rows,
+        MQC_AMR_HEADER, [0, 1, 2, 3, 4, 5], rows,
     )
 
 
@@ -1007,11 +1014,11 @@ def main():
         with open(path, 'w', encoding='utf-8-sig') as fh:
             fh.write('\t'.join(header) + '\n')
             for row in sorted(rows, key=lambda r: r[0]):
-                fh.write('\t'.join(str(v) for v in row) + '\n')
+                fh.write('\t'.join(str(v).replace(',', ';') for v in row) + '\n')
         print(f"summary_report.py: wrote {path} ({len(rows)} sample(s))")
 
     rows_amr = [
-        [sid, amr_targets(amr['genes']),
+        [sid, amr_target_genes(amr['genes']),
          ', '.join(amr['genes']),
          ', '.join(amr['subclasses']) or 'None']
         for sid, amr in amr_by_sample.items()
