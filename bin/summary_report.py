@@ -734,7 +734,8 @@ HEADER_STANDARD = [
     'annotated_cds',
 ]
 
-HEADER_AMR = ['sampleID', 'amr_target', 'amr_gene_symbol', 'amr_subclass']
+HEADER_AMR = ['sampleID', 'carbapenemase_family', 'amr_target',
+              'amr_genes', 'amr_subclass']
 
 HEADER_NM = [
     'sampleID',
@@ -768,8 +769,8 @@ MQC_SPECIES_HEADER = ['Sample', 'skani_species', 'skani_ani', 'skani_align_fract
 MQC_TYPING_COLS    = [0, 16, 17, 15]
 MQC_TYPING_HEADER  = ['Sample', 'mlst_scheme', 'mlst_st', 'serotype']
 
-MQC_AMR_HEADER     = ['Sample', 'amr_target', 'carbapenemase_family',
-                      'amr_gene_count', 'amr_gene_symbol', 'amr_subclass']
+MQC_AMR_HEADER     = ['Sample', 'carbapenemase_family', 'amr_target',
+                      'amr_gene_count', 'amr_genes', 'amr_subclass']
 
 
 def _mqc_preamble(section_id, section_name, description, pconfig=None, headers=None):
@@ -840,8 +841,8 @@ def emit_sanibel_amr_mqc_table(amr_by_sample):
         elif not amr['genes']:
             rows.append([sid, 'None', 'None', 0, 'None', 'None'])
         else:
-            rows.append([sid, amr_target_genes(amr['genes']),
-                         carbapenemase_family(amr['genes']), len(amr['genes']),
+            rows.append([sid, carbapenemase_family(amr['genes']),
+                         amr_target_genes(amr['genes']), len(amr['genes']),
                          ', '.join(amr['genes']),
                          ', '.join(amr['subclasses']) or 'None'])
     _write_mqc(
@@ -1018,7 +1019,8 @@ def main():
         print(f"summary_report.py: wrote {path} ({len(rows)} sample(s))")
 
     rows_amr = [
-        [sid, amr_target_genes(amr['genes']),
+        [sid, carbapenemase_family(amr['genes']),
+         amr_target_genes(amr['genes']),
          ', '.join(amr['genes']),
          ', '.join(amr['subclasses']) or 'None']
         for sid, amr in amr_by_sample.items()

@@ -46,10 +46,11 @@ ANI cannot separate the complex, so ShigaTyper picks the genus and skani names t
 ### AMR report
 AMR results live in their own file rather than as trailing columns of the standard report.
 
-- `amr_report.txt` (new): `sampleID`, `amr_target`, `amr_gene_symbol`, `amr_subclass`. Samples with no detected genes are omitted.
+- `amr_report.txt` (new): `sampleID`, `carbapenemase_family`, `amr_target`, `amr_genes`, `amr_subclass`. Samples with no detected genes are omitted.
 - `amr_target` lists the matched gene symbols, such as `blaKPC-3, blaNDM-1`, or `None`. Targets are VIM, KPC, IMP, OXA-48 and NDM; OXA-48 matches `blaOXA-48` alone, not other OXA family genes.
-- `sum_report.txt` drops `amr_gene_symbol` and `amr_subclass`, leaving 29 columns.
-- The interactive report's AMR table keeps both columns and gains `amr_target` and `carbapenemase_family`. The family column holds the broad labels and carries the conditional formatting.
+- `carbapenemase_family` holds the broad labels for the same hits, such as `KPC, NDM`, and carries the conditional formatting in the interactive report.
+- `sum_report.txt` drops the AMR columns, leaving 29 columns.
+- The interactive report's AMR table uses the same column order with `amr_gene_count` between `amr_target` and `amr_genes`.
 - `modules/summary_report.nf`: publish pattern widened to `*report.txt`.
 
 ### Interactive report
